@@ -34,7 +34,7 @@ export default function GiftcodeModal({ isOpen, onClose }: GiftcodeModalProps) {
         <div className="p-4 rounded-lg bg-[#141b47] border border-[#f5c767]/40 mb-6 text-left">
           <div className="text-xs text-slate-400 mb-1">Mã Giftcode Tân Thủ Toàn Cầu:</div>
           <div className="text-xl font-mono font-black text-[#f5c767] flex items-center justify-between">
-            <span>VOVSTAR2026</span>
+            <span>VOV2026</span>
             <button
               onClick={copyPromoCode}
               className="text-xs bg-[#f5c767] text-black font-bold px-3 py-1.5 rounded hover:bg-[#ffe394] transition-colors cursor-pointer"
@@ -45,10 +45,10 @@ export default function GiftcodeModal({ isOpen, onClose }: GiftcodeModalProps) {
         </div>
 
         <div className="text-left text-xs text-slate-300 space-y-1.5 mb-6 bg-black/40 p-3 rounded border border-white/5">
-          <div>✦ <strong>50.000</strong> Điểm Tín Dụng</div>
-          <div>✦ <strong>10</strong> Vé Tinh Cầu Đặc Biệt (Quay Banner Nhân Vật)</div>
-          <div>✦ <strong>01</strong> Nhân Vật 4 Sao Aurelia</div>
-          <div>✦ <strong>05</strong> Bình Năng Lượng Vũ Trụ</div>
+          <div>✦ <strong>50.000</strong> Vàng Lục Địa Veyra</div>
+          <div>✦ <strong>10</strong> Vé Triệu Hồi Valkyria Cao Cấp</div>
+          <div>✦ <strong>01</strong> Valkyria 4 Sao Aurelia</div>
+          <div>✦ <strong>05</strong> Bình Tinh Thể Năng Lượng Veyra</div>
         </div>
 
         <button

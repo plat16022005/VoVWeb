@@ -70,15 +70,15 @@ export default function PlayModal({ isOpen, onClose }: PlayModalProps) {
             <div className="text-center py-6">
               <div className="text-5xl mb-4">🎉</div>
               <h4 className="text-2xl font-bold text-white uppercase font-[family-name:var(--font-rajdhani)] mb-2">
-                CHÚC MỪNG NHÀ KHAI PHÁ!
+                CHÚC MỪNG CHỈ HUY!
               </h4>
               <p className="text-sm text-slate-300 mb-6">
-                Tài khoản của bạn đã được ghi danh thành công vào máy chủ <strong>Astral Express</strong>.
+                Tài khoản của bạn đã được ghi danh thành công vào máy chủ <strong>Veyra Sanctuary</strong>.
               </p>
               <div className="p-4 rounded-lg bg-[#141b47] border border-[#f5c767]/40 mb-6 text-left">
                 <div className="text-xs text-slate-400">Mã Tân Thủ Độc Quyền Của Bạn:</div>
                 <div className="text-lg font-mono font-bold text-[#f5c767] mt-1 flex items-center justify-between">
-                  <span>VOVSTAR2026</span>
+                  <span>VOV2026</span>
                   <button
                     onClick={copyPromoCode}
                     className="text-xs bg-[#f5c767]/20 text-[#f5c767] px-2.5 py-1 rounded hover:bg-[#f5c767]/30 cursor-pointer"
@@ -97,19 +97,19 @@ export default function PlayModal({ isOpen, onClose }: PlayModalProps) {
           ) : (
             <>
               <p className="text-xs text-slate-300 mb-5 leading-relaxed">
-                Đăng ký tài khoản Nhà Khai Phá để nhận ngay <strong>80 Lượt Quay</strong> cùng gói quà Tân Thủ trị giá <strong>2.000.000 VNĐ</strong>.
+                Đăng ký tài khoản Chỉ Huy để nhận ngay <strong>80 Lượt Triệu Hồi</strong> cùng gói quà Tân Thủ trị giá <strong>2.000.000 VNĐ</strong>.
               </p>
 
               <form onSubmit={handlePreRegister} className="flex flex-col gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase font-[family-name:var(--font-rajdhani)] text-slate-300 mb-1.5">
-                    Tên Nhà Khai Phá (Username)
+                    Tên Chỉ Huy (Username)
                   </label>
                   <input
                     type="text"
                     value={regUsername}
                     onChange={(e) => setRegUsername(e.target.value)}
-                    placeholder="Ví dụ: Trailblazer_VN"
+                    placeholder="Ví dụ: Commander_VN"
                     required
                     className="w-full px-4 py-2.5 rounded-lg bg-[#0e1438] border border-white/15 text-white text-sm focus:outline-none focus:border-[#f5c767] transition-colors"
                   />

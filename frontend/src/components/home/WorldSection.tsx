@@ -17,10 +17,10 @@ export default function WorldSection() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-white/10 gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
-              <span className="hsr-diamond" /> BẢN ĐỒ VŨ TRỤ
+              <span className="hsr-diamond" /> BẢN ĐỒ VÙNG ĐẤT VEYRA
             </div>
             <h2 className="text-3xl sm:text-5xl font-black text-white uppercase font-[family-name:var(--font-rajdhani)]">
-              HÀNH TRÌNH <span className="text-cyan-gradient">CÁC THẾ GIỚI</span>
+              KHÁM PHÁ <span className="text-cyan-gradient">LỤC ĐỊA VEYRA</span>
             </h2>
           </div>
 

@@ -404,3 +404,39 @@ body {
   transform: translateZ(40px) scale(1.02);
   transition: transform 0.15s ease-out;
 }
+
+/* Slide Down Notification Toast */
+@keyframes slideDownToast {
+  0% {
+    transform: translate(-50%, -120%);
+    opacity: 0;
+  }
+
+  60% {
+    transform: translate(-50%, 6px);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down-toast {
+  animation: slideDownToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes progressShrink {
+  0% {
+    width: 100%;
+  }
+
+  100% {
+    width: 0%;
+  }
+}
+
+.animate-progress-shrink {
+  animation: progressShrink 3.2s linear forwards;
+}

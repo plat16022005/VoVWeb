@@ -3,8 +3,8 @@ import StarCanvas from "@/components/common/StarCanvas";
 import LoginForm from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Đăng Nhập Khai Phá — Valkyria of Veyra",
-  description: "Cổng đăng nhập tài khoản Nhà Khai Phá. Kết nối dữ liệu vũ trụ và tiếp tục hành trình trên chuyến tàu ngân hà.",
+  title: "Cổng Chỉ Huy — Valkyria of Veyra",
+  description: "Cổng đăng nhập tài khoản Chỉ Huy. Kết nối dữ liệu và tiếp tục hành trình sát cánh cùng các Valkyria trên vùng đất Veyra.",
 };
 
 export default function LoginPage() {

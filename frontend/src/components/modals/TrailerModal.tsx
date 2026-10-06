@@ -47,10 +47,10 @@ export default function TrailerModal({
               ▶
             </div>
             <h5 className="text-xl font-bold text-white uppercase font-[family-name:var(--font-rajdhani)]">
-              VOV: STAR ODYSSEY — OFFICIAL CINEMATIC TRAILER
+              VALKYRIA OF VEYRA — OFFICIAL CINEMATIC TRAILER
             </h5>
             <p className="text-xs text-slate-300 mt-2 max-w-md mx-auto">
-              Khởi hành chuyến tàu Astral Express. Đồ họa Unreal Engine thế hệ mới và âm thanh vòm không gian 3D.
+              Sát cánh cùng các nữ chiến binh Valkyria trong các trận chiến chiến thuật theo lượt (Turn-Based) đỉnh cao trên nền tảng Unity Engine.
             </p>
           </div>
         </div>

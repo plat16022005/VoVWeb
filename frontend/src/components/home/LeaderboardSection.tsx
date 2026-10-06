@@ -21,13 +21,13 @@ export default function LeaderboardSection({
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)] mb-2">
-            <span className="hsr-diamond" /> KỶ LỤC KHAI PHÁ <span className="hsr-diamond" />
+            <span className="hsr-diamond" /> BẢNG CHIẾN TÍCH <span className="hsr-diamond" />
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white uppercase font-[family-name:var(--font-rajdhani)]">
-            BẢNG XẾP HẠNG <span className="text-gold-gradient">THÁM HIỂM GIA</span>
+            BẢNG XẾP HẠNG <span className="text-gold-gradient">CHỈ HUY VEYRA</span>
           </h2>
           <p className="text-slate-400 text-sm max-w-xl mx-auto mt-2">
-            Tôn vinh những Nhà Khai Phá dũng cảm nhất đã vượt qua mọi rào cản và ghi dấu tên tuổi khắp các vì sao.
+            Tôn vinh những Chỉ Huy dũng cảm nhất đã cùng các Valkyria vượt qua mọi thử thách trên khắp lục địa Veyra.
           </p>
         </div>
 
@@ -38,11 +38,11 @@ export default function LeaderboardSection({
               <thead className="bg-[#12163b] text-xs uppercase font-[family-name:var(--font-rajdhani)] text-[#f5c767] tracking-wider border-b border-white/10">
                 <tr>
                   <th className="py-4 px-6 text-center w-16">Hạng</th>
-                  <th className="py-4 px-6">Nhà Khai Phá</th>
-                  <th className="py-4 px-6">Cấp Khai Phá</th>
-                  <th className="py-4 px-6">Vận Mệnh</th>
-                  <th className="py-4 px-6">Tiến Độ Vũ Trụ</th>
-                  <th className="py-4 px-6 text-right">Máy Chủ</th>
+                  <th className="py-4 px-6">Chỉ Huy</th>
+                  <th className="py-4 px-6">Cấp Độ</th>
+                  <th className="py-4 px-6">Valkyria Tiên Phong</th>
+                  <th className="py-4 px-6">Tiến Độ Veyra</th>
+                  <th className="py-4 px-6 text-right">Khu Vực</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -122,7 +122,7 @@ export default function LeaderboardSection({
           {/* Bottom Join CTA */}
           <div className="p-4 bg-[#0e1338] border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <span className="text-slate-400">
-              Bạn muốn ghi tên mình lên Bảng Khai Phá? Hãy tham gia chuyến tàu Astral ngay hôm nay!
+              Bạn muốn ghi tên mình lên Bảng Chiến Tích? Hãy bước vào vùng đất Veyra ngay hôm nay!
             </span>
             <button
               onClick={onOpenPlayModal}

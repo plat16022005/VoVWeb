@@ -32,7 +32,7 @@ export default function NewsSection({
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b border-white/10 gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
-              <span className="hsr-diamond" /> BẢN TIN VŨ TRỤ
+              <span className="hsr-diamond" /> BẢN TIN VEYRA
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white uppercase font-[family-name:var(--font-rajdhani)]">
               TIN TỨC & SỰ KIỆN NỔI BẬT
@@ -83,10 +83,10 @@ export default function NewsSection({
               <div className="p-6">
                 <span className="text-xs text-slate-400 font-mono">CẬP NHẬT: 05/10/2026</span>
                 <h3 className="text-xl font-bold text-white group-hover:text-[#f5c767] transition-colors mt-2 mb-3 leading-snug">
-                  Đại Lễ Khởi Hành: Thám Hiểm Tiên Châu Luofu & Nhận Vé Tinh Cầu Đặc Biệt!
+                  Đại Lễ Khởi Hành: Khám Phá Thánh Địa Veyra & Nhận Vé Triệu Hồi Đặc Biệt!
                 </h3>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  Bước lên phi thuyền ngắm nhìn biển sao vô tận. Hoàn thành chuỗi nhiệm vụ Khai Phá cốt truyện để mở khóa trang bị Sử Thi và bảo vật Curio.
+                  Sát cánh cùng các nữ chiến binh Valkyria chiến đấu. Hoàn thành chuỗi nhiệm vụ cốt truyện để mở khóa trang bị Sử Thi và bảo vật cổ xưa.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
                   <span>Xem Chi Tiết Sự Kiện</span>
@@ -130,7 +130,7 @@ export default function NewsSection({
             <div className="mt-4 p-5 rounded-lg bg-gradient-to-r from-[#111636] to-[#0c1029] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <div className="text-sm font-bold text-white uppercase font-[family-name:var(--font-rajdhani)]">
-                  ĐĂNG KÝ BẢN TIN KHAI PHÁ
+                  ĐĂNG KÝ BẢN TIN VEYRA
                 </div>
                 <p className="text-xs text-slate-400">
                   Nhận thông báo cập nhật, giftcode và sự kiện mới nhất qua Email.

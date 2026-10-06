@@ -17,9 +17,11 @@ Tài liệu này ghi nhận toàn bộ kiến trúc, bài học và quy chuẩn 
 - **Căn giữa toàn bộ giao diện (Center Alignment)**:
   - Tuyệt đối không để nội dung lệch về bên trái.
   - Luôn bọc các section/container trong `max-w-7xl mx-auto px-4` hoặc căn giữa cân đối (`flex justify-center`, `items-center`).
-- **Phong cách thiết kế (Theme & Aesthetic)**:
-  - Game Anime Sci-Fi Vũ trụ (lấy cảm hứng từ không gian Honkai: Star Rail).
-  - Tông màu: Dark cosmic violet/black (`#0a0818`, `#060714`), điểm xuyết neon cyan và gold/amber rực rỡ.
+- **Phong cách thiết kế, Cốt truyện & Thể loại (Theme & Genre)**:
+  - **Cốt truyện cốt lõi**: Kể về vùng đất/đại lục **Veyra** huyền bí, nơi có các cô gái mang sức mạnh đặc biệt được gọi là các **Valkyria**. Người chơi là **Chỉ Huy**, sát cánh cùng các Valkyria chiến đấu và khám phá vùng đất Veyra.
+  - **Game Engine & Thể loại**: Phát triển trên nền tảng **Unity Engine**. Thể loại: **Turn-Based RPG** (Game Nhập Vai Chiến Thuật Theo Lượt). Tuyệt đối KHÔNG nhắc đến Unreal Engine.
+  - **Tuyệt đối KHÔNG dùng**: Từ ngữ về "đội tàu", "chuyến tàu", "Astral", "vũ trụ", "ngân hà", "Nhà Khai Phá", "Unreal Engine".
+  - **Tông màu**: Dark fantasy violet/black (`#0a0818`, `#060714`), điểm xuyết neon cyan và gold/amber rực rỡ, huyền ảo.
   - Hiệu ứng sao rơi nền (`StarCanvas`), nhạc nền BGM du dương có nút bật/tắt ở Navbar.
 - **Card 3D Tilt Effect**:
   - Các thẻ nhân vật (`CharacterShowcase`) và địa điểm (`WorldSection`) phải giữ hiệu ứng 3D hover tilt tương tác theo vị trí chuột (`preserve-3d`, xoay `rotateX`, `rotateY`).

@@ -4,9 +4,9 @@ import Image from "next/image";
 import { soundEngine } from "@/services/audio.service";
 
 const MEDIA_ITEMS = [
-  { title: "Chuyến Tàu Astral Vượt Ngân Hà", img: "/images/hero_bg.jpg", desc: "4K Key Visual Wallpaper" },
-  { title: "Trạm Không Gian Aethel", img: "/images/world_station.jpg", desc: "Sci-Fi Space Observation Deck" },
-  { title: "Hạm Đội Tiên Châu Luofu", img: "/images/world_skycity.jpg", desc: "Floating Oriental Sky Palace" },
+  { title: "Lục Địa Veyra Hùng Vĩ", img: "/images/hero_bg.jpg", desc: "4K Key Visual Wallpaper" },
+  { title: "Thánh Điện Cổ Đại Aethel", img: "/images/world_station.jpg", desc: "Veyra Fantasy Sanctuary" },
+  { title: "Thành Trì Mây Tiên Châu", img: "/images/world_skycity.jpg", desc: "Floating Oriental Sky City" },
 ];
 
 export default function MediaGallery() {
@@ -18,7 +18,7 @@ export default function MediaGallery() {
             <span className="hsr-diamond" /> ĐA PHƯƠNG TIỆN <span className="hsr-diamond" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white uppercase font-[family-name:var(--font-rajdhani)]">
-            HÌNH NỀN & <span className="text-gold-gradient">NGHỆ THUẬT VŨ TRỤ 4K</span>
+            HÌNH NỀN & <span className="text-gold-gradient">NGHỆ THUẬT VEYRA 4K</span>
           </h2>
         </div>
 

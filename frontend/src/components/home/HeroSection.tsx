@@ -36,7 +36,7 @@ export default function HeroSection({
 
       {/* Hero Content */}
       <div className="relative z-10 w-full max-w-5xl mx-auto text-center mt-12 flex flex-col items-center">
-        <div className="relative w-56 h-24 sm:w-64 sm:h-24 md:w-96 md:h-48 mb-4 drop-shadow-[0_0_25px_rgba(245,199,103,0.35)]">
+        <div className="relative w-56 h-24 sm:w-64 sm:h-24 md:w-112 md:h-56 mb-4 drop-shadow-[0_0_25px_rgba(245,199,103,0.35)]">
           <Image
             src="/images/logo_vov.png"
             alt="Valkyria of Veyra Logo"
@@ -67,7 +67,7 @@ export default function HeroSection({
 
         {/* Slogan & Description */}
         <p className="max-w-2xl text-slate-100 font-medium text-sm sm:text-base md:text-lg mb-8 leading-relaxed font-[family-name:var(--font-inter)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.75)]">
-          Thế giới Veyra kỳ ảo. Cùng các Valkyrie khai phá mọi nơi.
+          Thế giới Veyra kỳ ảo. Sát cánh cùng các Valkyria chiến đấu và khám phá mọi miền đất.
         </p>
 
         {/* Primary CTA Buttons */}
@@ -118,13 +118,13 @@ export default function HeroSection({
             <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 text-[10px]">
               16+
             </span>
-            <span>Game Nhập Vai Phiêu Lưu Không Gian Kỳ Ảo</span>
+            <span>Game Nhập Vai Chiến Thuật Theo Lượt (Turn-Based RPG)</span>
           </div>
         </div>
 
         {/* Scroll down indicator (safely positioned below indicators) */}
         <div className="flex flex-col items-center gap-2 text-slate-400 text-xs font-[family-name:var(--font-rajdhani)] tracking-widest uppercase mt-8 sm:mt-10">
-          <span>Khám Phá Vũ Trụ</span>
+          <span>Khám Phá Veyra</span>
           <div className="w-5 h-8 border-2 border-[#f5c767]/40 rounded-full flex justify-center p-1">
             <span className="w-1 h-2 bg-[#f5c767] rounded-full animate-bounce" />
           </div>

@@ -15,10 +15,10 @@ export default function CommunitySection() {
     <section className="relative w-full py-16 px-4 sm:px-6 lg:px-8 border-t border-white/10 bg-[#060817] flex justify-center">
       <div className="w-full max-w-5xl mx-auto text-center">
         <h3 className="text-2xl sm:text-3xl font-bold text-white uppercase font-[family-name:var(--font-rajdhani)] mb-3">
-          GIA NHẬP CỘNG ĐỒNG NHÀ KHAI PHÁ
+          GIA NHẬP CỘNG ĐỒNG CHỈ HUY VEYRA
         </h3>
         <p className="text-slate-400 text-xs sm:text-sm max-w-lg mx-auto mb-8">
-          Theo dõi các trang chính thức của VoV: Star Odyssey để cập nhật giftcode và thảo luận chiến thuật cùng hơn 1.000.000 game thủ Việt Nam.
+          Theo dõi các trang chính thức của Valkyria of Veyra để nhận giftcode độc quyền và chia sẻ chiến thuật cùng cộng đồng Chỉ Huy khắp cả nước.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">

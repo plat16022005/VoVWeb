@@ -30,12 +30,12 @@ const chakraPetch = Chakra_Petch({
 
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3002"),
-  title: "VoV: Star Odyssey — Game Nhập Vai Vũ Trụ Kỳ Ảo | Trang Chủ Chính Thức",
-  description: "Khám phá dải ngân hà vô tận cùng VoV: Star Odyssey. Lên chuyến tàu Astral, kết bạn cùng các nhân vật độc đáo, bước vào cuộc phiêu lưu chiến thuật nhập vai không gian kỳ ảo.",
-  keywords: ["VoV", "Star Odyssey", "Honkai Star Rail", "Game Anime", "RPG Vũ Trụ", "Game Nhập Vai", "Chuyến Tàu Ngân Hà"],
+  title: "Valkyria of Veyra — Sát Cánh Cùng Các Valkyria | Trang Chủ Chính Thức",
+  description: "Khám phá vùng đất Veyra huyền bí cùng Valkyria of Veyra. Game anime nhập vai chiến thuật theo lượt (Turn-Based RPG) phát triển trên nền tảng Unity. Sát cánh cùng các nữ chiến binh Valkyria chiến đấu và chinh phục mọi miền đất kỳ ảo.",
+  keywords: ["Valkyria of Veyra", "VoV", "Valkyrie", "Valkyria", "Turn-Based RPG", "Chiến Thuật Theo Lượt", "Unity Game", "Game Anime", "RPG Kỳ Ảo", "Vùng Đất Veyra"],
   openGraph: {
-    title: "VoV: Star Odyssey — Vạn Giới Khởi Hành, Dạo Bước Ngân Hà",
-    description: "Tựa game phiêu lưu nhập vai thám hiểm ngân hà thế hệ mới. Đăng ký trước nhận ngay 80 lượt quay và nhân vật 4 sao độc quyền!",
+    title: "Valkyria of Veyra — Game Nhập Vai Chiến Thuật Theo Lượt (Unity)",
+    description: "Tựa game anime nhập vai chiến thuật theo lượt (Turn-Based RPG) phát triển trên nền tảng Unity. Đăng ký trước nhận ngay 80 lượt triệu hồi và đồng hành cùng các Valkyria huyền thoại!",
     type: "website",
     locale: "vi_VN",
     images: [

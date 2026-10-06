@@ -61,13 +61,13 @@ export default function CharacterShowcase({
         {/* Header */}
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)] mb-2">
-            <span className="hsr-diamond" /> ĐỒNG HÀNH NGÂN HÀ <span className="hsr-diamond" />
+            <span className="hsr-diamond" /> CÁC VALKYRIA VEYRA <span className="hsr-diamond" />
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white uppercase font-[family-name:var(--font-rajdhani)]">
-            VŨ TRỤ <span className="text-gold-gradient">NHÂN VẬT</span>
+            NỮ CHIẾN BINH <span className="text-gold-gradient">VALKYRIA</span>
           </h2>
           <p className="text-slate-400 text-sm max-w-xl mx-auto mt-2">
-            Mỗi nhân vật đều sở hữu Vận Mệnh và Thuộc Tính nguyên tố riêng biệt. Hãy khám phá và chiêu mộ họ về đội hình của bạn!
+            Mỗi Valkyria đều mang trong mình sức mạnh cổ xưa và kỹ năng chiến đấu độc nhất. Hãy chiêu mộ và sát cánh cùng họ trên vùng đất Veyra!
           </p>
         </div>
 

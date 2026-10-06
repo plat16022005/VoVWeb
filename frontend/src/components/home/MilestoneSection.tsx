@@ -21,7 +21,7 @@ export default function MilestoneSection({
             <span className="hsr-diamond" /> CỘT MỐC ĐĂNG KÝ TOÀN CẦU <span className="hsr-diamond" />
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white uppercase font-[family-name:var(--font-rajdhani)]">
-            PHÚC LỢI KHỞI HÀNH <span className="text-gold-gradient">5.000.000 NHÀ KHAI PHÁ</span>
+            PHÚC LỢI KHỞI HÀNH <span className="text-gold-gradient">5.000.000 CHỈ HUY</span>
           </h2>
           <p className="text-slate-400 text-sm max-w-xl mx-auto mt-2">
             Tất cả các cột mốc đã chính thức được mở khóa! Đăng ký ngay để nhận trọn bộ quà tặng độc quyền khi bước vào thế giới VoV.
