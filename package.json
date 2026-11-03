@@ -9,6 +9,7 @@
     "dev:backend": "npm --prefix backend run start:dev",
     "dev:start": "npm --prefix frontend run dev",
     "build:frontend": "npm --prefix frontend run build",
-    "build:backend": "npm --prefix backend run build"
+    "build:backend": "npm --prefix backend run build",
+    "deploy:rules": "npx -y firebase-tools deploy --only firestore:rules"
   }
 }

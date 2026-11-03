@@ -10,7 +10,6 @@ export declare class PlayersService {
         username: string;
         email: string;
         avatarUrl?: string;
-        level?: number;
         id: string;
     }>;
     remove(id: string): Promise<{

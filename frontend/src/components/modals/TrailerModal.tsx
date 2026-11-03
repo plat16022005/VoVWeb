@@ -50,7 +50,7 @@ export default function TrailerModal({
               VALKYRIA OF VEYRA — OFFICIAL CINEMATIC TRAILER
             </h5>
             <p className="text-xs text-slate-300 mt-2 max-w-md mx-auto">
-              Sát cánh cùng các nữ chiến binh Valkyria trong các trận chiến chiến thuật theo lượt (Turn-Based) đỉnh cao trên nền tảng Unity Engine.
+              Sát cánh cùng các nữ chiến binh Valkyria trong các trận chiến chiến thuật theo lượt (Turn-Based RPG) đỉnh cao.
             </p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function TrailerModal({
         {/* Modal Footer */}
         <div className="px-6 py-4 bg-[#0d1336] flex items-center justify-between">
           <span className="text-xs text-slate-400">
-            Âm nhạc: VoV Universe Soundtrack • Độ phân giải: 4K HDR 60FPS
+            Âm nhạc: VoV Original Soundtrack • Độ phân giải: 4K HDR 60FPS
           </span>
           <button
             onClick={() => {

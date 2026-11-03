@@ -9,8 +9,107 @@ import {
   onAuthStateChanged,
   type User,
 } from "firebase/auth";
-import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { playersService } from "./players.service";
+
+export type UserRole = "Admin" | "Manager" | "Player";
+
+export function normalizeRole(roleStr?: string | null): UserRole {
+  if (!roleStr) return "Player";
+  const trimmed = roleStr.trim().toLowerCase();
+  if (trimmed === "admin") return "Admin";
+  if (trimmed === "manager") return "Manager";
+  return "Player";
+}
+
+export interface BanTermDetail {
+  id?: string;
+  title: string;
+  content?: string;
+}
+
+export interface BanViolationInfo {
+  termId?: string;
+  termTitle?: string;
+  termContent?: string;
+  termIds?: string[];
+  termTitles?: string[];
+  terms?: BanTermDetail[];
+  note?: string;
+  bannedAt?: string;
+  bannedBy?: string;
+  username?: string;
+  email?: string;
+}
+
+export function parseBanViolation(
+  rawBan: any,
+  userData: any,
+  fallbackUsername: string,
+  fallbackEmail: string
+): BanViolationInfo {
+  const terms: BanTermDetail[] =
+    Array.isArray(rawBan?.terms) && rawBan.terms.length > 0
+      ? rawBan.terms
+      : rawBan?.termTitle || userData?.BanReason
+      ? [
+          {
+            id: rawBan?.termId || userData?.BanTermId || "",
+            title: rawBan?.termTitle || userData?.BanReason || "Vi phạm Điều khoản Dịch vụ",
+            content: rawBan?.termContent || userData?.BanTermContent || "",
+          },
+        ]
+      : [];
+
+  const termTitles: string[] =
+    Array.isArray(rawBan?.termTitles) && rawBan.termTitles.length > 0
+      ? rawBan.termTitles
+      : terms.map((t) => t.title);
+
+  return {
+    termId: rawBan?.termId || userData?.BanTermId || "term01",
+    termTitle:
+      rawBan?.termTitle ||
+      userData?.BanReason ||
+      (termTitles.length > 0 ? termTitles.join(" • ") : "Vi phạm Điều khoản Dịch vụ"),
+    termContent: rawBan?.termContent || userData?.BanTermContent || "",
+    termIds: Array.isArray(rawBan?.termIds)
+      ? rawBan.termIds
+      : rawBan?.termId
+      ? [rawBan.termId]
+      : [],
+    termTitles,
+    terms,
+    note: rawBan?.note || userData?.BanNote || "Tài khoản bị khóa bởi Quản trị viên",
+    bannedAt: rawBan?.bannedAt || userData?.BannedAt || "",
+    bannedBy: rawBan?.bannedBy || userData?.BannedBy || "Quản trị viên",
+    username: userData?.Username || fallbackUsername,
+    email: fallbackEmail || userData?.Email || "",
+  };
+}
+
+export class BannedAccountError extends Error {
+  violation: BanViolationInfo;
+  constructor(violation: BanViolationInfo) {
+    super("Tài khoản của bạn đã bị khóa do vi phạm Điều khoản Dịch vụ.");
+    this.name = "BannedAccountError";
+    this.violation = violation;
+  }
+}
+
+export interface FirestoreUserData {
+  CreatedAt: string;
+  Email: string;
+  LastLogin: string;
+  Role: UserRole | string;
+  Status: "active" | "banned" | "pending";
+  IsBanned: boolean;
+  Provider?: "Email" | "Google" | "Guest";
+  UserId: string;
+  Username: string;
+  BanDetails?: BanViolationInfo | any;
+}
 
 export interface AuthUser {
   id: string;
@@ -18,6 +117,11 @@ export interface AuthUser {
   email: string;
   avatarUrl?: string;
   level: number;
+  role?: UserRole;
+  status?: "active" | "banned" | "pending";
+  isBanned?: boolean;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 const AUTH_CACHE_KEY = "vov_auth_commander";
@@ -41,24 +145,67 @@ function ensureGlobalAuthInit() {
   if (isGlobalAuthInit || typeof window === "undefined" || !auth) return;
   isGlobalAuthInit = true;
 
-  onAuthStateChanged(auth, (firebaseUser: User | null) => {
+  onAuthStateChanged(auth, async (firebaseUser: User | null) => {
     if (firebaseUser) {
+      let username = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Chỉ Huy";
+      let role: UserRole = "Player";
+      let createdAt: string | undefined = undefined;
+      let lastLogin: string | undefined = undefined;
+      let isBanned = false;
+      let status: "active" | "banned" | "pending" = "active";
+
+      // 1. Kiểm tra trạng thái trong Firestore TRƯỚC TIÊN
+      if (db) {
+        try {
+          const snap = await getDoc(doc(db, "Users", firebaseUser.uid));
+          if (snap.exists()) {
+            const data = snap.data();
+            isBanned = data.IsBanned === true || data.Status === "banned";
+            if (data.Username) username = data.Username;
+            if (data.Role) role = normalizeRole(data.Role);
+            if (data.CreatedAt) createdAt = data.CreatedAt;
+            if (data.LastLogin) lastLogin = data.LastLogin;
+            status = isBanned ? "banned" : data.Status === "pending" ? "pending" : "active";
+          }
+        } catch {
+          // Bỏ qua lỗi mạng
+        }
+      }
+
+      // 2. NẾU BỊ KHÓA: Chặn ngay lập tức, tuyệt đối KHÔNG cấp quyền hay phát tín hiệu đăng nhập
+      if (isBanned) {
+        if (auth) await signOut(auth);
+        inMemoryUser = null;
+        try {
+          localStorage.removeItem(AUTH_CACHE_KEY);
+        } catch {}
+        notifyAuthListeners();
+        return;
+      }
+
+      // 3. CHỈ KHI KHÔNG BỊ KHÓA: mới cấp quyền và phát tín hiệu cho UI
       inMemoryUser = {
         id: firebaseUser.uid,
-        username: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Chỉ Huy",
+        username,
         email: firebaseUser.email || "",
         level: 1,
+        role,
+        status,
+        isBanned: false,
+        createdAt,
+        lastLogin,
       };
       try {
         localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(inMemoryUser));
       } catch {}
+      notifyAuthListeners();
     } else {
       inMemoryUser = null;
       try {
         localStorage.removeItem(AUTH_CACHE_KEY);
       } catch {}
+      notifyAuthListeners();
     }
-    notifyAuthListeners();
   });
 }
 
@@ -88,7 +235,111 @@ export const authService = {
     }
   },
 
-  // 1. Đăng ký tài khoản THẬT trên Firebase + Đồng bộ Player sang NestJS
+  // Helper: Tạo hoặc Cập nhật document trong Firestore collection "Users" theo đúng motip chuẩn
+  async saveUserToFirestore(userData: {
+    uid: string;
+    email: string;
+    username: string;
+    isNewUser?: boolean;
+    provider?: "Email" | "Google" | "Guest";
+  }): Promise<FirestoreUserData | null> {
+    if (!db) return null;
+    try {
+      const userDocRef = doc(db, "Users", userData.uid);
+      const now = new Date().toISOString();
+      const rawEmail = (userData.email || "").trim().toLowerCase();
+      const isGuestEmail = !rawEmail || rawEmail === "(khách)" || rawEmail.includes("guest");
+
+      const providerMethod: "Email" | "Google" | "Guest" =
+        userData.provider || (isGuestEmail ? "Guest" : "Email");
+
+      if (userData.isNewUser) {
+        const docData: FirestoreUserData = {
+          UserId: userData.uid,
+          Username: userData.username,
+          Email: userData.email,
+          Role: "Player",
+          Status: "active",
+          IsBanned: false,
+          Provider: providerMethod,
+          CreatedAt: now,
+          LastLogin: now,
+        };
+        await setDoc(userDocRef, docData);
+
+        // Đếm tài khoản Người Chơi tạo mới hôm nay vào Counters/AccountStats
+        try {
+          await this.updateAccountStatsCounter(providerMethod);
+        } catch (cErr) {
+          console.warn("Lỗi cập nhật Counters từ auth:", cErr);
+        }
+
+        return docData;
+      } else {
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+          const docData: FirestoreUserData = {
+            UserId: userData.uid,
+            Username: userData.username,
+            Email: userData.email,
+            Role: "Player",
+            Status: "active",
+            IsBanned: false,
+            Provider: providerMethod,
+            CreatedAt: now,
+            LastLogin: now,
+          };
+          await setDoc(userDocRef, docData);
+
+          // Đếm tài khoản Người Chơi tạo mới hôm nay vào Counters/AccountStats (Google / Social / Guest)
+          try {
+            await this.updateAccountStatsCounter(providerMethod);
+          } catch (cErr) {
+            console.warn("Lỗi cập nhật Counters từ auth:", cErr);
+          }
+
+          return docData;
+        } else {
+          const existingData = userDocSnap.data() as Partial<FirestoreUserData>;
+          const updates: Record<string, any> = {
+            LastLogin: now,
+          };
+          if (!existingData.Status) {
+            updates.Status = existingData.IsBanned ? "banned" : "active";
+          }
+          if (existingData.IsBanned === undefined) {
+            updates.IsBanned = false;
+          }
+          // Bổ sung Provider cho tài khoản cũ chưa có
+          if (!existingData.Provider && userData.provider) {
+            updates.Provider = userData.provider;
+          }
+          await setDoc(userDocRef, updates, { merge: true });
+
+          const isBanned = existingData.IsBanned === true || existingData.Status === "banned";
+          const status = (existingData.Status as any) || (isBanned ? "banned" : "active");
+
+          return {
+            UserId: userData.uid,
+            Username: existingData.Username || userData.username,
+            Email: existingData.Email || userData.email,
+            Role: normalizeRole(existingData.Role),
+            Status: status,
+            IsBanned: isBanned,
+            Provider: existingData.Provider || userData.provider || (isGuestEmail ? "Guest" : "Email"),
+            CreatedAt: existingData.CreatedAt || now,
+            LastLogin: now,
+            BanDetails: existingData.BanDetails || (existingData as any)?.banDetails,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Lỗi lưu document vào Firestore collection Users:", err);
+      return null;
+    }
+  },
+
+  // 1. Đăng ký tài khoản THẬT trên Firebase + Tạo document trong Firestore Users
   async register(data: { username: string; email: string; password: string }): Promise<AuthUser> {
     if (!auth || !isFirebaseConfigured) {
       throw new Error("Cấu hình Firebase chưa được khởi tạo. Vui lòng kiểm tra .env.local");
@@ -102,17 +353,29 @@ export const authService = {
         data.password
       );
 
-      // Cập nhật Tên hiển thị (DisplayName) trên Firebase
+      const username = data.username.trim() || credential.user.email?.split("@")[0] || "Chỉ Huy";
+
+      // Cập nhật Tên hiển thị (DisplayName) trên Firebase Auth
       if (data.username.trim()) {
         await updateProfile(credential.user, {
-          displayName: data.username.trim(),
+          displayName: username,
         });
       }
+
+      // Tạo Document trong Firestore Users theo motip chuẩn:
+      // UserId, Username, Email, Role, Status, IsBanned, CreatedAt, LastLogin
+      const firestoreUser = await this.saveUserToFirestore({
+        uid: credential.user.uid,
+        email: credential.user.email || data.email.trim(),
+        username,
+        isNewUser: true,
+        provider: "Email",
+      });
 
       // Đồng bộ sang NestJS Backend (/api/players) nếu Backend đang chạy
       try {
         await playersService.create({
-          username: data.username.trim(),
+          username,
           email: data.email.trim(),
         });
       } catch {
@@ -121,9 +384,14 @@ export const authService = {
 
       return {
         id: credential.user.uid,
-        username: data.username.trim() || credential.user.email || "Chỉ Huy",
+        username,
         email: credential.user.email || data.email,
         level: 1,
+        role: normalizeRole(firestoreUser?.Role),
+        status: firestoreUser?.Status || "active",
+        isBanned: firestoreUser?.IsBanned || false,
+        createdAt: firestoreUser?.CreatedAt,
+        lastLogin: firestoreUser?.LastLogin,
       };
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
@@ -131,7 +399,7 @@ export const authService = {
     }
   },
 
-  // 2. Đăng nhập tài khoản THẬT từ Firebase Authentication
+  // 2. Đăng nhập tài khoản THẬT từ Firebase Authentication + Cập nhật LastLogin trên Firestore Users
   async login(data: { email: string; password: string }): Promise<AuthUser> {
     if (!auth || !isFirebaseConfigured) {
       throw new Error("Cấu hình Firebase chưa được khởi tạo. Vui lòng kiểm tra .env.local");
@@ -144,19 +412,65 @@ export const authService = {
         data.password
       );
 
+      const username = credential.user.displayName || credential.user.email?.split("@")[0] || "Chỉ Huy";
+
+      // 1. Kiểm tra tài khoản bị khóa trong Firestore NGAY LẬP TỨC
+      if (db) {
+        const snap = await getDoc(doc(db, "Users", credential.user.uid));
+        if (snap.exists()) {
+          const userData = snap.data();
+          const isBanned = userData.IsBanned === true || userData.Status === "banned";
+          if (isBanned) {
+            // Chặn ngay từ đầu: Hủy phiên xác thực tức thì, không cập nhật LastLogin
+            if (auth) await signOut(auth);
+            inMemoryUser = null;
+            try {
+              localStorage.removeItem(AUTH_CACHE_KEY);
+            } catch {}
+            notifyAuthListeners();
+
+            const rawBan = userData.BanDetails || userData.banDetails || {};
+            throw new BannedAccountError(
+              parseBanViolation(
+                rawBan,
+                userData,
+                userData.Username || username,
+                credential.user.email || data.email
+              )
+            );
+          }
+        }
+      }
+
+      // 2. CHỈ KHI HỢP LỆ VÀ KHÔNG BỊ KHÓA: mới ghi nhận LastLogin vào Firestore
+      const firestoreUser = await this.saveUserToFirestore({
+        uid: credential.user.uid,
+        email: credential.user.email || data.email.trim(),
+        username,
+        isNewUser: false,
+      });
+
       return {
         id: credential.user.uid,
-        username: credential.user.displayName || credential.user.email?.split("@")[0] || "Chỉ Huy",
+        username: firestoreUser?.Username || username,
         email: credential.user.email || data.email,
         level: 1,
+        role: normalizeRole(firestoreUser?.Role),
+        status: firestoreUser?.Status || "active",
+        isBanned: false,
+        createdAt: firestoreUser?.CreatedAt,
+        lastLogin: firestoreUser?.LastLogin,
       };
     } catch (err: unknown) {
+      if (err instanceof BannedAccountError || (err as any)?.name === "BannedAccountError") {
+        throw err;
+      }
       const error = err as { code?: string; message?: string };
       throw new Error(this.getErrorMessage(error.code || "", error.message || "Đăng nhập thất bại"));
     }
   },
 
-  // 3. Đăng nhập một chạm bằng Google
+  // 3. Đăng nhập một chạm bằng Google + Đồng bộ Firestore Users
   async loginWithGoogle(): Promise<AuthUser> {
     if (!auth || !isFirebaseConfigured) {
       throw new Error("Cấu hình Firebase chưa được khởi tạo.");
@@ -165,10 +479,49 @@ export const authService = {
     try {
       const credential = await signInWithPopup(auth, googleProvider);
 
+      const username = credential.user.displayName || credential.user.email?.split("@")[0] || "Chỉ Huy";
+
+      // 1. Kiểm tra tài khoản bị khóa trong Firestore NGAY LẬP TỨC
+      if (db) {
+        const snap = await getDoc(doc(db, "Users", credential.user.uid));
+        if (snap.exists()) {
+          const userData = snap.data();
+          const isBanned = userData.IsBanned === true || userData.Status === "banned";
+          if (isBanned) {
+            // Chặn ngay từ đầu: Hủy phiên xác thực tức thì, không cập nhật LastLogin
+            if (auth) await signOut(auth);
+            inMemoryUser = null;
+            try {
+              localStorage.removeItem(AUTH_CACHE_KEY);
+            } catch {}
+            notifyAuthListeners();
+
+            const rawBan = userData.BanDetails || userData.banDetails || {};
+            throw new BannedAccountError(
+              parseBanViolation(
+                rawBan,
+                userData,
+                userData.Username || username,
+                credential.user.email || ""
+              )
+            );
+          }
+        }
+      }
+
+      // 2. CHỈ KHI HỢP LỆ VÀ KHÔNG BỊ KHÓA: mới ghi nhận LastLogin vào Firestore
+      const firestoreUser = await this.saveUserToFirestore({
+        uid: credential.user.uid,
+        email: credential.user.email || "",
+        username,
+        isNewUser: false,
+        provider: "Google",
+      });
+
       // Đồng bộ thông tin người chơi sang NestJS
       try {
         await playersService.create({
-          username: credential.user.displayName || credential.user.email?.split("@")[0] || "Chỉ Huy",
+          username: firestoreUser?.Username || username,
           email: credential.user.email || "",
         });
       } catch {
@@ -177,14 +530,67 @@ export const authService = {
 
       return {
         id: credential.user.uid,
-        username: credential.user.displayName || "Chỉ Huy",
+        username: firestoreUser?.Username || username,
         email: credential.user.email || "",
         level: 1,
+        role: normalizeRole(firestoreUser?.Role),
+        status: firestoreUser?.Status || "active",
+        isBanned: false,
+        createdAt: firestoreUser?.CreatedAt,
+        lastLogin: firestoreUser?.LastLogin,
       };
     } catch (err: unknown) {
+      if (err instanceof BannedAccountError || (err as any)?.name === "BannedAccountError") {
+        throw err;
+      }
       const error = err as { code?: string; message?: string };
       throw new Error(this.getErrorMessage(error.code || "", error.message || "Đăng nhập Google thất bại"));
     }
+  },
+
+  // 3b. Đăng nhập / Trải nghiệm nhanh dưới dạng Khách (Guest)
+  async loginAsGuest(): Promise<AuthUser> {
+    const guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const guestUsername = `Chỉ Huy Khách #${Math.floor(1000 + Math.random() * 9000)}`;
+    const now = new Date().toISOString();
+
+    if (db) {
+      try {
+        const userDocRef = doc(db, "Users", guestId);
+        const docData: FirestoreUserData = {
+          UserId: guestId,
+          Username: guestUsername,
+          Email: "",
+          Role: "Player",
+          Status: "active",
+          IsBanned: false,
+          Provider: "Guest",
+          CreatedAt: now,
+          LastLogin: now,
+        };
+        await setDoc(userDocRef, docData);
+
+        // Tăng bộ đếm GuestCount vào Counters/AccountStats
+        await this.updateAccountStatsCounter("Guest");
+      } catch (err) {
+        console.warn("Lỗi lưu tài khoản khách vào Firestore:", err);
+      }
+    }
+
+    const guestUser: AuthUser = {
+      id: guestId,
+      username: guestUsername,
+      email: "",
+      level: 1,
+      role: "Player",
+      status: "active",
+      isBanned: false,
+      createdAt: now,
+      lastLogin: now,
+    };
+
+    this.setCachedUser(guestUser);
+    return guestUser;
   },
 
   // 4. Quên mật khẩu THẬT - Firebase gửi email khôi phục mật khẩu trực tiếp đến Gmail
@@ -249,15 +655,68 @@ export const authService = {
     await signOut(auth);
   },
 
-  // 6. Lắng nghe trạng thái đăng nhập Firebase trong thời gian thực
-  onAuthStateChanged(callback: (user: AuthUser | null) => void): () => void {
-    ensureGlobalAuthInit();
-    const listener = () => callback(inMemoryUser);
-    authListeners.add(listener);
-    callback(inMemoryUser);
-    return () => {
-      authListeners.delete(listener);
-    };
+  // 7. Cập nhật bộ đếm tài khoản Người Chơi tạo mới hôm nay vào Counters/AccountStats
+  async updateAccountStatsCounter(method: "Email" | "Google" | "Guest" = "Email"): Promise<void> {
+    if (!db) return;
+    try {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+      const docRef = doc(db, "Counters", "AccountStats");
+      const snap = await getDoc(docRef);
+      const methodKey = `${method}Count`;
+
+      // 1. Cập nhật Document cha: CHỈ LƯU 3 trường EmailCount, GoogleCount, GuestCount
+      if (snap.exists()) {
+        const data = snap.data();
+        const currentMethodCount = Number(data[methodKey]) || 0;
+
+        await setDoc(
+          docRef,
+          {
+            [methodKey]: currentMethodCount + 1,
+          },
+          { merge: true }
+        );
+      } else {
+        await setDoc(docRef, {
+          EmailCount: method === "Email" ? 1 : 0,
+          GoogleCount: method === "Google" ? 1 : 0,
+          GuestCount: method === "Guest" ? 1 : 0,
+        });
+      }
+
+      // Đồng thời cập nhật vào subcollection DailyStats/{todayStr}
+      const dailyDocRef = doc(db, "Counters", "AccountStats", "DailyStats", todayStr);
+      const dailySnap = await getDoc(dailyDocRef);
+      if (dailySnap.exists()) {
+        const dData = dailySnap.data();
+        const curPlayers = Number(dData.PlayerCount) || 0;
+        const curMethod = Number(dData[methodKey]) || 0;
+        await setDoc(
+          dailyDocRef,
+          {
+            Date: todayStr,
+            PlayerCount: curPlayers + 1,
+            [methodKey]: curMethod + 1,
+            LastUpdated: new Date().toLocaleString("vi-VN"),
+          },
+          { merge: true }
+        );
+      } else {
+        await setDoc(dailyDocRef, {
+          Date: todayStr,
+          PlayerCount: 1,
+          EmailCount: method === "Email" ? 1 : 0,
+          GoogleCount: method === "Google" ? 1 : 0,
+          GuestCount: method === "Guest" ? 1 : 0,
+          LastUpdated: new Date().toLocaleString("vi-VN"),
+        });
+      }
+    } catch (err) {
+      console.warn("Lỗi cập nhật Counters/AccountStats từ auth.service:", err);
+    }
   },
 };
 

@@ -20,7 +20,7 @@ export default function Footer() {
             <div className="font-extrabold text-white font-[family-name:var(--font-rajdhani)] text-base tracking-wider uppercase">
               VOV STUDIO • HOYOVERSE STYLE
             </div>
-            <div>Bản quyền trò chơi trực tuyến © 2026 VoV: Star Odyssey.</div>
+            <div>Bản quyền trò chơi trực tuyến © 2026 Valkyria of Veyra.</div>
           </div>
         </div>
 
@@ -35,8 +35,8 @@ export default function Footer() {
           <a href="#hero" className="hover:text-[#f5c767] transition-colors">
             Chăm Sóc Khách Hàng
           </a>
-          <a href="#hero" className="hover:text-[#f5c767] transition-colors">
-            Hệ Thống Phê Duyệt
+          <a href="/admin" className="text-[#3fe9d6]/80 hover:text-[#3fe9d6] font-mono transition-colors">
+            Quản Trị Admin
           </a>
         </div>
 

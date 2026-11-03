@@ -5,7 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { soundEngine } from "@/services/audio.service";
-import { authService, useAuth, useIsMounted } from "@/services/auth.service";
+import { authService, useAuth, useIsMounted, BanViolationInfo, BannedAccountError } from "@/services/auth.service";
+import TermsModal from "@/components/modals/TermsModal";
+import BannedNotificationModal from "@/components/modals/BannedNotificationModal";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -14,6 +16,9 @@ export default function LoginForm() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [bannedViolation, setBannedViolation] = useState<BanViolationInfo | null>(null);
+  const [isBannedModalOpen, setIsBannedModalOpen] = useState(false);
 
   // Popup Toast Notification (slide down from top, auto-closes)
   const [toast, setToast] = useState<{
@@ -99,10 +104,13 @@ export default function LoginForm() {
           "Đăng Nhập Thành Công"
         );
 
-        // Tự động chuyển hướng về Trang Chủ sau 1.5 giây
+        // Tự động phân quyền chuyển hướng: Admin -> /admin, Manager -> /manager, Player -> /
+        const destination =
+          user.role === "Admin" ? "/admin" : user.role === "Manager" ? "/manager" : "/";
+
         setTimeout(() => {
-          router.push("/");
-        }, 1500);
+          router.push(destination);
+        }, 1200);
       } else {
         const user = await authService.register({
           username: formData.username.trim(),
@@ -123,6 +131,13 @@ export default function LoginForm() {
         }, 1500);
       }
     } catch (err: unknown) {
+      if (err instanceof BannedAccountError || (err as any)?.name === "BannedAccountError" || (err as any)?.violation) {
+        const violation = (err as any).violation as BanViolationInfo;
+        setBannedViolation(violation);
+        setIsBannedModalOpen(true);
+        soundEngine.playClick();
+        return;
+      }
       const error = err as Error;
       showToast(
         "error",
@@ -178,17 +193,51 @@ export default function LoginForm() {
         "Đăng Nhập Thành Công"
       );
 
-      // Tự động chuyển hướng về Trang Chủ sau 1.5 giây
+      // Tự động phân quyền chuyển hướng: Admin -> /admin, Manager -> /manager, Player -> /
+      const destination =
+        user.role === "Admin" ? "/admin" : user.role === "Manager" ? "/manager" : "/";
+
       setTimeout(() => {
-        router.push("/");
-      }, 1500);
+        router.push(destination);
+      }, 1200);
     } catch (err: unknown) {
+      if (err instanceof BannedAccountError || (err as any)?.name === "BannedAccountError" || (err as any)?.violation) {
+        const violation = (err as any).violation as BanViolationInfo;
+        setBannedViolation(violation);
+        setIsBannedModalOpen(true);
+        soundEngine.playClick();
+        return;
+      }
       const error = err as Error;
       showToast(
         "error",
         error.message || "Đăng nhập Google thất bại.",
         "Lỗi Đăng Nhập"
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestSignIn = async () => {
+    soundEngine.playClick();
+    setLoading(true);
+    setToast(null);
+
+    try {
+      const user = await authService.loginAsGuest();
+      soundEngine.playCelestialChime();
+      showToast(
+        "success",
+        `Chào mừng ${user.username} tham gia trải nghiệm Veyra dưới tư cách Khách!`,
+        "Đăng Nhập Khách"
+      );
+
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
+    } catch (err: any) {
+      showToast("error", err?.message || "Không thể đăng nhập dạng Khách.", "Lỗi");
     } finally {
       setLoading(false);
     }
@@ -215,15 +264,15 @@ export default function LoginForm() {
         >
           <div
             className={`relative overflow-hidden rounded-xl backdrop-blur-2xl bg-[#080a1c]/95 border shadow-[0_20px_50px_rgba(0,0,0,0.9)] p-4 sm:p-4.5 ${toast.type === "success"
-                ? "border-[#3fe9d6]/60 shadow-[0_10px_35px_rgba(63,233,214,0.25)]"
-                : "border-red-500/60 shadow-[0_10px_35px_rgba(239,68,68,0.25)]"
+              ? "border-[#3fe9d6]/60 shadow-[0_10px_35px_rgba(63,233,214,0.25)]"
+              : "border-red-500/60 shadow-[0_10px_35px_rgba(239,68,68,0.25)]"
               }`}
           >
             {/* Top ambient glow line */}
             <div
               className={`absolute top-0 left-0 right-0 h-[2px] ${toast.type === "success"
-                  ? "bg-gradient-to-r from-transparent via-[#3fe9d6] to-transparent shadow-[0_0_12px_#3fe9d6]"
-                  : "bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_#ef4444]"
+                ? "bg-gradient-to-r from-transparent via-[#3fe9d6] to-transparent shadow-[0_0_12px_#3fe9d6]"
+                : "bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_#ef4444]"
                 }`}
             />
 
@@ -231,8 +280,8 @@ export default function LoginForm() {
               {/* Icon */}
               <div
                 className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-lg ${toast.type === "success"
-                    ? "bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_12px_rgba(63,233,214,0.3)]"
-                    : "bg-red-500/15 text-red-400 border border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+                  ? "bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_12px_rgba(63,233,214,0.3)]"
+                  : "bg-red-500/15 text-red-400 border border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
                   }`}
               >
                 {toast.type === "success" ? (
@@ -381,8 +430,8 @@ export default function LoginForm() {
                   setToast(null);
                 }}
                 className={`flex-1 py-2 text-xs sm:text-sm font-semibold tracking-wider uppercase rounded transition-all cursor-pointer ${tab === "login"
-                    ? "bg-gradient-to-r from-[#ecd178]/20 to-[#d8a83a]/20 text-[#f5c767] border border-[#f5c767]/40 shadow-[0_0_10px_rgba(245,199,103,0.2)]"
-                    : "text-slate-400 hover:text-white"
+                  ? "bg-gradient-to-r from-[#ecd178]/20 to-[#d8a83a]/20 text-[#f5c767] border border-[#f5c767]/40 shadow-[0_0_10px_rgba(245,199,103,0.2)]"
+                  : "text-slate-400 hover:text-white"
                   }`}
               >
                 Đăng Nhập
@@ -395,8 +444,8 @@ export default function LoginForm() {
                   setToast(null);
                 }}
                 className={`flex-1 py-2 text-xs sm:text-sm font-semibold tracking-wider uppercase rounded transition-all cursor-pointer ${tab === "register"
-                    ? "bg-gradient-to-r from-[#3fe9d6]/20 to-[#3b82f6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_10px_rgba(63,233,214,0.2)]"
-                    : "text-slate-400 hover:text-white"
+                  ? "bg-gradient-to-r from-[#3fe9d6]/20 to-[#3b82f6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_10px_rgba(63,233,214,0.2)]"
+                  : "text-slate-400 hover:text-white"
                   }`}
               >
                 Đăng Ký
@@ -552,8 +601,18 @@ export default function LoginForm() {
                     />
                     <span>
                       Tôi đồng ý với{" "}
-                      <span className="text-[#3fe9d6] underline">Điều khoản dịch vụ</span> &{" "}
-                      <span className="text-[#3fe9d6] underline">Quy tắc Hiệp ước Veyra</span>.
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          soundEngine.playClick();
+                          setIsTermsModalOpen(true);
+                        }}
+                        className="text-[#3fe9d6] underline hover:text-[#5ef0e0] font-semibold cursor-pointer inline transition-colors"
+                      >
+                        Điều khoản dịch vụ
+                      </button>{" "}
+                      của Valkyria of Veyra.
                     </span>
                   </label>
                 </div>
@@ -564,8 +623,8 @@ export default function LoginForm() {
                 type="submit"
                 disabled={loading}
                 className={`w-full py-3.5 mt-2 rounded font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)] text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 ${tab === "login"
-                    ? "hsr-btn-gold"
-                    : "bg-gradient-to-r from-[#3fe9d6] to-[#3b82f6] text-[#060814] hover:shadow-[0_0_25px_rgba(63,233,214,0.6)]"
+                  ? "hsr-btn-gold"
+                  : "bg-gradient-to-r from-[#3fe9d6] to-[#3b82f6] text-[#060814] hover:shadow-[0_0_25px_rgba(63,233,214,0.6)]"
                   } ${loading ? "opacity-75 cursor-wait" : ""}`}
               >
                 {loading ? (
@@ -616,6 +675,19 @@ export default function LoginForm() {
                 </svg>
                 <span>Đăng nhập nhanh với Google</span>
               </button>
+
+              {/* Guest Sign In */}
+              <button
+                type="button"
+                onClick={handleGuestSignIn}
+                disabled={loading}
+                className="w-full py-2.5 mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>Trải nghiệm nhanh dưới dạng Khách (Chơi Ngay)</span>
+              </button>
             </form>
           </>
         )}
@@ -634,6 +706,22 @@ export default function LoginForm() {
           </Link>
         </div>
       </div>
+
+      {/* Terms of Service Realtime Modal */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+      />
+
+      {/* Banned Violation Notification Modal */}
+      <BannedNotificationModal
+        isOpen={isBannedModalOpen}
+        violation={bannedViolation}
+        onClose={() => {
+          setIsBannedModalOpen(false);
+          setBannedViolation(null);
+        }}
+      />
     </div>
   );
 }

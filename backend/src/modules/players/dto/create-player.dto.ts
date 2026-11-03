@@ -10,9 +10,4 @@ export class CreatePlayerDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  level?: number;
 }

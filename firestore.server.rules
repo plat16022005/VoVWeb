@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // CÁC HÀM HỖ TRỢ XÁC THỰC VÀ PHÂN QUYỀN (RBAC)
+    // =========================================================================
+
+    // Người dùng đã đăng nhập vào hệ thống Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Người dùng là chính chủ của tài nguyên (User ID trùng khớp với UID đăng nhập)
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Quản trị viên (Admin) hoặc Quản lý (Manager)
+    function isAdminOrManager() {
+      return isAuthenticated() && (
+        request.auth.token.role in ['admin', 'manager', 'Admin', 'Manager']
+      );
+    }
+
+    // =========================================================================
+    // 1. DỮ LIỆU NGƯỜI CHƠI (Users/{userId}/UserData/...)
+    // =========================================================================
+
+    // Document cha Users/{userId}: Cho phép chính chủ hoặc Admin đọc
+    match /Users/{userId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow write: if false; // Toàn bộ thay đổi qua Cloud Function
+    }
+
+    // 1.1. Hồ sơ hiển thị (Profile):
+    // Cho phép mọi người chơi đã đăng nhập xem để phục vụ Bảng Xếp Hạng, PvP, Tìm kiếm bạn bè
+    match /Users/{userId}/UserData/Profile {
+      allow read: if isAuthenticated();
+      allow write: if false; // Chống hack: Cập nhật Level, Exp, Tên qua Cloud Function
+    }
+
+    // 1.2. Các tài sản & dữ liệu nhạy cảm cá nhân (Wallet, Heroes, Formation, Inventory, Progress):
+    // Chỉ duy nhất CHÍNH CHỦ hoặc Admin/Manager mới có quyền đọc
+    match /Users/{userId}/UserData/{docId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow write: if false; // Chống hack tài sản: Toàn bộ ghi qua Cloud Function
+    }
+
+    // =========================================================================
+    // 2. TÍNH NĂNG CỘNG ĐỒNG SERVER (Bảng xếp hạng, Bang hội, Hòm thư)
+    // =========================================================================
+
+    // Bảng xếp hạng Server (Leaderboards: Lực chiến, Vượt ải, Đấu trường PvP)
+    // Cho phép mọi người chơi đã đăng nhập đọc danh sách xếp hạng
+    match /Leaderboards/{boardId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Cập nhật điểm và thứ hạng qua Cloud Function
+      
+      match /Rankings/{rankId} {
+        allow read: if isAuthenticated();
+        allow write: if false;
+      }
+    }
+
+    // Bang hội trong Server (Guilds)
+    // Cho phép người chơi đọc thông tin bang hội, thành viên
+    match /Guilds/{guildId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Tạo bang, duyệt thành viên, thăng cấp qua Cloud Function
+
+      match /{subCollection=**} {
+        allow read: if isAuthenticated();
+        allow write: if false;
+      }
+    }
+
+    // Hòm thư Server (Mailbox)
+    // Thư toàn server hoặc thư riêng gửi đến userId của người chơi
+    match /Mailbox/{mailId} {
+      allow read: if isAuthenticated() && (
+        resource.data.Type == 'global' ||
+        resource.data.ReceiverId == request.auth.uid ||
+        resource.data.UserId == request.auth.uid ||
+        isAdminOrManager()
+      );
+      allow write: if false; // Nhận thư, xóa thư, gửi thư qua Cloud Function
+    }
+
+    // =========================================================================
+    // 4. CẤU HÌNH CỤM MÁY CHỦ (ServerConfig/Config)
+    // =========================================================================
+
+    // Cấu hình máy chủ (ServerConfig/Config): Trạng thái bảo trì và thông số cụm server
+    match /ServerConfig/Config {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
+    // =========================================================================
+    // 5. QUY TẮC BẢO VỆ CHỐNG GIAN LẬN TOÀN CỤC (Anti-Cheat / Anti-Hack)
+    // =========================================================================
+
+    // TUYỆT ĐỐI KHÓA TOÀN BỘ THAO TÁC GHI TỪ PHÍA CLIENT
+    // Mọi logic chỉnh sửa dữ liệu, tăng tài sản, lên cấp, gacha, vượt ải 
+    // đều bắt buộc phải chạy qua Cloud Function (Firebase Admin SDK).
+    match /{document=**} {
+      allow write: if false;
+    }
+
+  }
+}

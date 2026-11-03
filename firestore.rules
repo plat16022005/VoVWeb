@@ -1,0 +1,111 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Kiểm tra quyền Quản Trị Viên Tối Cao (Admin)
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.role in ['admin', 'Admin'] ||
+        (exists(/databases/$(database)/documents/Users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/Users/$(request.auth.uid)).data.Role in ['Admin', 'admin'])
+      );
+    }
+
+    // Kiểm tra quyền Admin hoặc Manager
+    function isAdminOrManager() {
+      return request.auth != null && (
+        request.auth.token.role in ['admin', 'manager', 'Admin', 'Manager'] ||
+        (exists(/databases/$(database)/documents/Users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/Users/$(request.auth.uid)).data.Role in ['Admin', 'Manager', 'admin', 'manager'])
+      );
+    }
+
+    // Cấu hình game (GameInfo): Công khai đọc cho mọi người
+    // Admin hoặc Manager đặc quyền điều chỉnh từ Web
+    match /GameInfo/{document} {
+      allow read: if true;
+      allow write: if isAdminOrManager();
+    }
+
+    // Cấu hình hệ thống trò chơi (GameConfig: Terms, Policy, ServerList...):
+    // Công khai đọc cho game client & web; chỉ Admin đặc quyền cập nhật
+    match /GameConfig/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Cấu hình thông số tướng (HeroConfigs): Công khai đọc cho game
+    // Admin hoặc Manager đặc quyền điều chỉnh từ Web
+    match /HeroConfigs/{document} {
+      allow read: if true;
+      allow write: if isAdminOrManager();
+    }
+
+    // Hồ sơ người dùng (Users):
+    // - Cho phép ĐỌC CÔNG KHAI (allow read: if true) để kiểm tra trạng thái tài khoản (IsBanned, Role, Profile) mượt mà mà không bao giờ bị lỗi missing quyền
+    // - GHI: Người dùng tự cập nhật hồ sơ của chính mình (request.auth.uid == userId); Admin hoặc Manager có quyền cập nhật, khóa/mở khóa hồ sơ người khác
+    match /Users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && (
+        request.auth.uid == userId || isAdminOrManager()
+      );
+    }
+
+    // Cấu hình hệ thống (SystemConfig): Công khai đọc cho mọi người (Điều khoản, Chính sách, Link tải...)
+    // CHỈ CÓ ADMIN mới có quyền sửa đổi và xuất bản
+    match /SystemConfig/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Bộ đếm tài khoản & thông số hệ thống (Counters & DailyStats subcollections):
+    // Cho phép đọc và ghi để các tương tác đăng ký / đăng nhập tự động cập nhật bộ đếm
+    match /Counters/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Nhật ký hoạt động hệ thống (Logs):
+    // Cho phép đọc và ghi đối với tài khoản quản trị và hệ thống
+    match /Logs/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Kiểm tra dữ liệu bài viết Blog hợp lệ (dùng chung cho create và update)
+    function isValidBlog(data) {
+      return data.keys().hasAll(['Title', 'Category', 'Content', 'Status', 'AuthorId'])
+        && data.Title is string && data.Title.size() > 0 && data.Title.size() <= 200
+        && data.Category is string && data.Category.size() <= 100
+        && data.Content is string && data.Content.size() <= 900000
+        && data.Status in ['Draft', 'Published']
+        && data.AuthorId is string && data.AuthorId.size() <= 128
+        && (!('Slug' in data) || (data.Slug is string && data.Slug.size() <= 250))
+        && (!('Excerpt' in data) || (data.Excerpt is string && data.Excerpt.size() <= 1000))
+        && (!('CoverUrl' in data) || (data.CoverUrl is string && data.CoverUrl.size() <= 2048))
+        && (!('AuthorName' in data) || (data.AuthorName is string && data.AuthorName.size() <= 200))
+        && (!('CreatedAt' in data) || data.CreatedAt is number)
+        && (!('UpdatedAt' in data) || data.UpdatedAt is number)
+        && (!('PublishedAt' in data) || data.PublishedAt == null || data.PublishedAt is number);
+    }
+
+    // Bài viết Blog (Blogs):
+    // - ĐỌC: mọi người chỉ đọc được bài đã xuất bản (Published); Admin/Manager đọc được cả bản nháp
+    // - GHI: chỉ Admin hoặc Manager; AuthorId không được thay đổi sau khi tạo
+    match /Blogs/{postId} {
+      allow read: if resource.data.Status == 'Published' || isAdminOrManager();
+      allow create: if isAdminOrManager()
+        && isValidBlog(request.resource.data)
+        && request.resource.data.AuthorId == request.auth.uid;
+      allow update: if isAdminOrManager()
+        && isValidBlog(request.resource.data)
+        && request.resource.data.AuthorId == resource.data.AuthorId;
+      allow delete: if isAdminOrManager();
+    }
+
+  }
+}

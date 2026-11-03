@@ -101,22 +101,46 @@ export default function Navbar({
               <span className="hidden sm:inline w-16 h-3 bg-white/10 rounded animate-pulse" />
             </div>
           ) : currentUser ? (
-            <Link
-              href="/profile"
-              onClick={() => soundEngine.playClick()}
-              className="hsr-btn-glass text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 cursor-pointer transition-all flex items-center gap-2 border-[#3fe9d6]/50 text-[#3fe9d6] hover:shadow-[0_0_15px_rgba(63,233,214,0.35)] group"
-              title={`Hồ Sơ Chỉ Huy: ${currentUser.username} (${currentUser.email})`}
-            >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#f5c767] to-[#3fe9d6] flex items-center justify-center text-[10px] font-bold text-[#060814] shadow-[0_0_6px_rgba(63,233,214,0.4)]">
-                {currentUser.username ? currentUser.username[0].toUpperCase() : "★"}
-              </div>
-              <span className="hidden sm:inline max-w-[110px] truncate font-mono font-semibold">
-                {currentUser.username || "CHỈ HUY"}
-              </span>
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/30 hidden md:inline">
-                HỒ SƠ
-              </span>
-            </Link>
+            <div className="flex items-center gap-2">
+              {currentUser.role === "Admin" && (
+                <Link
+                  href="/admin"
+                  onClick={() => soundEngine.playClick()}
+                  className="hsr-btn-glass text-xs py-2 px-2.5 sm:px-3 cursor-pointer transition-all flex items-center gap-1.5 border-red-500/50 text-red-300 hover:shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                  title="Vào Trung Tâm Quản Trị Hệ Thống (Admin)"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                  <span className="font-mono font-bold tracking-wider">ADMIN</span>
+                </Link>
+              )}
+              {currentUser.role === "Manager" && (
+                <Link
+                  href="/manager"
+                  onClick={() => soundEngine.playClick()}
+                  className="hsr-btn-glass text-xs py-2 px-2.5 sm:px-3 cursor-pointer transition-all flex items-center gap-1.5 border-[#f5c767]/50 text-[#f5c767] hover:shadow-[0_0_12px_rgba(245,199,103,0.4)]"
+                  title="Vào Cổng Điều Hành Vận Hành (Manager Portal)"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f5c767] animate-pulse" />
+                  <span className="font-mono font-bold tracking-wider">MANAGER</span>
+                </Link>
+              )}
+              <Link
+                href="/profile"
+                onClick={() => soundEngine.playClick()}
+                className="hsr-btn-glass text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 cursor-pointer transition-all flex items-center gap-2 border-[#3fe9d6]/50 text-[#3fe9d6] hover:shadow-[0_0_15px_rgba(63,233,214,0.35)] group"
+                title={`Hồ Sơ Chỉ Huy: ${currentUser.username} (${currentUser.email})`}
+              >
+                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#f5c767] to-[#3fe9d6] flex items-center justify-center text-[10px] font-bold text-[#060814] shadow-[0_0_6px_rgba(63,233,214,0.4)]">
+                  {currentUser.username ? currentUser.username[0].toUpperCase() : "★"}
+                </div>
+                <span className="hidden sm:inline max-w-[110px] truncate font-mono font-semibold">
+                  {currentUser.username || "CHỈ HUY"}
+                </span>
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/30 hidden md:inline">
+                  HỒ SƠ
+                </span>
+              </Link>
+            </div>
           ) : (
             <Link
               href="/login"

@@ -7,12 +7,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { IsString, IsEmail, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsEmail, IsOptional } from 'class-validator';
 export class CreatePlayerDto {
     username;
     email;
     avatarUrl;
-    level;
 }
 __decorate([
     IsString(),
@@ -27,10 +26,4 @@ __decorate([
     IsString(),
     __metadata("design:type", String)
 ], CreatePlayerDto.prototype, "avatarUrl", void 0);
-__decorate([
-    IsOptional(),
-    IsInt(),
-    Min(0),
-    __metadata("design:type", Number)
-], CreatePlayerDto.prototype, "level", void 0);
 //# sourceMappingURL=create-player.dto.js.map

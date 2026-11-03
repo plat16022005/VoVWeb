@@ -31,11 +31,11 @@ const chakraPetch = Chakra_Petch({
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3002"),
   title: "Valkyria of Veyra — Sát Cánh Cùng Các Valkyria | Trang Chủ Chính Thức",
-  description: "Khám phá vùng đất Veyra huyền bí cùng Valkyria of Veyra. Game anime nhập vai chiến thuật theo lượt (Turn-Based RPG) phát triển trên nền tảng Unity. Sát cánh cùng các nữ chiến binh Valkyria chiến đấu và chinh phục mọi miền đất kỳ ảo.",
-  keywords: ["Valkyria of Veyra", "VoV", "Valkyrie", "Valkyria", "Turn-Based RPG", "Chiến Thuật Theo Lượt", "Unity Game", "Game Anime", "RPG Kỳ Ảo", "Vùng Đất Veyra"],
+  description: "Khám phá vùng đất Veyra huyền bí cùng Valkyria of Veyra. Game anime nhập vai chiến thuật theo lượt (Turn-Based RPG). Sát cánh cùng các nữ chiến binh Valkyria chiến đấu và chinh phục mọi miền đất kỳ ảo.",
+  keywords: ["Valkyria of Veyra", "VoV", "Valkyrie", "Valkyria", "Turn-Based RPG", "Chiến Thuật Theo Lượt", "Game Anime", "RPG Kỳ Ảo", "Vùng Đất Veyra"],
   openGraph: {
-    title: "Valkyria of Veyra — Game Nhập Vai Chiến Thuật Theo Lượt (Unity)",
-    description: "Tựa game anime nhập vai chiến thuật theo lượt (Turn-Based RPG) phát triển trên nền tảng Unity. Đăng ký trước nhận ngay 80 lượt triệu hồi và đồng hành cùng các Valkyria huyền thoại!",
+    title: "Valkyria of Veyra — Game Nhập Vai Chiến Thuật Theo Lượt",
+    description: "Tựa game anime nhập vai chiến thuật theo lượt (Turn-Based RPG). Đăng ký trước nhận ngay 80 lượt triệu hồi và đồng hành cùng các Valkyria huyền thoại!",
     type: "website",
     locale: "vi_VN",
     images: [

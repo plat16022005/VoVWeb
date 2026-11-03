@@ -13,7 +13,6 @@ export declare class PlayersController {
         username: string;
         email: string;
         avatarUrl?: string;
-        level?: number;
         id: string;
     }>;
     remove(id: string): Promise<{

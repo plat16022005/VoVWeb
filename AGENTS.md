@@ -59,3 +59,33 @@ Tài liệu này ghi nhận toàn bộ kiến trúc, bài học và quy chuẩn 
 - **Deploy**:
   - Frontend triển khai trên Vercel.
   - Backend triển khai trên Railway hoặc Render.
+
+---
+
+## 6. Quy chuẩn Kiến trúc Logs (Audit Logs & Nhật ký Hoạt động)
+- **Mô hình 2 cấp độ (Hybrid Architecture)**:
+  - **Cấp độ 1: Log cục bộ (Contextual Logs)**: Tích hợp tab nhật ký trực tiếp bên trong từng phân hệ nghiệp vụ cụ thể (như Sub-tab trong *Quản lý Tài khoản*, *Quản lý Điều khoản & Chính sách*...). Giúp người quản trị tra cứu nhanh lịch sử liên quan mà không phải chuyển trang.
+  - **Cấp độ 2: Log tổng hợp (Centralized Logs)**: Xây dựng màn hình tổng hợp độc lập tại `/admin/logs` (`Nhật Ký Hoạt Động`).
+- **Nguyên tắc cấu trúc bảng Log (Quan trọng)**:
+  - **TUYỆT ĐỐI KHÔNG gộp chung tất cả các loại log vào một bảng duy nhất** vì mỗi phân hệ có cấu trúc dữ liệu và trường nghiệp vụ hoàn toàn khác nhau (ví dụ: Log Tài khoản có lý do khóa, tài khoản đích; Log Điều khoản có số hiệu phiên bản, số lượng mục...).
+  - Trang Tổng hợp `/admin/logs` phải được tổ chức thành **các Sub-Tabs chuyên biệt cho từng Phân Hệ** (Tab Quản Lý Tài Khoản, Tab Điều Khoản Dịch Vụ, Tab Chính Sách Bảo Mật...). Mỗi tab sử dụng bảng dữ liệu, bộ lọc và cấu trúc cột phù hợp với nghiệp vụ đó, giúp dễ dàng cắm thêm các phân hệ mới (Giao dịch, Máy chủ, Giftcode...) trong tương lai mà không làm vỡ cấu trúc.
+- **Tiêu chuẩn dữ liệu & Hiển thị**:
+  - Lưu vào Firestore theo cấu trúc phân cấp để tránh giới hạn kích thước document (ví dụ: `Logs/{Module}/{SubModule}/{logId}`).
+  - Tuyệt đối không hiển thị các mã nội bộ (như `termId`, `term01`...) lên giao diện người dùng/quản trị.
+  - Sử dụng ngôn từ quản lý người dùng chuẩn mực ("Tài khoản", "Người dùng", "Khóa tài khoản", "Mở khóa", "Quản Trị Viên"), không lạm dụng thuật ngữ game/nhập vai trong khu vực quản trị.
+
+---
+
+## 7. Quy chuẩn Quản lý Thông số & Bộ đếm (Collection `Counters`)
+- **Document cha `Counters/AccountStats`**:
+  - **CHỈ CHỨA DUY NHẤT 3 TRƯỜNG**: `EmailCount`, `GoogleCount`, `GuestCount` (Thống kê tổng hợp phương thức đăng ký tài khoản Người Chơi).
+  - **Tuyệt đối KHÔNG lưu các thông số đếm theo ngày trong Document cha này** để tránh dữ liệu bị phình to hoặc lẫn lộn dữ liệu thời gian.
+- **Subcollection theo ngày `Counters/AccountStats/DailyStats/{YYYY-MM-DD}`**:
+  - Toàn bộ chỉ số biến động theo thời gian được lưu độc lập tại đây (Document ID định dạng `YYYY-MM-DD`, ví dụ: `2026-10-30`).
+  - Chứa các trường: `Date` (YYYY-MM-DD), `PlayerCount` (chỉ đếm Người Chơi tạo trong ngày đó), `EmailCount`, `GoogleCount`, `GuestCount`, `LastUpdated`.
+  - Phục vụ biểu đồ tăng trưởng, phân tích dữ liệu lịch sử theo chuỗi thời gian (time-series).
+- **Lưu ý tiên quyết**: *Chỉ đếm tài khoản Người Chơi (`Role: Player`)*. Tuyệt đối không đếm tài khoản Quản Trị Viên (Admin) hay Quản Lý (Manager) vào các thông số này.
+
+
+
+

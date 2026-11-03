@@ -29,4 +29,4 @@ if (isFirebaseConfigured) {
   db = getFirestore(app);
 }
 
-export { app, auth, db, googleProvider };
+export { app, auth, db, googleProvider, firebaseConfig };

@@ -7,10 +7,36 @@ import { useRouter } from "next/navigation";
 import { soundEngine } from "@/services/audio.service";
 import { authService, useAuth, useIsMounted } from "@/services/auth.service";
 
+function getRoleBadgeConfig(role?: string) {
+  const normalized = role?.trim().toLowerCase();
+  switch (normalized) {
+    case "admin":
+      return {
+        label: "Admin · Quản Trị Viên",
+        badgeClass: "bg-red-500/20 text-red-300 border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.3)]",
+        icon: "👑",
+      };
+    case "manager":
+      return {
+        label: "Manager · Quản Lý",
+        badgeClass: "bg-[#f5c767]/20 text-[#f5c767] border-[#f5c767]/50 shadow-[0_0_12px_rgba(245,199,103,0.3)]",
+        icon: "🛡️",
+      };
+    case "player":
+    default:
+      return {
+        label: "Player · Chỉ Huy",
+        badgeClass: "bg-[#3fe9d6]/15 text-[#3fe9d6] border-[#3fe9d6]/40 shadow-[0_0_12px_rgba(63,233,214,0.25)]",
+        icon: "★",
+      };
+  }
+}
+
 export default function ProfileView() {
   const router = useRouter();
   const isMounted = useIsMounted();
   const currentUser = useAuth();
+  const roleBadge = getRoleBadgeConfig(currentUser?.role);
 
   const [copiedUid, setCopiedUid] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
@@ -265,14 +291,27 @@ export default function ProfileView() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wider">
                 {currentUser.username}
               </h1>
-              <span className="inline-block self-center md:self-auto px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider rounded-full bg-[#f5c767]/15 text-[#f5c767] border border-[#f5c767]/40">
-                Chỉ Huy Trưởng Veyra
+              <span
+                className={`inline-flex items-center gap-1.5 self-center md:self-auto px-3 py-1 text-[11px] font-mono uppercase tracking-wider rounded-full border transition-all ${roleBadge.badgeClass}`}
+              >
+                <span>{roleBadge.icon}</span>
+                <span>{roleBadge.label}</span>
               </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-400 font-mono">
-              Email Xác Thực: <span className="text-slate-200">{currentUser.email}</span>
-            </p>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 text-xs text-slate-400 font-mono">
+              <p>
+                Email: <span className="text-slate-200">{currentUser.email}</span>
+              </p>
+              {currentUser.createdAt && (
+                <p>
+                  Gia Nhập:{" "}
+                  <span className="text-[#3fe9d6]">
+                    {new Date(currentUser.createdAt).toLocaleDateString("vi-VN")}
+                  </span>
+                </p>
+              )}
+            </div>
 
             {/* UID Badge with Copy Button */}
             <div className="inline-flex items-center gap-2 pt-1">
@@ -292,6 +331,15 @@ export default function ProfileView() {
 
           {/* Quick Action Buttons on Desktop */}
           <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
+            {(currentUser.role === "Admin" || currentUser.role === "Manager") && (
+              <Link
+                href="/admin"
+                onClick={() => soundEngine.playClick()}
+                className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded border border-[#3fe9d6]/50 text-[#3fe9d6] bg-[#3fe9d6]/10 hover:bg-[#3fe9d6]/20 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(63,233,214,0.25)]"
+              >
+                <span>⚡ Vào Trang Quản Trị</span>
+              </Link>
+            )}
             <button
               type="button"
               onClick={handlePasswordReset}
@@ -369,7 +417,7 @@ export default function ProfileView() {
             </p>
           </div>
           <span className="text-xs font-mono text-[#f5c767] hidden sm:inline">
-            Unity Engine · Turn-Based
+            Tactical · Turn-Based
           </span>
         </div>
 
