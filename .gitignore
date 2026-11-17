@@ -1,0 +1,20 @@
+# Environment files (secrets) - keep only .env.example
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dependencies & build output
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
