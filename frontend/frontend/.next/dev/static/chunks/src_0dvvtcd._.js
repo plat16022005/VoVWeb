@@ -6097,6 +6097,8 @@ __turbopack_context__.s([
     ()=>BLOG_CATEGORIES,
     "BLOG_MAX_CONTENT_LENGTH",
     ()=>BLOG_MAX_CONTENT_LENGTH,
+    "DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE",
+    ()=>DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE,
     "blogsService",
     ()=>blogsService,
     "slugify",
@@ -6105,6 +6107,7 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$esm$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/esm/index.esm.js [app-client] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.esm.js [app-client] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__aL__as__collection$3e$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/common-CLMydGSF.esm.js [app-client] (ecmascript) <export aL as collection>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__aO__as__deleteField$3e$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/common-CLMydGSF.esm.js [app-client] (ecmascript) <export aO as deleteField>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__v__as__doc$3e$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/common-CLMydGSF.esm.js [app-client] (ecmascript) <export v as doc>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-client] (ecmascript)");
 ;
@@ -6118,6 +6121,7 @@ const BLOG_CATEGORIES = [
     "Cốt Truyện",
     "Sự Kiện"
 ];
+const DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE = "Chào Chỉ Huy {name}! Cảm ơn bạn đã quan tâm và để lại bình luận cho Valkyria of Veyra. Hãy tiếp tục theo dõi Fanpage để cập nhật các tin tức và đợt Closed Beta mới nhất nhé! ✨";
 const BLOG_MAX_CONTENT_LENGTH = 900_000;
 function requireDb() {
     if (!__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"]) throw new Error("Firestore chưa được cấu hình.");
@@ -6144,7 +6148,10 @@ function mapDoc(id, d) {
         publishedAt: d.PublishedAt ?? null,
         facebookPostId: d.FacebookPostId || null,
         facebookPostUrl: d.FacebookPostUrl || null,
-        facebookPublishedAt: d.FacebookPublishedAt ?? null
+        facebookPublishedAt: d.FacebookPublishedAt ?? null,
+        facebookAutoReplyEnabled: Boolean(d.FacebookAutoReplyEnabled),
+        facebookAutoReplyMessage: d.FacebookAutoReplyMessage || "",
+        facebookRepliedCommentIds: Array.isArray(d.FacebookRepliedCommentIds) ? d.FacebookRepliedCommentIds : []
     };
 }
 function validate(input) {
@@ -6295,6 +6302,60 @@ const blogsService = {
             FacebookPublishedAt: null,
             UpdatedAt: Date.now()
         });
+    },
+    // Cập nhật cấu hình tự động trả lời bình luận Facebook
+    async updateFacebookAutoReply (postId, enabled, message) {
+        const dbInstance = requireDb();
+        const ref = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__v__as__doc$3e$__["doc"])(dbInstance, BLOGS_COLLECTION, postId);
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["updateDoc"])(ref, {
+            FacebookAutoReplyEnabled: enabled,
+            FacebookAutoReplyMessage: message,
+            UpdatedAt: Date.now()
+        });
+        const post = await this.getPostById(postId);
+        if (post) {
+            await logActivity("FACEBOOK_AUTO_REPLY", `${enabled ? "Bật" : "Tắt"} tự động trả lời bình luận Facebook`, post, `Trạng thái: ${enabled ? "BẬT" : "TẮT"}`);
+        }
+    },
+    // Lấy danh sách ID bình luận đã rep từ Subcollection: Blogs/{postId}/FacebookRepliedComments
+    // Cấu trúc phân cấp giúp KHÔNG BAO GIỜ bị giới hạn bởi trần kích thước 1 MiB của Document cha
+    async getFacebookRepliedCommentIds (postId) {
+        try {
+            const dbInstance = requireDb();
+            const colRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__aL__as__collection$3e$__["collection"])(dbInstance, BLOGS_COLLECTION, postId, "FacebookRepliedComments");
+            const snap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getDocs"])(colRef);
+            return snap.docs.map((d)=>d.id);
+        } catch (err) {
+            console.warn("Lỗi đọc subcollection FacebookRepliedComments:", err);
+            return [];
+        }
+    },
+    // Lưu danh sách comment ID đã được trả lời tự động vào Subcollection riêng biệt
+    // Đảm bảo không lưu mảng unbounded trong Document cha, tránh rủi ro vượt quá 1MB
+    async addFacebookRepliedCommentIds (postId, newCommentIds) {
+        if (!newCommentIds.length) return [];
+        const dbInstance = requireDb();
+        const batch = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["writeBatch"])(dbInstance);
+        const now = Date.now();
+        for (const cmtId of newCommentIds){
+            const ref = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__v__as__doc$3e$__["doc"])(dbInstance, BLOGS_COLLECTION, postId, "FacebookRepliedComments", cmtId);
+            batch.set(ref, {
+                commentId: cmtId,
+                repliedAt: now
+            });
+        }
+        // Nếu trước đó từng lưu mảng FacebookRepliedCommentIds trong doc cha, xóa đi để giải phóng bộ nhớ
+        const postRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__v__as__doc$3e$__["doc"])(dbInstance, BLOGS_COLLECTION, postId);
+        try {
+            batch.update(postRef, {
+                FacebookRepliedCommentIds: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$common$2d$CLMydGSF$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__aO__as__deleteField$3e$__["deleteField"])(),
+                UpdatedAt: now
+            });
+        } catch  {
+        // Bỏ qua nếu doc cha chưa có trường này
+        }
+        await batch.commit();
+        return await this.getFacebookRepliedCommentIds(postId);
     }
 };
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {

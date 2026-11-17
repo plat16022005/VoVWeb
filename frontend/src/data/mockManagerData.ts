@@ -191,7 +191,7 @@ export const MOCK_GIFTCODES: ManagerGiftcode[] = [
   {
     id: "gc_004",
     code: "HALLOWEENVEYRA",
-    title: "Dạ Hội Bóng Đêm Thành Astral",
+    title: "Dạ Hội Bóng Đêm Thành Cổ Veyra",
     description: "Sự kiện lễ hội hóa trang mùa thu tại Veyra.",
     rewards: {
       ruby: 666,

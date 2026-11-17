@@ -1,0 +1,4 @@
+npm notice run backend@0.0.1 dev
+npm notice run nest start --watch
+[2J[3J[H[[90m3:49:28 PM[0m] Starting compilation in watch mode...
+

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import { soundEngine } from "@/services/audio.service";
-import { CHARACTERS, Character } from "@/data/characters";
+import { Character } from "@/data/characters";
+import {
+  characterService,
+  getRarityColor,
+  getRarityImage,
+  sortCharactersByRarity,
+  DEFAULT_HERO_IMAGE,
+} from "@/services/character.service";
 
 interface CharacterShowcaseProps {
   onOpenPlayModal: () => void;
@@ -12,9 +19,105 @@ interface CharacterShowcaseProps {
 export default function CharacterShowcase({
   onOpenPlayModal,
 }: CharacterShowcaseProps) {
-  const [selectedChar, setSelectedChar] = useState<Character>(CHARACTERS[0]);
+  const [characterList, setCharacterList] = useState<Character[]>([]);
+  const [selectedChar, setSelectedChar] = useState<Character | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [charTab, setCharTab] = useState<"skills" | "lore">("skills");
   const [activeVoiceChime, setActiveVoiceChime] = useState(false);
+  const [filterRarity, setFilterRarity] = useState<"ALL" | "SSR" | "SR" | "R">("ALL");
+
+  // Load real characters from Firestore & local client cache
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Kiểm tra cache client: nếu đã có dữ liệu thật từ phiên trước, nạp tức thì
+    try {
+      const cached = characterService.getLocalCache();
+      if (cached && cached.length > 0) {
+        const visible = sortCharactersByRarity(cached.filter((c) => c.status !== "Hidden"));
+        if (visible.length > 0 && isMounted) {
+          setCharacterList(visible);
+          setSelectedChar((prev) => (prev ? visible.find((c) => c.id === prev.id) || visible[0] : visible[0]));
+          setIsLoading(false);
+        }
+      }
+    } catch {}
+
+    // 2. Tải dữ liệu thật từ Firestore
+    characterService
+      .getCharacters()
+      .then((chars) => {
+        if (isMounted && chars && chars.length > 0) {
+          const visible = sortCharactersByRarity(chars.filter((c) => c.status !== "Hidden"));
+          if (visible.length > 0) {
+            setCharacterList(visible);
+            setSelectedChar((prev) => (prev ? visible.find((c) => c.id === prev.id) || visible[0] : visible[0]));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Không thể tải danh sách Valkyria từ hệ thống:", err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Filtered characters list for the avatar bar
+  const displayedCharacters = useMemo(() => {
+    if (filterRarity === "ALL") return characterList;
+    return characterList.filter((c) => {
+      const r = (c.rarityLabel || (c.rarity >= 5 ? "SSR" : c.rarity === 4 ? "SR" : "R")).toUpperCase();
+      return r === filterRarity;
+    });
+  }, [characterList, filterRarity]);
+
+  // Statistics for rarity filter badges
+  const countSSR = useMemo(
+    () =>
+      characterList.filter(
+        (c) =>
+          (c.rarityLabel || (c.rarity >= 5 ? "SSR" : c.rarity === 4 ? "SR" : "R")).toUpperCase() === "SSR"
+      ).length,
+    [characterList]
+  );
+  const countSR = useMemo(
+    () =>
+      characterList.filter(
+        (c) =>
+          (c.rarityLabel || (c.rarity >= 5 ? "SSR" : c.rarity === 4 ? "SR" : "R")).toUpperCase() === "SR"
+      ).length,
+    [characterList]
+  );
+  const countR = useMemo(
+    () =>
+      characterList.filter(
+        (c) =>
+          (c.rarityLabel || (c.rarity >= 5 ? "SSR" : c.rarity === 4 ? "SR" : "R")).toUpperCase() === "R"
+      ).length,
+    [characterList]
+  );
+
+  const handleFilterChange = (rarity: "ALL" | "SSR" | "SR" | "R") => {
+    soundEngine.playClick();
+    setFilterRarity(rarity);
+    const nextList =
+      rarity === "ALL"
+        ? characterList
+        : characterList.filter((c) => {
+            const r = (c.rarityLabel || (c.rarity >= 5 ? "SSR" : c.rarity === 4 ? "SR" : "R")).toUpperCase();
+            return r === rarity;
+          });
+    if (nextList.length > 0 && (!selectedChar || !nextList.some((c) => c.id === selectedChar.id))) {
+      setSelectedChar(nextList[0]);
+    }
+  };
 
   // 2.5D Interactive Parallax & Tilt State
   const cardStageRef = useRef<HTMLDivElement | null>(null);
@@ -52,6 +155,12 @@ export default function CharacterShowcase({
     setTimeout(() => setActiveVoiceChime(false), 2000);
   };
 
+  const charRarity = selectedChar
+    ? selectedChar.rarityLabel || (selectedChar.rarity >= 5 ? "SSR" : selectedChar.rarity === 4 ? "SR" : "R")
+    : "SSR";
+  const rarityColor = getRarityColor(charRarity);
+  const rarityImage = getRarityImage(charRarity);
+
   return (
     <section
       id="characters"
@@ -71,49 +180,235 @@ export default function CharacterShowcase({
           </p>
         </div>
 
-        {/* Character Selector Bar (HoYoverse Avatar Tabs) */}
-        <div className="flex items-center justify-center gap-3 sm:gap-6 mb-12 flex-wrap">
-          {CHARACTERS.map((char) => {
-            const active = selectedChar.id === char.id;
-            return (
-              <button
-                key={char.id}
-                onClick={() => handleSelectChar(char)}
-                className={`group relative flex items-center gap-3 px-4 py-2.5 rounded-lg border transition-all duration-300 cursor-pointer ${active
-                  ? "bg-[#161c40] border-[#f5c767] shadow-[0_0_20px_rgba(245,199,103,0.35)] scale-105"
-                  : "bg-[#0b0e24]/80 border-white/10 hover:border-white/30 hover:bg-[#121636]"
-                  }`}
+        {/* Rarity Filter Bar (SSR, SR, R) with Official Graphics */}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2.5 sm:gap-4 mb-8 flex-wrap">
+            <div className="w-24 h-9 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+            <div className="w-24 h-9 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+            <div className="w-24 h-9 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+            <div className="w-24 h-9 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2.5 sm:gap-4 mb-8 flex-wrap">
+            {/* Tất Cả */}
+            <button
+              onClick={() => handleFilterChange("ALL")}
+              className={`group relative px-4 py-2 rounded-xl text-xs font-bold font-[family-name:var(--font-rajdhani)] tracking-wider uppercase transition-all duration-300 border flex items-center gap-2.5 cursor-pointer ${
+                filterRarity === "ALL"
+                  ? "bg-[#3fe9d6]/20 border-[#3fe9d6] text-[#3fe9d6] shadow-[0_0_20px_rgba(63,233,214,0.35)] scale-105"
+                  : "bg-[#0b0e24]/80 border-white/10 text-slate-400 hover:text-white hover:border-white/30 hover:bg-[#121636]"
+              }`}
+            >
+              <span className="w-2 h-2 rotate-45 bg-[#3fe9d6]" />
+              <span>TẤT CẢ</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                  filterRarity === "ALL" ? "bg-[#3fe9d6] text-slate-900" : "bg-white/10 text-slate-400"
+                }`}
               >
-                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#f5c767]/40">
-                  <Image
-                    src={char.image}
-                    alt={char.name}
-                    fill
-                    className="object-cover object-top"
-                  />
+                {characterList.length}
+              </span>
+            </button>
+
+            {/* Phẩm SSR */}
+            <button
+              onClick={() => handleFilterChange("SSR")}
+              className={`group relative px-4 py-1.5 rounded-xl transition-all duration-300 border flex items-center gap-2.5 cursor-pointer ${
+                filterRarity === "SSR"
+                  ? "bg-[#ef4444]/20 border-[#ef4444] shadow-[0_0_20px_rgba(239,68,68,0.4)] scale-105"
+                  : "bg-[#0b0e24]/80 border-white/10 hover:border-[#ef4444]/50 hover:bg-[#180e1b]"
+              }`}
+            >
+              <div className="relative h-6 w-12 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]">
+                <Image src="/images/SSR.png" alt="SSR" fill className="object-contain" priority />
+              </div>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                  filterRarity === "SSR" ? "bg-[#ef4444] text-white" : "bg-[#ef4444]/20 text-[#ef4444]"
+                }`}
+              >
+                {countSSR}
+              </span>
+            </button>
+
+            {/* Phẩm SR */}
+            <button
+              onClick={() => handleFilterChange("SR")}
+              className={`group relative px-4 py-1.5 rounded-xl transition-all duration-300 border flex items-center gap-2.5 cursor-pointer ${
+                filterRarity === "SR"
+                  ? "bg-[#f5c767]/20 border-[#f5c767] shadow-[0_0_20px_rgba(245,199,103,0.4)] scale-105"
+                  : "bg-[#0b0e24]/80 border-white/10 hover:border-[#f5c767]/50 hover:bg-[#1a1610]"
+              }`}
+            >
+              <div className="relative h-6 w-11 drop-shadow-[0_0_6px_rgba(245,199,103,0.5)]">
+                <Image src="/images/SR.png" alt="SR" fill className="object-contain" priority />
+              </div>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                  filterRarity === "SR" ? "bg-[#f5c767] text-slate-900" : "bg-[#f5c767]/20 text-[#f5c767]"
+                }`}
+              >
+                {countSR}
+              </span>
+            </button>
+
+            {/* Phẩm R */}
+            <button
+              onClick={() => handleFilterChange("R")}
+              className={`group relative px-4 py-1.5 rounded-xl transition-all duration-300 border flex items-center gap-2.5 cursor-pointer ${
+                filterRarity === "R"
+                  ? "bg-[#38bdf8]/20 border-[#38bdf8] shadow-[0_0_20px_rgba(56,189,248,0.4)] scale-105"
+                  : "bg-[#0b0e24]/80 border-white/10 hover:border-[#38bdf8]/50 hover:bg-[#0c1626]"
+              }`}
+            >
+              <div className="relative h-6 w-9 drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]">
+                <Image src="/images/R.png" alt="R" fill className="object-contain" priority />
+              </div>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                  filterRarity === "R" ? "bg-[#38bdf8] text-slate-900" : "bg-[#38bdf8]/20 text-[#38bdf8]"
+                }`}
+              >
+                {countR}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Character Selector Bar (HoYoverse Avatar Tabs) */}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-3 sm:gap-6 mb-12 flex-wrap">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/5 bg-[#0b0e24]/60 animate-pulse w-36 sm:w-44 h-14"
+              >
+                <div className="w-10 h-10 rounded-full bg-white/10 shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <div className="h-3.5 bg-white/10 rounded w-16" />
+                  <div className="h-2.5 bg-white/5 rounded w-10" />
                 </div>
-                <div className="text-left">
-                  <div
-                    className={`font-bold font-[family-name:var(--font-rajdhani)] text-sm tracking-wider uppercase ${active ? "text-[#f5c767]" : "text-white"
-                      }`}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-3 sm:gap-6 mb-12 flex-wrap">
+            {displayedCharacters.length === 0 ? (
+              <div className="text-slate-400 text-xs py-4 px-6 rounded-lg border border-white/10 bg-[#0b0e24]/60">
+                Chưa có Valkyria thuộc phẩm cấp này.
+              </div>
+            ) : (
+              displayedCharacters.map((char) => {
+                const active = selectedChar?.id === char.id;
+                const cRarity = char.rarityLabel || (char.rarity >= 5 ? "SSR" : char.rarity === 4 ? "SR" : "R");
+                const cRarityColor = getRarityColor(cRarity);
+                const cRarityImg = getRarityImage(cRarity);
+                return (
+                  <button
+                    key={char.id}
+                    onClick={() => handleSelectChar(char)}
+                    className={`group relative flex items-center gap-3 px-4 py-2.5 rounded-lg border transition-all duration-300 cursor-pointer ${
+                      active
+                        ? "bg-[#161c40] border-[#f5c767] shadow-[0_0_20px_rgba(245,199,103,0.35)] scale-105"
+                        : "bg-[#0b0e24]/80 border-white/10 hover:border-white/30 hover:bg-[#121636]"
+                    }`}
                   >
-                    {char.name}
-                  </div>
-                  <div className="text-[10px] text-slate-400">{char.path}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                    <div
+                      className="relative w-10 h-10 rounded-full overflow-hidden border bg-black/60"
+                      style={{ borderColor: `${cRarityColor}80` }}
+                    >
+                      <Image
+                        src={char.image || DEFAULT_HERO_IMAGE}
+                        alt={char.name}
+                        fill
+                        unoptimized={!char.image || char.image.startsWith("http") || char.image.includes("default_hero")}
+                        className="object-cover object-top"
+                      />
+                    </div>
+                    <div className="text-left">
+                      <div
+                        className={`font-bold font-[family-name:var(--font-rajdhani)] text-sm tracking-wider uppercase ${
+                          active ? "text-[#f5c767]" : "text-white"
+                        }`}
+                      >
+                        {char.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        {cRarityImg ? (
+                          <div className="relative h-3.5 w-7">
+                            <Image src={cRarityImg} alt={cRarity} fill className="object-contain" />
+                          </div>
+                        ) : (
+                          <span className="font-mono font-bold text-[10px]" style={{ color: cRarityColor }}>
+                            {cRarity}
+                          </span>
+                        )}
+                        <span className="text-white/20">/</span>
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-slate-300">
+                          {char.role || "Archer"}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
 
         {/* Active Character Showcase Stage */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-6xl mx-auto">
-          {/* Left: Giant Character Portrait Visual with 2.5D Living Parallax */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center">
-            <div
-              ref={cardStageRef}
-              onMouseMove={handleStageMouseMove}
-              onMouseLeave={handleStageMouseLeave}
+        {isLoading || !selectedChar ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-6xl mx-auto w-full animate-pulse">
+            {/* Left Skeleton Card */}
+            <div className="lg:col-span-6 flex flex-col items-center justify-center">
+              <div className="relative w-full max-w-md aspect-[3/4] rounded-2xl bg-[#090d24]/90 border border-white/10 p-5 flex flex-col justify-between shadow-2xl">
+                <div className="flex justify-between items-center">
+                  <div className="w-16 h-8 rounded-xl bg-white/10" />
+                </div>
+                <div className="flex flex-col items-center justify-center my-auto">
+                  <div className="w-28 h-28 rounded-full bg-white/5" />
+                </div>
+                <div className="p-4 rounded-xl bg-[#080c21]/90 border border-white/10 space-y-2">
+                  <div className="w-32 h-6 bg-white/10 rounded" />
+                  <div className="w-20 h-4 bg-white/5 rounded" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Skeleton Details */}
+            <div className="lg:col-span-6 flex flex-col justify-center space-y-5">
+              <div className="flex gap-3">
+                <div className="w-24 h-10 rounded-xl bg-white/10" />
+                <div className="w-32 h-10 rounded-xl bg-white/10" />
+              </div>
+              <div className="space-y-2">
+                <div className="w-64 h-10 bg-white/10 rounded-lg" />
+                <div className="w-40 h-4 bg-white/5 rounded" />
+              </div>
+              <div className="p-4 rounded-xl bg-[#0c1029]/80 border border-white/10 space-y-2">
+                <div className="w-28 h-4 bg-white/10 rounded" />
+                <div className="w-full h-8 bg-white/5 rounded" />
+              </div>
+              <div className="flex gap-4 border-b border-white/10 pb-2">
+                <div className="w-36 h-6 bg-white/10 rounded" />
+                <div className="w-36 h-6 bg-white/5 rounded" />
+              </div>
+              <div className="space-y-3">
+                <div className="h-16 rounded-lg bg-[#0d122e]/80 border border-white/5" />
+                <div className="h-16 rounded-lg bg-[#0d122e]/80 border border-white/5" />
+                <div className="h-16 rounded-lg bg-[#0d122e]/80 border border-white/5" />
+              </div>
+              <div className="w-56 h-11 rounded-xl bg-[#f5c767]/20 border border-[#f5c767]/30" />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-6xl mx-auto">
+            {/* Left: Giant Character Portrait Visual with 2.5D Living Parallax */}
+            <div className="lg:col-span-6 flex flex-col items-center justify-center">
+              <div
+                ref={cardStageRef}
+                onMouseMove={handleStageMouseMove}
+                onMouseLeave={handleStageMouseLeave}
               className="relative w-full max-w-md aspect-[3/4] perspective-stage cursor-pointer group select-none"
               onClick={handlePlayVoice}
             >
@@ -132,22 +427,12 @@ export default function CharacterShowcase({
                     transform: `translate3d(${-tilt.x * 35}px, ${-tilt.y * 35}px, -40px)`,
                   }}
                 >
-                  {/* Outer rotating elemental halo */}
-                  <div
-                    className="w-[125%] h-[125%] rounded-full border border-dashed animate-rotate-slow opacity-30"
-                    style={{ borderColor: selectedChar.elementColor }}
-                  />
-                  {/* Inner counter-rotating rune ring */}
-                  <div
-                    className="absolute w-[95%] h-[95%] rounded-full border-2 border-dotted animate-rotate-reverse opacity-40"
-                    style={{ borderColor: selectedChar.elementColor }}
-                  />
-                  {/* Glowing elemental nebula core */}
+                  {/* Glowing rarity nebula core */}
                   <div
                     className="absolute w-72 h-72 rounded-full blur-3xl animate-aura-pulse"
                     style={{
-                      backgroundColor: selectedChar.elementColor,
-                      opacity: 0.28,
+                      backgroundColor: rarityColor,
+                      opacity: 0.35,
                     }}
                   />
                 </div>
@@ -160,94 +445,100 @@ export default function CharacterShowcase({
                   }}
                 >
                   <Image
-                    src={selectedChar.image}
+                    src={selectedChar.image || DEFAULT_HERO_IMAGE}
                     alt={selectedChar.name}
                     fill
+                    unoptimized={!selectedChar.image || selectedChar.image.startsWith("http") || selectedChar.image.includes("default_hero")}
                     className="object-cover object-top transition-transform duration-700"
                     priority
                   />
-
-                  {/* Shimmering Starlight Light Sweep */}
-                  <div className="absolute inset-0 w-[50%] h-full bg-gradient-to-r from-transparent via-white/25 to-transparent animate-light-sweep pointer-events-none" />
 
                   {/* Atmospheric vignette */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#060817] via-[#060817]/25 to-transparent" />
                 </div>
 
-                {/* ── LAYER 3: Dynamic Floating Particles & Foreground Badges (Front Parallax: +45px) ── */}
+                {/* ── LAYER 3: Dynamic Foreground Badges (Front Parallax: +45px) ── */}
                 <div
                   className="absolute inset-0 pointer-events-none parallax-layer-front p-5 flex flex-col justify-between"
                   style={{
                     transform: `translate3d(${tilt.x * 28}px, ${tilt.y * 28}px, 45px)`,
                   }}
                 >
-                  {/* Top row: 5-Star Crest & Interactive 2.5D Tag */}
+                  {/* Top row: Rarity Crest Image */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#060817]/85 backdrop-blur-md border border-white/20 text-xs font-bold text-amber-300 font-mono shadow-lg">
-                      <span>★★★★★</span>
-                      <span>5-STAR</span>
+                    <div
+                      className="relative h-8 px-2.5 py-1 rounded-xl bg-[#060817]/90 backdrop-blur-md border shadow-[0_0_20px_rgba(0,0,0,0.8)] flex items-center justify-center"
+                      style={{
+                        borderColor: `${rarityColor}70`,
+                        boxShadow: `0 0 15px ${rarityColor}30`,
+                      }}
+                    >
+                      {rarityImage ? (
+                        <div className="relative h-6 w-14 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
+                          <Image src={rarityImage} alt={charRarity} fill className="object-contain" priority />
+                        </div>
+                      ) : (
+                        <span className="font-mono font-black text-xs" style={{ color: rarityColor }}>
+                          {charRarity}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/70 backdrop-blur-md border border-[#f5c767]/40 text-[10px] font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)] shadow-lg">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>2.5D LIVE TILT</span>
-                    </div>
-                  </div>
-
-                  {/* Floating elemental stardust sparks */}
-                  <div className="relative w-full h-32 overflow-hidden">
-                    <div className="absolute bottom-2 left-6 w-1.5 h-1.5 rounded-full bg-white animate-ping opacity-75" />
-                    <div className="absolute bottom-8 right-10 w-2 h-2 rounded-full bg-[#f5c767] animate-pulse opacity-80" />
-                    <div className="absolute bottom-16 left-1/3 w-1 h-1 rounded-full bg-[#3fe9d6] animate-bounce opacity-70" />
                   </div>
 
                   {/* Bottom Name Plate */}
-                  <div className="bg-[#080c21]/90 backdrop-blur-md p-3.5 rounded-xl border border-[#f5c767]/30 shadow-2xl">
-                    <div className="text-[11px] uppercase tracking-widest text-[#f5c767] font-[family-name:var(--font-rajdhani)] font-bold">
-                      {selectedChar.title}
-                    </div>
-                    <h3 className="text-2xl font-black text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
+                  <div className="bg-[#080c21]/90 backdrop-blur-md px-4 py-3 rounded-xl border border-white/15 shadow-2xl relative">
+                    <h3 className="text-2xl font-black text-white font-[family-name:var(--font-rajdhani)] tracking-wider uppercase leading-tight">
                       {selectedChar.name}
                     </h3>
+                    <p className="text-xs font-semibold text-[#f5c767] tracking-wider uppercase mt-1">
+                      Vai trò: <span className="text-white font-bold">{selectedChar.role || "Archer"}</span>
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Interactive Hint beneath card */}
-              <div className="text-center mt-3 text-[11px] text-slate-400 font-[family-name:var(--font-rajdhani)] tracking-wider flex items-center justify-center gap-2">
-                <span>✦</span>
-                <span>RÊ CHUỘT LÊN NHÂN VẬT ĐỂ TƯƠNG TÁC 3D & HÀO QUANG</span>
-                <span>✦</span>
               </div>
             </div>
           </div>
 
           {/* Right: Character Details, Skills & Audio Line */}
           <div className="lg:col-span-6 flex flex-col justify-center">
-            {/* Badges: Element & Path */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span
-                className="px-3 py-1 rounded-full text-xs font-bold font-[family-name:var(--font-rajdhani)] uppercase tracking-wider border"
+            {/* Badges: Rarity & Role (Authentic RPG Design, No Emojis) */}
+            <div className="flex flex-wrap items-center gap-3 mb-5">
+              {/* High-res Rarity Graphic Badge */}
+              <div
+                className="relative h-10 px-3.5 py-1 rounded-xl bg-gradient-to-r from-[#0c102a] to-[#141b3d] border shadow-lg flex items-center gap-2"
                 style={{
-                  backgroundColor: `${selectedChar.elementColor}20`,
-                  borderColor: `${selectedChar.elementColor}60`,
-                  color: selectedChar.elementColor,
+                  borderColor: `${rarityColor}70`,
+                  boxShadow: `0 0 15px ${rarityColor}20`,
                 }}
               >
-                ⚡ THUỘC TÍNH: {selectedChar.element}
-              </span>
+                {rarityImage ? (
+                  <div className="relative h-7 w-16 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                    <Image src={rarityImage} alt={charRarity} fill className="object-contain" priority />
+                  </div>
+                ) : (
+                  <span className="font-mono font-black text-xs" style={{ color: rarityColor }}>
+                    PHẨM CẤP: {charRarity}
+                  </span>
+                )}
+              </div>
 
-              <span className="px-3 py-1 rounded-full text-xs font-bold font-[family-name:var(--font-rajdhani)] uppercase tracking-wider bg-[#f5c767]/15 border border-[#f5c767]/40 text-[#f5c767]">
-                🗡 VẬN MỆNH: {selectedChar.path}
-              </span>
+              {/* Role Badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0a1329] border border-[#3fe9d6]/40 text-[#3fe9d6]">
+                <span className="text-xs font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
+                  Vai Trò: {selectedChar.role || "Archer"}
+                </span>
+              </div>
             </div>
 
             {/* Title & Name */}
             <h3 className="text-4xl sm:text-5xl font-black text-white uppercase font-[family-name:var(--font-rajdhani)] tracking-wide mb-2">
               {selectedChar.name}
             </h3>
-            <p className="text-sm font-semibold text-[#f5c767] font-[family-name:var(--font-rajdhani)] tracking-widest uppercase mb-4">
-              {selectedChar.title}
-            </p>
+            {selectedChar.title && (
+              <p className="text-sm font-semibold text-[#f5c767] font-[family-name:var(--font-rajdhani)] tracking-widest uppercase mb-4">
+                {selectedChar.title}
+              </p>
+            )}
 
             {/* Voice Actor & Quote Bar */}
             <div className="hsr-card p-4 mb-6 bg-[#0c1029]/80 border-white/10">
@@ -314,25 +605,7 @@ export default function CharacterShowcase({
               </div>
             ) : (
               <div className="p-5 rounded-lg bg-[#0d122e]/80 border border-white/5 text-slate-300 text-sm leading-relaxed">
-                <p className="mb-4">{selectedChar.lore}</p>
-                <div className="grid grid-cols-2 gap-3 text-xs border-t border-white/10 pt-4">
-                  <div>
-                    <span className="text-slate-500">Phe phái:</span>{" "}
-                    <strong className="text-white">Đoàn Tàu Astral</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Vũ khí:</span>{" "}
-                    <strong className="text-white">Thánh Di Vật Tinh Thần</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Giới tính:</span>{" "}
-                    <strong className="text-white">Độc Nhất</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Trạng thái:</span>{" "}
-                    <strong className="text-emerald-400">Sẵn Sàng Xuất Kích</strong>
-                  </div>
-                </div>
+                <p>{selectedChar.lore}</p>
               </div>
             )}
 
@@ -350,6 +623,7 @@ export default function CharacterShowcase({
             </div>
           </div>
         </div>
+      )}
       </div>
     </section>
   );

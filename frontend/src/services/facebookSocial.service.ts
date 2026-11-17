@@ -29,6 +29,18 @@ export interface FacebookCommentItem {
   }[];
 }
 
+export interface FacebookFeedPost {
+  id: string;
+  message: string;
+  story?: string | null;
+  created_time: string;
+  full_picture?: string | null;
+  permalink_url: string;
+  likes: number;
+  comments: number;
+  shares: number;
+}
+
 export interface PublishToFacebookParams {
   postId: string;
   title: string;
@@ -120,6 +132,25 @@ export const facebookSocialService = {
     const data = await res.json();
     if (!res.ok || data.error) {
       throw new Error(data.error || "Không thể gửi phản hồi bình luận");
+    }
+    return data;
+  },
+
+  /**
+   * Lấy danh sách toàn bộ bài đăng trực tiếp trên Fanpage
+   */
+  async getPagePosts(limit = 25): Promise<{
+    success: boolean;
+    posts: FacebookFeedPost[];
+    total?: number;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/social/facebook?action=posts&limit=${limit}`, {
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Không thể lấy danh sách bài viết từ Fanpage");
     }
     return data;
   },

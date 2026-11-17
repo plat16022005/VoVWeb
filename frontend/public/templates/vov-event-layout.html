@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Thánh Điện Sự Kiện — Valkyria of Veyra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --veyra-obsidian: #050712;
+      --veyra-ink: #0a0e22;
+      --veyra-gold: #f5c767;
+      --veyra-gold-dim: rgba(245, 199, 103, 0.22);
+      --veyra-cyan: #3fe9d6;
+      --veyra-hairline: rgba(245, 199, 103, 0.14);
+      --veyra-text: #eef2ff;
+      --veyra-muted: #7e8aa6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--veyra-obsidian);
+      color: var(--veyra-text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    /* Sân khấu chuẩn 960x600 ở chế độ thường & 100vw x 100vh khi Toàn màn hình */
+    #vov-unity-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 45%, #111635 0%, #060816 68%, #04050d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Nền lưới Astrolabe tinh tế phía sau canvas khi game chưa nạp xong hoặc đang xem mẫu */
+    .veyra-astrolabe-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background-image:
+        linear-gradient(to right, rgba(245, 199, 103, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(245, 199, 103, 0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9) 20%, transparent 82%);
+      -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.9) 20%, transparent 82%);
+    }
+
+    .veyra-astrolabe-rings {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(74vmin, 430px);
+      height: min(74vmin, 430px);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.45;
+    }
+
+    .veyra-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--veyra-gold-dim);
+    }
+
+    .veyra-ring--outer {
+      border-style: dashed;
+      animation: veyra-spin-cw 48s linear infinite;
+    }
+
+    .veyra-ring--mid {
+      inset: 14%;
+      border-color: rgba(63, 233, 214, 0.16);
+      animation: veyra-spin-ccw 32s linear infinite;
+    }
+
+    .veyra-ring--inner {
+      inset: 28%;
+      border-color: rgba(245, 199, 103, 0.25);
+    }
+
+    .veyra-axis-h,
+    .veyra-axis-v {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, rgba(245, 199, 103, 0.18), transparent);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .veyra-axis-h {
+      left: 8%;
+      right: 8%;
+      top: 50%;
+      height: 1px;
+    }
+
+    .veyra-axis-v {
+      top: 8%;
+      bottom: 8%;
+      left: 50%;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(245, 199, 103, 0.18), transparent);
+    }
+
+    /* Nhãn tọa độ tinh giản ở 4 góc — biến mất ngay khi Unity Canvas chiếm quyền hiển thị */
+    .veyra-standby-plate {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+      padding: 24px;
+    }
+
+    .veyra-standby-kicker {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: var(--veyra-gold);
+    }
+
+    .veyra-standby-title {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .veyra-standby-meta {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--veyra-muted);
+    }
+
+    #unity-canvas {
+      position: relative;
+      z-index: 5;
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      background: transparent;
+      outline: none;
+      touch-action: none;
+    }
+
+    @keyframes veyra-spin-cw {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes veyra-spin-ccw {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="vov-unity-container">
+    <div class="veyra-astrolabe-bg"></div>
+    <div class="veyra-axis-h"></div>
+    <div class="veyra-axis-v"></div>
+
+    <div class="veyra-astrolabe-rings">
+      <div class="veyra-ring veyra-ring--outer"></div>
+      <div class="veyra-ring veyra-ring--mid"></div>
+      <div class="veyra-ring veyra-ring--inner"></div>
+    </div>
+
+    <div class="veyra-standby-plate" id="veyra-standby-plate">
+      <div class="veyra-standby-kicker">VALKYRIA OF VEYRA // CAMPAIGN STAGE</div>
+      <div class="veyra-standby-title">KHÔNG GIAN SỰ KIỆN TRỰC TUYẾN</div>
+      <div class="veyra-standby-meta">TỶ LỆ CHUẨN 960 × 600 · ĐỒNG BỘ DỮ LIỆU CHỈ HUY</div>
+    </div>
+
+    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+  </div>
+
+  <script>
+    (function () {
+      function unlockBrowserAudio() {
+        try {
+          if (
+            window.unityInstance &&
+            window.unityInstance.Module &&
+            window.unityInstance.Module.WEBAudio &&
+            window.unityInstance.Module.WEBAudio.audioContext
+          ) {
+            var ctx = window.unityInstance.Module.WEBAudio.audioContext;
+            if (ctx && ctx.state === "suspended" && typeof ctx.resume === "function") {
+              ctx.resume().catch(function () {});
+            }
+          }
+        } catch (e) {}
+      }
+
+      window.addEventListener("pointerdown", unlockBrowserAudio, { passive: true });
+      window.addEventListener("keydown", unlockBrowserAudio, { passive: true });
+    })();
+  </script>
+</body>
+</html>

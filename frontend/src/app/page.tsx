@@ -52,11 +52,11 @@ export default function HonkaiStarRailHome() {
         if (isSubscribed && Array.isArray(data) && data.length > 0) {
           const mapped: LeaderboardEntry[] = data.map((p, idx) => ({
             rank: idx + 1,
-            username: p.username || `Pioneer_${idx + 1}`,
+            username: p.username || `Commander_${idx + 1}`,
             level: p.level || 50 + idx * 2,
-            path: idx % 2 === 0 ? "Săn Bắn" : "Tri Thức",
+            path: idx % 2 === 0 ? "Xạ Thủ" : "Đấu Sĩ",
             progress: `${Math.min(100, 75 + idx * 5)}%`,
-            server: "Astral-01",
+            server: "Veyra-01",
           }));
           setLivePlayers(mapped);
         }

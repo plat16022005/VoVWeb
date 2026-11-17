@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -11,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
@@ -48,6 +50,9 @@ export interface BlogPost {
   facebookPostId?: string | null;
   facebookPostUrl?: string | null;
   facebookPublishedAt?: number | null;
+  facebookAutoReplyEnabled?: boolean;
+  facebookAutoReplyMessage?: string;
+  facebookRepliedCommentIds?: string[];
 }
 
 export interface BlogInput {
@@ -59,6 +64,9 @@ export interface BlogInput {
 }
 
 export const BLOG_CATEGORIES = ["Tin Tức", "Cập Nhật", "Hướng Dẫn", "Cốt Truyện", "Sự Kiện"];
+
+export const DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE =
+  "Chào Chỉ Huy {name}! Cảm ơn bạn đã quan tâm và để lại bình luận cho Valkyria of Veyra. Hãy tiếp tục theo dõi Fanpage để cập nhật các tin tức và đợt Closed Beta mới nhất nhé! ✨";
 
 // Document Firestore giới hạn 1 MiB; chừa biên an toàn cho các trường còn lại
 export const BLOG_MAX_CONTENT_LENGTH = 900_000;
@@ -102,6 +110,11 @@ function mapDoc(id: string, d: any): BlogPost {
     facebookPostId: d.FacebookPostId || null,
     facebookPostUrl: d.FacebookPostUrl || null,
     facebookPublishedAt: d.FacebookPublishedAt ?? null,
+    facebookAutoReplyEnabled: Boolean(d.FacebookAutoReplyEnabled),
+    facebookAutoReplyMessage: d.FacebookAutoReplyMessage || "",
+    facebookRepliedCommentIds: Array.isArray(d.FacebookRepliedCommentIds)
+      ? d.FacebookRepliedCommentIds
+      : [],
   };
 }
 
@@ -149,7 +162,11 @@ export const blogsService = {
     );
     return snap.docs
       .map((d) => mapDoc(d.id, d.data()))
-      .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0));
+      .sort((a, b) => {
+        const timeA = a.publishedAt || a.updatedAt || a.createdAt || 0;
+        const timeB = b.publishedAt || b.updatedAt || b.createdAt || 0;
+        return timeB - timeA;
+      });
   },
 
   async getPostById(id: string): Promise<BlogPost | null> {
@@ -284,6 +301,93 @@ export const blogsService = {
       FacebookPublishedAt: null,
       UpdatedAt: Date.now(),
     });
+  },
+
+  // Cập nhật cấu hình tự động trả lời bình luận Facebook
+  async updateFacebookAutoReply(
+    postId: string,
+    enabled: boolean,
+    message: string
+  ): Promise<void> {
+    const dbInstance = requireDb();
+    const ref = doc(dbInstance, BLOGS_COLLECTION, postId);
+    const now = Date.now();
+    const currentUid = auth?.currentUser?.uid || "admin";
+    const currentName = auth?.currentUser?.displayName || "Ban Quản Trị";
+
+    // Dùng setDoc với merge: true và bổ sung các trường schema chuẩn để đảm bảo luôn vượt qua Firestore Rules
+    await setDoc(
+      ref,
+      {
+        Title: `Bài đăng Fanpage (${postId})`,
+        Category: "Mạng Xã Hội",
+        Content: "Bài viết được đồng bộ từ Fanpage Facebook.",
+        Status: "Published",
+        AuthorId: currentUid,
+        AuthorName: currentName,
+        Slug: `fb-${postId}`,
+        FacebookPostId: postId,
+        FacebookAutoReplyEnabled: enabled,
+        FacebookAutoReplyMessage: message,
+        UpdatedAt: now,
+      },
+      { merge: true }
+    );
+    const post = await this.getPostById(postId);
+    await logActivity(
+      "FACEBOOK_AUTO_REPLY",
+      `${enabled ? "Bật" : "Tắt"} tự động trả lời bình luận Facebook`,
+      post || { id: postId, title: `Bài viết Facebook (${postId})` },
+      `Trạng thái: ${enabled ? "BẬT" : "TẮT"}`
+    );
+  },
+
+  // Lấy danh sách ID bình luận đã rep từ Subcollection: Blogs/{postId}/FacebookRepliedComments
+  // Cấu trúc phân cấp giúp KHÔNG BAO GIỜ bị giới hạn bởi trần kích thước 1 MiB của Document cha
+  async getFacebookRepliedCommentIds(postId: string): Promise<string[]> {
+    try {
+      const dbInstance = requireDb();
+      const colRef = collection(dbInstance, BLOGS_COLLECTION, postId, "FacebookRepliedComments");
+      const snap = await getDocs(colRef);
+      return snap.docs.map((d) => d.id);
+    } catch (err) {
+      console.warn("Lỗi đọc subcollection FacebookRepliedComments:", err);
+      return [];
+    }
+  },
+
+  // Lưu danh sách comment ID đã được trả lời tự động vào Subcollection riêng biệt
+  // Đảm bảo không lưu mảng unbounded trong Document cha, tránh rủi ro vượt quá 1MB
+  async addFacebookRepliedCommentIds(
+    postId: string,
+    newCommentIds: string[]
+  ): Promise<string[]> {
+    if (!newCommentIds.length) return [];
+    const dbInstance = requireDb();
+    const batch = writeBatch(dbInstance);
+    const now = Date.now();
+
+    for (const cmtId of newCommentIds) {
+      const ref = doc(dbInstance, BLOGS_COLLECTION, postId, "FacebookRepliedComments", cmtId);
+      batch.set(ref, {
+        commentId: cmtId,
+        repliedAt: now,
+      });
+    }
+
+    // Đồng bộ thời gian cập nhật trên doc cha
+    const postRef = doc(dbInstance, BLOGS_COLLECTION, postId);
+    batch.set(
+      postRef,
+      {
+        UpdatedAt: now,
+      },
+      { merge: true }
+    );
+
+    await batch.commit();
+
+    return await this.getFacebookRepliedCommentIds(postId);
   },
 };
 

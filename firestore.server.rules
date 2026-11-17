@@ -48,6 +48,14 @@ service cloud.firestore {
       allow write: if false; // Chống hack tài sản: Toàn bộ ghi qua Cloud Function
     }
 
+    // 1.3. Lịch sử quay Gacha (GachaHistory):
+    // Users/{userId}/UserData/GachaState đã được bảo vệ bởi rule UserData/{docId} ở mục 1.2;
+    // riêng lịch sử quay lưu tại subcollection GachaHistory/{logId}
+    match /Users/{userId}/GachaHistory/{logId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow write: if false; // Chỉ Cloud Function được phép ghi lịch sử
+    }
+
     // =========================================================================
     // 2. TÍNH NĂNG CỘNG ĐỒNG SERVER (Bảng xếp hạng, Bang hội, Hòm thư)
     // =========================================================================

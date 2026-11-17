@@ -2,12 +2,23 @@ import { adminService } from "./admin.service";
 import { settingsService } from "./settings.service";
 import { blogsService } from "./blogs.service";
 import { getServerLogs } from "./serverManagement.service";
+import { characterService } from "./character.service";
+import { gachaService } from "./gacha.service";
 
-export type LogModuleType = "ALL" | "ACCOUNTS" | "TERMS" | "POLICY" | "BLOGS" | "SERVERS" | "SYSTEM";
+export type LogModuleType =
+  | "ALL"
+  | "ACCOUNTS"
+  | "TERMS"
+  | "POLICY"
+  | "BLOGS"
+  | "SERVERS"
+  | "GAMEDATA"
+  | "GACHA"
+  | "SYSTEM";
 
 export interface SystemLogItem {
   id: string;
-  module: "ACCOUNTS" | "TERMS" | "POLICY" | "BLOGS" | "SERVERS" | "SYSTEM";
+  module: "ACCOUNTS" | "TERMS" | "POLICY" | "BLOGS" | "SERVERS" | "GAMEDATA" | "GACHA" | "SYSTEM";
   moduleName: string;
   action: string;
   actionTitle: string;
@@ -128,7 +139,51 @@ export const logsService = {
       console.warn("Lỗi đọc log máy chủ trong logsService:", err);
     }
 
-    // 6. Sắp xếp toàn bộ nhật ký theo mốc thời gian mới nhất lên đầu
+    // 6. Lấy nhật ký Dữ Liệu Game (Logs/GameData/Characters)
+    try {
+      const gameDataLogs = await characterService.getGameDataLogs(limitCount);
+      gameDataLogs.forEach((l) => {
+        allItems.push({
+          id: `gd_${l.id}`,
+          module: "GAMEDATA",
+          moduleName: "Dữ Liệu Game",
+          action: l.action,
+          actionTitle: l.actionTitle,
+          target: l.characterName ? `${l.characterName} (#${l.characterId})` : l.characterId || "Toàn Hệ Thống",
+          details: l.details || l.actionTitle,
+          performedBy: l.performedBy || "Quản Trị Viên",
+          timestamp: l.timestamp || 0,
+          createdAt: l.createdAt || "",
+        });
+      });
+    } catch (err) {
+      console.warn("Lỗi đọc log dữ liệu game trong logsService:", err);
+    }
+
+    // 7. Lấy nhật ký Banner Gacha (Logs/GachaBanners/Activities)
+    try {
+      const gachaLogs = await gachaService.getGachaLogs(limitCount);
+      gachaLogs.forEach((l) => {
+        allItems.push({
+          id: `gacha_${l.id}`,
+          module: "GACHA",
+          moduleName: "Banner Gacha",
+          action: l.action,
+          actionTitle: l.actionTitle,
+          target: l.bannerTitle
+            ? `${l.seasonName} • ${l.bannerTitle}`
+            : l.seasonName || l.seasonId,
+          details: l.details || l.actionTitle,
+          performedBy: l.performedBy || "Quản Trị Viên",
+          timestamp: l.timestamp || 0,
+          createdAt: l.createdAt || "",
+        });
+      });
+    } catch (err) {
+      console.warn("Lỗi đọc log Banner Gacha trong logsService:", err);
+    }
+
+    // 8. Sắp xếp toàn bộ nhật ký theo mốc thời gian mới nhất lên đầu
     allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     return allItems.slice(0, limitCount);

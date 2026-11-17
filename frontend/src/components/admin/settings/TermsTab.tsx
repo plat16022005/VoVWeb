@@ -230,12 +230,12 @@ export default function TermsTab({
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 {tabTitle}
               </h3>
-              <span className="px-2 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30 text-xs font-mono">
-                Firestore: {docPath}
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
+                Hệ Thống Dữ Liệu: Đã Kết Nối
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-1">
-              Mỗi mục được lưu dưới dạng trường riêng (<code className="text-[#3fe9d6]">{prefix}01</code>, <code className="text-[#3fe9d6]">{prefix}02</code>...) gồm <strong className="text-white">Title</strong> và <strong className="text-white">Content</strong>.
+              Mỗi quy định được lưu trữ an toàn gồm <strong className="text-white">Tiêu Đề Mục</strong> và <strong className="text-white">Nội Dung Chi Tiết</strong>.
             </p>
           </div>
 
@@ -360,17 +360,11 @@ export default function TermsTab({
                         {String(realIndex + 1).padStart(2, "0")}
                       </span>
 
-                      {/* Mã trường trong Firestore */}
+                      {/* Tiêu đề số thứ tự quy định */}
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono text-slate-400">Mã Firestore:</span>
-                        <input
-                          type="text"
-                          value={item.id}
-                          disabled={!isAdmin}
-                          onChange={(e) => handleItemChange(realIndex, "id", e.target.value)}
-                          placeholder={`${prefix}01`}
-                          className="w-24 px-2.5 py-1 rounded-lg bg-[#0e122b] border border-white/10 text-[#3fe9d6] font-mono text-xs font-semibold focus:outline-none focus:border-[#3fe9d6] disabled:opacity-60"
-                        />
+                        <span className="text-xs font-mono text-slate-300 font-semibold">
+                          Quy Định #{String(realIndex + 1).padStart(2, "0")}
+                        </span>
                       </div>
                     </div>
 
@@ -499,12 +493,12 @@ export default function TermsTab({
                 <h4 className="text-sm font-bold font-mono text-[#f5c767] uppercase tracking-wider">
                   Nhật Ký Cập Nhật {nameLabel}
                 </h4>
-                <span className="px-2 py-0.5 rounded-full bg-[#f5c767]/15 text-[#f5c767] border border-[#f5c767]/30 text-xs font-mono">
-                  Firestore: Logs/Term&Policy/{type === "policy" ? "Policy" : "Term"}
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
+                  Nhật Ký Trực Tuyến: Đã Kết Nối
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Ghi nhận tự động vào subcollection Logs/Term&Policy/{type === "policy" ? "Policy" : "Term"} mỗi khi xuất bản {nameLabel.toLowerCase()}.
+                Hệ thống tự động ghi nhận nhật ký kiểm toán an toàn mỗi khi xuất bản {nameLabel.toLowerCase()} mới.
               </p>
             </div>
             <button

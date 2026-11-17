@@ -7,9 +7,12 @@ import AccountLogsTable from "../AccountLogsTable";
 import TermsLogsTable from "./TermsLogsTable";
 import BlogLogsTable from "./BlogLogsTable";
 import ServerLogsTable from "./ServerLogsTable";
+import GameDataLogsTable from "./GameDataLogsTable";
+import GachaLogsTable from "./GachaLogsTable";
+import EventLogsTable from "./EventLogsTable";
 import { soundEngine } from "@/services/audio.service";
 
-type ActiveLogTab = "accounts" | "terms" | "policy" | "blogs" | "servers";
+type ActiveLogTab = "accounts" | "terms" | "policy" | "blogs" | "servers" | "gamedata" | "gacha" | "events";
 
 interface LogCategoryGroup {
   groupName: string;
@@ -63,6 +66,32 @@ export default function AdminLogsView() {
           icon: "📰",
           badge: "Blog Audit",
           description: "Thao tác tạo, sửa, xuất bản, gỡ và xóa bài viết tin tức",
+        },
+      ],
+    },
+    {
+      groupName: "Dữ Liệu Game & Chiến Binh",
+      tabs: [
+        {
+          id: "gamedata",
+          label: "Dữ Liệu Game",
+          icon: "⚔️",
+          badge: "Game Data Audit",
+          description: "Thao tác khởi tạo, sửa chỉ số, cập nhật hồ sơ & xóa nhân vật",
+        },
+        {
+          id: "gacha",
+          label: "Banner Gacha",
+          icon: "🌠",
+          badge: "Gacha Audit",
+          description: "Tạo mùa, kích hoạt mùa, cấu hình tỷ lệ quay, Pity & pool Banner Gacha",
+        },
+        {
+          id: "events",
+          label: "Sự Kiện & Minigame",
+          icon: "◆",
+          badge: "Event Audit",
+          description: "Tạo sự kiện, tải bản build Unity (.zip), cập nhật layout (.html) & phần thưởng",
         },
       ],
     },
@@ -142,7 +171,7 @@ export default function AdminLogsView() {
         {/* Page Inner Container (Always Centered) */}
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           {/* Header Description Banner & Quick Selector */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
+          <div className={`p-5 sm:p-6 rounded-2xl bg-[#090c21]/95 backdrop-blur-md border border-white/10 shadow-xl space-y-4 relative transition-all ${isDropdownOpen ? "z-50" : "z-10"}`}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-3">
                 <span className="text-2xl sm:text-3xl p-2.5 rounded-xl bg-white/5 border border-white/10">📜</span>
@@ -182,13 +211,13 @@ export default function AdminLogsView() {
                 {isDropdownOpen && (
                   <>
                     <div
-                      className="fixed inset-0 z-40"
+                      className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
                       onClick={() => setIsDropdownOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-[#090d24] border border-[#3fe9d6]/30 shadow-2xl p-2 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                    <div className="absolute right-0 mt-2 w-72 sm:w-84 rounded-2xl bg-[#080c24] border border-[#3fe9d6]/50 shadow-[0_25px_70px_rgba(0,0,0,0.95)] p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                       <div className="px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 border-b border-white/10 flex items-center justify-between">
                         <span>Chọn Phân Hệ Tra Cứu</span>
-                        <span className="text-[#3fe9d6]">{allTabs.length} Phân Hệ</span>
+                        <span className="text-[#3fe9d6] font-bold">{allTabs.length} Phân Hệ</span>
                       </div>
 
                       <div className="max-h-80 overflow-y-auto space-y-3 p-1 mt-1 custom-scrollbar">
@@ -238,8 +267,8 @@ export default function AdminLogsView() {
             </div>
           </div>
 
-          {/* Sub-Tabs Navigation theo từng Phân Hệ - Bố cục lưới 5 cột vừa khít, xuống dòng tự động, KHÔNG BAO GIỜ bị tràn mép hay cắt chữ */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+          {/* Sub-Tabs Navigation theo từng Phân Hệ - Bố cục lưới cân đối 4 cột */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 relative z-0">
             {allTabs.map((tab) => {
               const active = activeTab === tab.id;
               return (
@@ -298,6 +327,9 @@ export default function AdminLogsView() {
             {activeTab === "policy" && <TermsLogsTable type="policy" />}
             {activeTab === "blogs" && <BlogLogsTable />}
             {activeTab === "servers" && <ServerLogsTable />}
+            {activeTab === "gamedata" && <GameDataLogsTable />}
+            {activeTab === "gacha" && <GachaLogsTable />}
+            {activeTab === "events" && <EventLogsTable />}
           </div>
         </main>
 

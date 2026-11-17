@@ -28,4 +28,6 @@ export interface AdminAccount {
   lastLogin: string;
   lastLoginTimestamp: number;
   banDetails?: BanDetails;
+  permissionGroups?: string[]; // Danh sách nhóm chức năng lớn được cấp (vd: ["content_management"])
+  permissions?: string[];      // Danh sách các quyền nhỏ cụ thể (vd: ["content.blog.view", ...])
 }

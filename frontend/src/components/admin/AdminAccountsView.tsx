@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import StarCanvas from "@/components/common/StarCanvas";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
@@ -392,10 +393,23 @@ export default function AdminAccountsView() {
               </button>
             </div>
 
-            <div className="text-xs font-mono text-slate-400 hidden sm:block">
-              {activeTab === "accounts"
-                ? "Quản lý quyền hạn & trạng thái tài khoản"
-                : "Theo dõi toàn bộ lịch sử thao tác của Quản Trị Viên"}
+            <div className="flex items-center gap-3">
+              <div className="text-xs font-mono text-slate-400 hidden lg:block">
+                {activeTab === "accounts"
+                  ? "Quản lý thông tin & trạng thái tài khoản"
+                  : "Theo dõi toàn bộ lịch sử thao tác của Quản Trị Viên"}
+              </div>
+              <Link
+                href="/admin/permissions"
+                onClick={() => soundEngine.playClick()}
+                className="px-3 py-2 rounded-xl bg-[#090c21] border border-[#3fe9d6]/30 text-[#3fe9d6] hover:text-white hover:border-[#3fe9d6] hover:bg-[#3fe9d6]/10 transition-all text-xs font-mono font-bold flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span>Phân Quyền Quản Trị</span>
+                <span className="px-1.5 py-0.2 rounded bg-[#3fe9d6]/20 text-[#3fe9d6] text-[10px]">RBAC</span>
+              </Link>
             </div>
           </div>
 

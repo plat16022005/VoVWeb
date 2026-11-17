@@ -23,7 +23,7 @@ export default function HeroSection({
       <div className="absolute inset-0 z-0">
         <Image
           src="/images/bg.png"
-          alt="Astral Express Crossing Galaxy"
+          alt="Valkyria of Veyra Epic Background"
           fill
           className="object-cover object-center scale-105 animate-cosmic-float"
           priority

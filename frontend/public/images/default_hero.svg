@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="cosmicBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#1e1848" />
+      <stop offset="45%" stop-color="#0e0c24" />
+      <stop offset="100%" stop-color="#05060f" />
+    </radialGradient>
+    <radialGradient id="auraGlow" cx="50%" cy="38%" r="45%">
+      <stop offset="0%" stop-color="#3fe9d6" stop-opacity="0.35" />
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#05060f" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="coreHalo" cx="50%" cy="35%" r="35%">
+      <stop offset="0%" stop-color="#f5c767" stop-opacity="0.3" />
+      <stop offset="60%" stop-color="#3fe9d6" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#05060f" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Linear Gradients -->
+    <linearGradient id="crestGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe699" />
+      <stop offset="50%" stop-color="#f5c767" />
+      <stop offset="100%" stop-color="#d99a26" />
+    </linearGradient>
+    <linearGradient id="cyanNeon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7f3d0" />
+      <stop offset="50%" stop-color="#3fe9d6" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="armorShade" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#3b3561" />
+      <stop offset="50%" stop-color="#241e42" />
+      <stop offset="100%" stop-color="#131026" />
+    </linearGradient>
+    <linearGradient id="silhouette" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1c1936" />
+      <stop offset="100%" stop-color="#0c0b17" />
+    </linearGradient>
+    <linearGradient id="bottomFade" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#05060f" stop-opacity="0" />
+      <stop offset="70%" stop-color="#05060f" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#05060f" stop-opacity="1" />
+    </linearGradient>
+
+    <!-- Filter for Glow -->
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Layer -->
+  <rect width="600" height="800" fill="url(#cosmicBg)" />
+
+  <!-- Outer Star Constellation Accents -->
+  <g opacity="0.35" stroke="#f5c767" stroke-width="0.8">
+    <circle cx="120" cy="180" r="1.5" fill="#f5c767" />
+    <circle cx="210" cy="110" r="2" fill="#fff" />
+    <circle cx="160" cy="140" r="1.5" fill="#3fe9d6" />
+    <line x1="120" y1="180" x2="160" y2="140" opacity="0.4" />
+    <line x1="160" y1="140" x2="210" y2="110" opacity="0.4" />
+
+    <circle cx="480" cy="170" r="1.5" fill="#f5c767" />
+    <circle cx="420" cy="120" r="2" fill="#fff" />
+    <circle cx="450" cy="220" r="1.5" fill="#3fe9d6" />
+    <line x1="480" y1="170" x2="420" y2="120" opacity="0.4" />
+    <line x1="480" y1="170" x2="450" y2="220" opacity="0.4" />
+  </g>
+
+  <!-- Glowing Nebulae Aura Behind Silhouette -->
+  <circle cx="300" cy="320" r="240" fill="url(#auraGlow)" />
+  <circle cx="300" cy="290" r="160" fill="url(#coreHalo)" />
+
+  <!-- Sacred Magic Circle Rings (Valkyria Halo) -->
+  <g transform="translate(300, 300)" opacity="0.6">
+    <!-- Outer dashed circle -->
+    <circle cx="0" cy="0" r="190" fill="none" stroke="#3fe9d6" stroke-width="1.2" stroke-dasharray="6,8" opacity="0.5" />
+    <!-- Middle geometric diamond ring -->
+    <polygon points="0,-165 165,0 0,165 -165,0" fill="none" stroke="#f5c767" stroke-width="0.8" opacity="0.4" />
+    <polygon points="0,-165 165,0 0,165 -165,0" transform="rotate(45)" fill="none" stroke="#3fe9d6" stroke-width="0.8" opacity="0.3" />
+    <!-- Inner rune ring -->
+    <circle cx="0" cy="0" r="145" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="2,6" opacity="0.6" />
+    <circle cx="0" cy="0" r="130" fill="none" stroke="#f5c767" stroke-width="0.6" opacity="0.5" />
+  </g>
+
+  <!-- Winged Tiara / Celestial Wings Behind Silhouette -->
+  <g transform="translate(300, 270)" opacity="0.85">
+    <!-- Left Wing -->
+    <path d="M-30,-20 C-90,-80 -170,-100 -220,-60 C-180,-30 -130,-10 -60,10 C-120,40 -160,80 -180,120 C-130,90 -80,50 -25,25 Z" fill="url(#crestGold)" opacity="0.25" />
+    <path d="M-25,-15 C-70,-60 -130,-70 -170,-45 C-135,-20 -95,-5 -45,10 Z" fill="url(#cyanNeon)" opacity="0.4" />
+    <!-- Right Wing -->
+    <path d="M30,-20 C90,-80 170,-100 220,-60 C180,-30 130,-10 60,10 C120,40 160,80 180,120 C130,90 80,50 25,25 Z" fill="url(#crestGold)" opacity="0.25" />
+    <path d="M25,-15 C70,-60 130,-70 170,-45 C135,-20 95,-5 45,10 Z" fill="url(#cyanNeon)" opacity="0.4" />
+  </g>
+
+  <!-- Valkyria Silhouette Form -->
+  <!-- Ethereal Flowing Hair Silhouette -->
+  <path d="M300,160 C240,160 210,210 200,280 C190,360 170,440 140,530 C180,510 220,450 230,390 C240,430 260,510 250,580 C270,520 280,440 285,380 L315,380 C320,440 330,520 350,580 C340,510 360,430 370,390 C380,450 420,510 460,530 C430,440 410,360 400,280 C390,210 360,160 300,160 Z" fill="url(#silhouette)" opacity="0.9" />
+
+  <!-- Shoulder Armor & Chestplate Form -->
+  <g>
+    <!-- Left Pauldron -->
+    <path d="M220,380 C160,390 120,440 100,520 C140,525 190,500 235,450 Z" fill="url(#armorShade)" stroke="#f5c767" stroke-width="1.2" opacity="0.75" />
+    <path d="M205,400 C160,420 130,460 120,510" fill="none" stroke="#3fe9d6" stroke-width="0.8" opacity="0.6" />
+
+    <!-- Right Pauldron -->
+    <path d="M380,380 C440,390 480,440 500,520 C460,525 410,500 365,450 Z" fill="url(#armorShade)" stroke="#f5c767" stroke-width="1.2" opacity="0.75" />
+    <path d="M395,400 C440,420 470,460 480,510" fill="none" stroke="#3fe9d6" stroke-width="0.8" opacity="0.6" />
+
+    <!-- Torso / Cuirass -->
+    <path d="M230,420 C230,520 240,620 200,720 L400,720 C360,620 370,520 370,420 C340,445 320,450 300,450 C280,450 260,445 230,420 Z" fill="url(#armorShade)" stroke="#3fe9d6" stroke-width="1" opacity="0.85" />
+
+    <!-- Center Armor Core Gem -->
+    <polygon points="300,465 315,485 300,505 285,485" fill="url(#cyanNeon)" filter="url(#glowEffect)" />
+    <line x1="300" y1="505" x2="300" y2="600" stroke="#f5c767" stroke-width="1" stroke-dasharray="4,4" opacity="0.5" />
+  </g>
+
+  <!-- Neck & Elegant Head Profile -->
+  <path d="M285,320 L285,380 C295,385 305,385 315,380 L315,320 Z" fill="#241e42" />
+  <ellipse cx="300" cy="275" rx="55" ry="70" fill="url(#silhouette)" />
+
+  <!-- Valkyria Winged Circlet / Tiara -->
+  <g transform="translate(300, 235)">
+    <!-- Circlet Band -->
+    <path d="M-55,20 C-25,10 25,10 55,20 C35,28 -35,28 -55,20 Z" fill="url(#crestGold)" stroke="#ffe699" stroke-width="0.8" />
+    <!-- Wing Ear Crests -->
+    <polygon points="-55,18 -105,-20 -60,0" fill="url(#crestGold)" opacity="0.9" />
+    <polygon points="55,18 105,-20 60,0" fill="url(#crestGold)" opacity="0.9" />
+    <!-- Forehead Star Diamond Gem -->
+    <polygon points="0,5 9,18 0,30 -9,18" fill="url(#cyanNeon)" filter="url(#glowEffect)" />
+  </g>
+
+  <!-- Face Glowing Visor / Eyes Accent -->
+  <g opacity="0.85">
+    <path d="M275,270 Q285,268 293,272" stroke="#3fe9d6" stroke-width="2.5" stroke-linecap="round" fill="none" filter="url(#glowEffect)" />
+    <path d="M325,270 Q315,268 307,272" stroke="#3fe9d6" stroke-width="2.5" stroke-linecap="round" fill="none" filter="url(#glowEffect)" />
+  </g>
+
+  <!-- Bottom Fog / Vignette Fade -->
+  <rect y="500" width="600" height="300" fill="url(#bottomFade)" />
+
+  <!-- Decorative Badge & Text Plate at the bottom -->
+  <g transform="translate(300, 710)" text-anchor="middle">
+    <!-- Emblem Diamond -->
+    <polygon points="0,-35 8,-25 0,-15 -8,-25" fill="#f5c767" opacity="0.8" />
+    <line x1="-120" y1="-25" x2="-20" y2="-25" stroke="#f5c767" stroke-width="0.8" opacity="0.5" />
+    <line x1="20" y1="-25" x2="120" y2="-25" stroke="#f5c767" stroke-width="0.8" opacity="0.5" />
+
+    <!-- Title -->
+    <text y="0" font-family="'Rajdhani', sans-serif, system-ui" font-weight="900" font-size="20" letter-spacing="4" fill="#ffffff">
+      VALKYRIA OF VEYRA
+    </text>
+    <!-- Subtitle -->
+    <text y="22" font-family="'Inter', sans-serif, system-ui" font-weight="600" font-size="11" letter-spacing="2" fill="#3fe9d6" opacity="0.9">
+      ✦ HỒ SƠ CHIẾN BINH ✦
+    </text>
+  </g>
+</svg>

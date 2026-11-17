@@ -39,21 +39,78 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Cấu hình thông số tướng (HeroConfigs): Công khai đọc cho game
-    // Admin hoặc Manager đặc quyền điều chỉnh từ Web
-    match /HeroConfigs/{document} {
+    // Cấu hình thông số tướng & Subcollection Profile hiển thị web:
+    // Đọc công khai; Admin/Manager có quyền ghi
+    match /HeroConfigs/{document=**} {
       allow read: if true;
       allow write: if isAdminOrManager();
+    }
+
+    // Dữ liệu danh sách Chiến Binh Valkyria (Characters):
+    // - ĐỌC: Công khai cho khách truy cập website và game client không cần đăng nhập
+    // - GHI: Chỉ Quản Trị Viên (Admin) hoặc Quản Lý (Manager) mới có quyền tạo, cập nhật, xóa
+    match /Characters/{charId} {
+      allow read: if true;
+      allow write: if isAdminOrManager();
+    }
+
+    // Cấu hình vật phẩm, trang bị, nguyên liệu (ItemConfigs): Công khai đọc cho game
+    // Admin hoặc Manager đặc quyền điều chỉnh từ Web
+    match /ItemConfigs/{document} {
+      allow read: if true;
+      allow write: if isAdminOrManager();
+    }
+
+    // Cấu hình Banner Gacha theo mùa (GachaBanners):
+    // Công khai đọc cho Game Client (kể cả trước khi đăng nhập); chỉ Admin hoặc Manager được tạo/sửa từ Web
+    match /GachaBanners/{seasonId} {
+      allow read: if true;
+      allow write: if isAdminOrManager();
+    }
+
+    // Cấu hình máy chủ Gacha & công thức xác suất nội bộ (GachaServerConfigs):
+    // Chỉ Firebase Admin SDK (Cloud Functions / Server) truy cập độc quyền, từ chối mọi truy cập từ Client
+    match /GachaServerConfigs/{document=**} {
+      allow read, write: if false;
     }
 
     // Hồ sơ người dùng (Users):
     // - Cho phép ĐỌC CÔNG KHAI (allow read: if true) để kiểm tra trạng thái tài khoản (IsBanned, Role, Profile) mượt mà mà không bao giờ bị lỗi missing quyền
     // - GHI: Người dùng tự cập nhật hồ sơ của chính mình (request.auth.uid == userId); Admin hoặc Manager có quyền cập nhật, khóa/mở khóa hồ sơ người khác
+    // - CHỐNG LEO THANG ĐẶC QUYỀN: Người dùng thông thường không được tự phong Role hoặc tự gỡ IsBanned
     match /Users/{userId} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == userId || isAdminOrManager()
+      allow create: if request.auth != null && (
+        isAdminOrManager() ||
+        (request.auth.uid == userId &&
+         (!('Role' in request.resource.data) || request.resource.data.Role == 'player') &&
+         (!('IsBanned' in request.resource.data) || request.resource.data.IsBanned == false))
       );
+      allow update: if request.auth != null && (
+        isAdminOrManager() ||
+        (request.auth.uid == userId &&
+         (!('Role' in request.resource.data) || request.resource.data.Role == resource.data.Role) &&
+         (!('IsBanned' in request.resource.data) || request.resource.data.IsBanned == resource.data.IsBanned))
+      );
+      allow delete: if isAdmin();
+
+      // Phân quyền chi tiết cho tài khoản Manager (Subcollection Permissions)
+      match /Permissions/{permissionId} {
+        allow read: if true;
+        allow write: if isAdminOrManager();
+      }
+
+      // Túi đồ người chơi (Subcollection Inventory)
+      match /Inventory/{itemId} {
+        allow read: if true;
+        allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
+      }
+
+      // Trạng thái sự kiện của người chơi (Subcollection EventStates)
+      match /EventStates/{eventId} {
+        allow read: if true;
+        allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
+      }
     }
 
     // Cấu hình hệ thống (SystemConfig): Công khai đọc cho mọi người (Điều khoản, Chính sách, Link tải...)
@@ -76,6 +133,12 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Nhật ký kiểm toán quản trị CMS (AdminAuditLogs): Bảo vệ thông tin nhạy cảm (UpdatedBy, Email Admin...)
+    // Chỉ Admin hoặc Manager mới có quyền đọc và ghi (Zero-Trust)
+    match /AdminAuditLogs/{document=**} {
+      allow read, write: if isAdminOrManager();
+    }
+
     // Kiểm tra dữ liệu bài viết Blog hợp lệ (dùng chung cho create và update)
     function isValidBlog(data) {
       return data.keys().hasAll(['Title', 'Category', 'Content', 'Status', 'AuthorId'])
@@ -90,7 +153,13 @@ service cloud.firestore {
         && (!('AuthorName' in data) || (data.AuthorName is string && data.AuthorName.size() <= 200))
         && (!('CreatedAt' in data) || data.CreatedAt is number)
         && (!('UpdatedAt' in data) || data.UpdatedAt is number)
-        && (!('PublishedAt' in data) || data.PublishedAt == null || data.PublishedAt is number);
+        && (!('PublishedAt' in data) || data.PublishedAt == null || data.PublishedAt is number)
+        && (!('FacebookPostId' in data) || data.FacebookPostId == null || (data.FacebookPostId is string && data.FacebookPostId.size() <= 200))
+        && (!('FacebookPostUrl' in data) || data.FacebookPostUrl == null || (data.FacebookPostUrl is string && data.FacebookPostUrl.size() <= 2048))
+        && (!('FacebookPublishedAt' in data) || data.FacebookPublishedAt == null || data.FacebookPublishedAt is number)
+        && (!('FacebookAutoReplyEnabled' in data) || data.FacebookAutoReplyEnabled == null || data.FacebookAutoReplyEnabled is bool)
+        && (!('FacebookAutoReplyMessage' in data) || data.FacebookAutoReplyMessage == null || (data.FacebookAutoReplyMessage is string && data.FacebookAutoReplyMessage.size() <= 2000))
+        && (!('FacebookRepliedCommentIds' in data) || (data.FacebookRepliedCommentIds is list && data.FacebookRepliedCommentIds.size() <= 5000));
     }
 
     // Bài viết Blog (Blogs):
@@ -105,6 +174,31 @@ service cloud.firestore {
         && isValidBlog(request.resource.data)
         && request.resource.data.AuthorId == resource.data.AuthorId;
       allow delete: if isAdminOrManager();
+
+      // Bình luận Facebook đã được tự động trả lời: chỉ Admin hoặc Manager đọc/ghi
+      match /FacebookRepliedComments/{commentId} {
+        allow read, write: if isAdminOrManager();
+      }
+    }
+
+    // Sự kiện Web & Minigame Unity WebGL (WebEvents):
+    // Công khai đọc cho Web & Game Client (tương tự GachaBanners); chỉ Admin hoặc Manager được tạo/sửa/xóa
+    match /WebEvents/{eventId} {
+      allow read: if true;
+      allow write: if isAdminOrManager();
+
+      // Trạng thái tham gia sự kiện của từng người chơi (PlayerStates)
+      match /PlayerStates/{userId} {
+        allow read: if true;
+        allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
+      }
+
+      // Lịch sử vòng quay / trúng thưởng sự kiện (SpinLogs)
+      match /SpinLogs/{logId} {
+        allow read: if true;
+        allow create, update: if request.auth != null || isAdminOrManager();
+        allow delete: if isAdminOrManager();
+      }
     }
 
   }

@@ -8,6 +8,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   getFirestore,
   addDoc,
   query,
@@ -17,6 +18,7 @@ import {
 import { auth, db, firebaseConfig } from "@/lib/firebase";
 import { normalizeRole } from "./auth.service";
 import { AdminAccount, BanDetails } from "@/data/adminAccounts";
+import { PERMISSION_GROUPS } from "@/data/permissions";
 
 export type AccountLogAction =
   | "CREATE"
@@ -24,7 +26,8 @@ export type AccountLogAction =
   | "BAN"
   | "UNBAN"
   | "DELETE"
-  | "RESET_PASSWORD";
+  | "RESET_PASSWORD"
+  | "UPDATE_PERMISSIONS";
 
 export interface AccountLogItem {
   id: string;
@@ -198,6 +201,8 @@ function mapFirestoreDocToAccount(docId: string, data: any): AdminAccount {
     lastLogin: formattedLastLogin,
     lastLoginTimestamp,
     banDetails,
+    permissionGroups: [],
+    permissions: [],
   };
 }
 
@@ -211,9 +216,31 @@ export const adminService = {
     try {
       const colRef = collection(db, USERS_COLLECTION);
       const snapshot = await getDocs(colRef);
-      return snapshot.docs.map((docSnap) =>
-        mapFirestoreDocToAccount(docSnap.id, docSnap.data())
+      const accounts = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        // Tự động dọn dẹp các trường PermissionGroups, Permissions thừa ở document cha nếu có
+        if (data.PermissionGroups !== undefined || data.Permissions !== undefined) {
+          updateDoc(docSnap.ref, {
+            PermissionGroups: deleteField(),
+            Permissions: deleteField(),
+          }).catch(() => {});
+        }
+        return mapFirestoreDocToAccount(docSnap.id, data);
+      });
+
+      // Tải quyền hạn trực tiếp từ Subcollection Permissions cho các tài khoản Manager
+      const managers = accounts.filter((a) => a.role === "Manager");
+      await Promise.all(
+        managers.map(async (mgr) => {
+          try {
+            const perms = await this.getUserPermissions(mgr.id);
+            mgr.permissionGroups = perms.permissionGroups;
+            mgr.permissions = perms.permissions;
+          } catch {}
+        })
       );
+
+      return accounts;
     } catch (err: any) {
       console.error("Lỗi khi đọc danh sách tài khoản từ Firestore Users:", err);
       throw new Error(err.message || "Không thể tải danh sách tài khoản từ Firebase Firestore");
@@ -685,6 +712,116 @@ export const adminService = {
       targetEmail: updates.email || targetInfo?.email || "",
       details: changeDetails.length > 0 ? `Thay đổi: ${changeDetails.join(", ")}` : "Cập nhật dữ liệu tài khoản.",
     });
+  },
+
+  // 4.1 Cập nhật phân quyền chi tiết lưu vào Subcollection Users/{id}/Permissions/{groupId}
+  async updateAccountPermissions(
+    id: string,
+    permissionsData: {
+      permissionGroups: string[];
+      permissions: string[];
+    },
+    targetInfo?: { username?: string; email?: string }
+  ): Promise<void> {
+    if (!db) throw new Error("Chưa kết nối được Firebase Firestore.");
+
+    // 1. Lưu vào Subcollection: Users/{id}/Permissions/{groupId}
+    for (const group of PERMISSION_GROUPS) {
+      const groupDocRef = doc(db, USERS_COLLECTION, id, "Permissions", group.id);
+      const isGroupEnabled = permissionsData.permissionGroups.includes(group.id);
+
+      if (isGroupEnabled) {
+        const subPerms = permissionsData.permissions.filter((p) =>
+          group.subPermissions.some((sp) => sp.id === p)
+        );
+        await setDoc(
+          groupDocRef,
+          {
+            GroupId: group.id,
+            GroupName: group.title,
+            GroupCode: group.code,
+            IsEnabled: true,
+            SubPermissions: subPerms,
+            GrantedBy: auth?.currentUser?.email || "Admin",
+            UpdatedAt: Date.now(),
+          },
+          { merge: true }
+        );
+      } else {
+        // Nếu không thuộc nhóm -> Xóa doc trong subcollection
+        try {
+          await deleteDoc(groupDocRef);
+        } catch {
+          // Bỏ qua nếu doc chưa từng tồn tại
+        }
+      }
+    }
+
+    // 2. Xóa bỏ hoàn toàn 2 trường PermissionGroups và Permissions ở document cha Users/{id}
+    const docRef = doc(db, USERS_COLLECTION, id);
+    try {
+      await updateDoc(docRef, {
+        PermissionGroups: deleteField(),
+        Permissions: deleteField(),
+      });
+    } catch {
+      // Bỏ qua nếu trường chưa từng tồn tại
+    }
+
+    // 3. Ghi nhật ký phân quyền
+    await this.logActivity({
+      action: "UPDATE_PERMISSIONS",
+      actionTitle: "Phân quyền quản trị",
+      targetUserId: id,
+      targetUsername: targetInfo?.username || "Tài khoản",
+      targetEmail: targetInfo?.email || "",
+      details: `Lưu subcollection Permissions: Cấp ${permissionsData.permissionGroups.length} nhóm lớn, ${permissionsData.permissions.length} quyền nhỏ.`,
+      performedBy: auth?.currentUser?.email || "Admin",
+    });
+  },
+
+  // Đọc danh sách phân quyền từ Subcollection Users/{id}/Permissions
+  async getUserPermissions(id: string): Promise<{ permissionGroups: string[]; permissions: string[] }> {
+    if (!db) return { permissionGroups: [], permissions: [] };
+    try {
+      const subcolRef = collection(db, USERS_COLLECTION, id, "Permissions");
+      const snap = await getDocs(subcolRef);
+      if (!snap.empty) {
+        const permissionGroups: string[] = [];
+        const permissions: string[] = [];
+        snap.docs.forEach((d) => {
+          const data = d.data();
+          if (data.IsEnabled !== false) {
+            permissionGroups.push(d.id);
+            if (Array.isArray(data.SubPermissions)) {
+              permissions.push(...data.SubPermissions);
+            }
+          }
+        });
+        return {
+          permissionGroups: Array.from(new Set(permissionGroups)),
+          permissions: Array.from(new Set(permissions)),
+        };
+      }
+    } catch (err) {
+      console.warn("Lỗi đọc subcollection Permissions:", err);
+    }
+
+    // Tự động dọn sạch 2 trường cũ ở document cha Users/{id} nếu còn sót
+    try {
+      const userSnap = await getDoc(doc(db, USERS_COLLECTION, id));
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        if (data.PermissionGroups !== undefined || data.Permissions !== undefined) {
+          updateDoc(doc(db, USERS_COLLECTION, id), {
+            PermissionGroups: deleteField(),
+            Permissions: deleteField(),
+          }).catch(() => {});
+        }
+      }
+    } catch {}
+
+    return { permissionGroups: [], permissions: [] };
   },
 
   // 5. Khóa tài khoản kèm lý do & trích dẫn điều khoản vi phạm

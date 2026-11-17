@@ -50,11 +50,10 @@ export default function GlobalMaintenanceModal({
         <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                maintenance
+              className={`w-10 h-10 rounded-xl flex items-center justify-center ${maintenance
                   ? "bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.3)]"
                   : "bg-[#f5c767]/10 text-[#f5c767] border border-[#f5c767]/30"
-              }`}
+                }`}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -65,7 +64,7 @@ export default function GlobalMaintenanceModal({
                 CHẾ ĐỘ BẢO TRÌ TOÀN GAME
               </h3>
               <p className="text-xs font-mono text-[#f5c767]">
-                Firestore: GameInfo / Information
+                Cấu Hình Trực Tuyến Toàn Hệ Thống
               </p>
             </div>
           </div>
@@ -114,16 +113,14 @@ export default function GlobalMaintenanceModal({
                 soundEngine.playClick();
                 setMaintenance(!maintenance);
               }}
-              className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none ${
-                maintenance
+              className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none ${maintenance
                   ? "bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]"
                   : "bg-slate-700 hover:bg-slate-600"
-              }`}
+                }`}
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
-                  maintenance ? "translate-x-5" : "translate-x-0"
-                }`}
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${maintenance ? "translate-x-5" : "translate-x-0"
+                  }`}
               />
             </button>
           </div>
@@ -191,11 +188,10 @@ export default function GlobalMaintenanceModal({
             <button
               type="submit"
               disabled={isSaving}
-              className={`px-5 py-2 rounded-xl font-bold text-xs font-mono tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                maintenance
+              className={`px-5 py-2 rounded-xl font-bold text-xs font-mono tracking-wider transition-all cursor-pointer flex items-center gap-2 ${maintenance
                   ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]"
                   : "bg-gradient-to-r from-[#f5c767] to-[#e6a836] text-[#040614] shadow-[0_0_20px_rgba(245,199,103,0.4)]"
-              }`}
+                }`}
             >
               {isSaving ? (
                 <span>Đang lưu...</span>

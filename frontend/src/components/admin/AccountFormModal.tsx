@@ -281,6 +281,14 @@ export default function AccountFormModal({
               )}
             </div>
 
+            {/* Manager Notice */}
+            {role === "Manager" && (
+              <div className="p-2.5 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/20 text-[11px] font-mono text-[#3fe9d6] flex items-center gap-2">
+                <span>🛡️</span>
+                <span>Tài khoản <strong>Manager</strong> có thể được cấp các Nhóm chức năng lớn (Quản Lý Nội Dung...) và cấu hình quyền chi tiết sau khi lưu.</span>
+              </div>
+            )}
+
             {/* Status */}
             <div>
               <label className="block text-xs font-mono text-slate-300 mb-1.5">

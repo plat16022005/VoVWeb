@@ -69,6 +69,11 @@ class SoundEngine {
     }
   }
 
+  // Play success feedback chime
+  playSuccess() {
+    this.playCelestialChime();
+  }
+
   // Toggle ambient BGM chord progression (ethereal space pad)
   toggleBgm(onStateChange?: (playing: boolean) => void) {
     this.initContext();

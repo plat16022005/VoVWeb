@@ -59,20 +59,58 @@ export async function GET(req: NextRequest) {
 
     if (isRealConfigured && pageAccessToken) {
       try {
-        // 1. Luôn truy vấn các trường cốt lõi (Reactions và Comments - hỗ trợ cả Post, Photo, Video, Album)
-        const coreUrl = `https://graph.facebook.com/v19.0/${facebookPostId}?fields=reactions.summary(total_count),comments.summary(total_count)&access_token=${pageAccessToken}`;
-        const coreRes = await fetch(coreUrl, { cache: "no-store" });
-        const coreData = await coreRes.json();
-
-        if (coreData.error) {
-          throw new Error(coreData.error.message || "Lỗi truy vấn Facebook Graph API");
-        }
-
-        const likes = coreData.reactions?.summary?.total_count ?? 0;
-        const comments = coreData.comments?.summary?.total_count ?? 0;
+        let likes = 0;
+        let comments = 0;
         let shares = 0;
 
-        // 2. Thử lấy thêm lượt shares nếu đối tượng hỗ trợ (Feed post hỗ trợ shares, Photo/Video đơn lẻ không có trường này)
+        // 1. Thử lấy reactions hoặc likes summary (Hỗ trợ Post, Photo, Video, Album)
+        try {
+          const rxRes = await fetch(
+            `https://graph.facebook.com/v19.0/${facebookPostId}?fields=reactions.summary(total_count)&access_token=${pageAccessToken}`,
+            { cache: "no-store" }
+          );
+          const rxData = await rxRes.json();
+          if (!rxData.error && rxData.reactions?.summary?.total_count !== undefined) {
+            likes = rxData.reactions.summary.total_count;
+          } else {
+            // Fallback sang likes.summary(true) nếu object không hỗ trợ trường reactions
+            const likeRes = await fetch(
+              `https://graph.facebook.com/v19.0/${facebookPostId}?fields=likes.summary(true)&access_token=${pageAccessToken}`,
+              { cache: "no-store" }
+            );
+            const likeData = await likeRes.json();
+            if (!likeData.error && likeData.likes?.summary?.total_count !== undefined) {
+              likes = likeData.likes.summary.total_count;
+            }
+          }
+        } catch (rxErr) {
+          console.warn("[FacebookAPI] Không thể đọc reactions/likes:", rxErr);
+        }
+
+        // 2. Thử lấy comments summary
+        try {
+          const cmtRes = await fetch(
+            `https://graph.facebook.com/v19.0/${facebookPostId}?fields=comments.summary(total_count)&access_token=${pageAccessToken}`,
+            { cache: "no-store" }
+          );
+          const cmtData = await cmtRes.json();
+          if (!cmtData.error && cmtData.comments?.summary?.total_count !== undefined) {
+            comments = cmtData.comments.summary.total_count;
+          } else {
+            const cmtFallback = await fetch(
+              `https://graph.facebook.com/v19.0/${facebookPostId}?fields=comments.summary(true)&access_token=${pageAccessToken}`,
+              { cache: "no-store" }
+            );
+            const fallbackData = await cmtFallback.json();
+            if (!fallbackData.error && fallbackData.comments?.summary?.total_count !== undefined) {
+              comments = fallbackData.comments.summary.total_count;
+            }
+          }
+        } catch (cmtErr) {
+          console.warn("[FacebookAPI] Không thể đọc comments summary:", cmtErr);
+        }
+
+        // 3. Thử lấy thêm lượt shares nếu đối tượng hỗ trợ (Feed post hỗ trợ shares, Photo/Video đơn lẻ không có trường này)
         try {
           const shareRes = await fetch(
             `https://graph.facebook.com/v19.0/${facebookPostId}?fields=shares&access_token=${pageAccessToken}`,
@@ -99,7 +137,7 @@ export async function GET(req: NextRequest) {
           },
         });
       } catch (err) {
-        console.warn("[FacebookAPI] Lỗi gọi Graph API:", err);
+        console.warn("[FacebookAPI] Lỗi đọc thông số:", err);
       }
     }
 
@@ -126,16 +164,25 @@ export async function GET(req: NextRequest) {
 
     if (isRealConfigured && pageAccessToken) {
       try {
-        const url = `https://graph.facebook.com/v19.0/${facebookPostId}/comments?fields=id,from,message,created_time,like_count,comments{id,from,message,created_time}&limit=30&access_token=${pageAccessToken}`;
-        const res = await fetch(url, { cache: "no-store" });
+        let rawComments = [];
+        const urlWithReplies = `https://graph.facebook.com/v19.0/${facebookPostId}/comments?fields=id,from,message,created_time,like_count,comments{id,from,message,created_time}&filter=toplevel&limit=40&access_token=${pageAccessToken}`;
+        const res = await fetch(urlWithReplies, { cache: "no-store" });
         const data = await res.json();
 
-        if (data.error) {
-          throw new Error(data.error.message || "Lỗi đọc bình luận Facebook");
+        if (!data.error && Array.isArray(data.data)) {
+          rawComments = data.data;
+        } else {
+          // Thử lại với cấu trúc comments phẳng nếu đối tượng không hỗ trợ nested replies
+          const urlSimple = `https://graph.facebook.com/v19.0/${facebookPostId}/comments?fields=id,from,message,created_time,like_count&limit=30&access_token=${pageAccessToken}`;
+          const simpleRes = await fetch(urlSimple, { cache: "no-store" });
+          const simpleData = await simpleRes.json();
+          if (!simpleData.error && Array.isArray(simpleData.data)) {
+            rawComments = simpleData.data;
+          }
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const comments: FacebookComment[] = (data.data || []).map((item: any) => ({
+        const comments: FacebookComment[] = rawComments.map((item: any) => ({
           id: item.id,
           from: {
             id: item.from?.id || "unknown",
@@ -171,6 +218,65 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       comments: [],
+    });
+  }
+
+  // 3. Lấy danh sách toàn bộ bài đăng trực tiếp trên Fanpage (Page Posts Feed)
+  if (action === "posts") {
+    const limit = searchParams.get("limit") || "25";
+
+    if (isRealConfigured && pageAccessToken) {
+      try {
+        // Thử lấy từ published_posts trước
+        let fbUrl = `https://graph.facebook.com/v19.0/${pageId}/published_posts?fields=id,message,story,created_time,full_picture,permalink_url,shares,reactions.summary(total_count),comments.summary(total_count)&limit=${limit}&access_token=${pageAccessToken}`;
+        let res = await fetch(fbUrl, { cache: "no-store" });
+        let data = await res.json();
+
+        // Fallback sang endpoint feed nếu published_posts gặp vấn đề về quyền
+        if (data.error || !Array.isArray(data.data)) {
+          fbUrl = `https://graph.facebook.com/v19.0/${pageId}/feed?fields=id,message,story,created_time,full_picture,permalink_url,shares,reactions.summary(total_count),comments.summary(total_count)&limit=${limit}&access_token=${pageAccessToken}`;
+          res = await fetch(fbUrl, { cache: "no-store" });
+          data = await res.json();
+        }
+
+        if (!data.error && Array.isArray(data.data)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const posts = data.data.map((item: any) => ({
+            id: item.id,
+            message: item.message || item.story || "Bài viết truyền thông chính thức",
+            story: item.story || null,
+            created_time: item.created_time || new Date().toISOString(),
+            full_picture: item.full_picture || null,
+            permalink_url: item.permalink_url || `https://www.facebook.com/${item.id}`,
+            likes: item.reactions?.summary?.total_count || 0,
+            comments: item.comments?.summary?.total_count || 0,
+            shares: item.shares?.count || 0,
+          }));
+
+          return NextResponse.json({
+            success: true,
+            posts,
+            total: posts.length,
+          });
+        }
+
+        if (data.error) {
+          console.warn("[FacebookAPI] Lỗi đọc bài viết Trang:", data.error);
+          return NextResponse.json({
+            success: false,
+            error: data.error.message || "Lỗi truy xuất từ Meta Graph API",
+            posts: [],
+          });
+        }
+      } catch (err) {
+        console.warn("[FacebookAPI] Lỗi kết nối khi lấy bài viết Trang:", err);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      posts: [],
+      message: "Chưa cấu hình hoặc không tìm thấy bài đăng nào.",
     });
   }
 
@@ -280,26 +386,48 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // TRƯỜNG HỢP 2: Đúng 1 ảnh (Ảnh bìa hoặc 1 ảnh bài viết)
+          // TRƯỜNG HỢP 2: Đúng 1 ảnh (Ảnh bìa hoặc 1 ảnh bài viết) -> Xuất bản lên Feed Dòng thời gian
           if (!fbPostId && imageMedia.length === 1) {
             try {
+              // Bước 1: Tải ảnh dạng unpublished (ẩn) vào kho media
               const photoRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   url: imageMedia[0].url,
-                  caption: message,
-                  published: true,
+                  published: false,
                   access_token: pageAccessToken,
                 }),
               });
 
               const photoData = await photoRes.json();
-              if (photoData.post_id || photoData.id) {
-                fbPostId = photoData.post_id || photoData.id;
+              const photoFbid = photoData.id;
+
+              if (photoFbid) {
+                // Bước 2: Xuất bản bài viết Feed chính thức đính kèm ảnh lên Dòng thời gian của Page
+                const feedRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    message,
+                    attached_media: [{ media_fbid: photoFbid }],
+                    published: true,
+                    access_token: pageAccessToken,
+                  }),
+                });
+
+                const feedData = await feedRes.json();
+                if (feedData.id) {
+                  fbPostId = feedData.id;
+                }
+              }
+
+              // Fallback nếu xuất bản feed không được thì dùng post_id của photo
+              if (!fbPostId && photoData.post_id) {
+                fbPostId = photoData.post_id;
               }
             } catch (photoErr) {
-              console.warn("[FacebookAPI] Đăng ảnh đơn thất bại, fallback sang dạng Feed:", photoErr);
+              console.warn("[FacebookAPI] Đăng ảnh đơn lên Feed thất bại, fallback sang dạng Feed thuần túy:", photoErr);
             }
           }
 
@@ -386,13 +514,16 @@ export async function POST(req: NextRequest) {
 
       try {
         const replyUrl = `https://graph.facebook.com/v19.0/${commentId}/comments`;
+        
+        // Chuẩn hóa gửi dạng application/x-www-form-urlencoded bắt buộc của Facebook Graph API đối với bình luận
+        const formData = new URLSearchParams();
+        formData.append("message", message.trim());
+        formData.append("access_token", pageAccessToken);
+
         const fbRes = await fetch(replyUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: message.trim(),
-            access_token: pageAccessToken,
-          }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData.toString(),
         });
 
         const fbData = await fbRes.json();

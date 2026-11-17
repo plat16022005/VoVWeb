@@ -63,8 +63,11 @@ Tài liệu này ghi nhận toàn bộ kiến trúc, bài học và quy chuẩn 
 ---
 
 ## 6. Quy chuẩn Kiến trúc Logs (Audit Logs & Nhật ký Hoạt động)
+- **Phân tách thẩm quyền hiển thị (Tuyệt đối KHÔNG hiển thị Logs ở phân hệ Manager)**:
+  - **Nhật ký hoạt động (Audit Logs) là tính năng bảo mật độc quyền dành riêng cho Quản Trị Viên (Admin)**.
+  - **Tuyệt đối KHÔNG hiển thị tab, nút bấm hoặc bảng tra cứu logs trong bất kỳ trang nào của phân hệ Manager** (`/manager/*`). Phân hệ Manager là khu vực tác nghiệp vận hành, không được phép xem lịch sử kiểm toán hệ thống. Mọi bảng nhật ký chỉ được phép hiển thị tại trang tập trung `/admin/logs` và các phân hệ nội bộ của Admin.
 - **Mô hình 2 cấp độ (Hybrid Architecture)**:
-  - **Cấp độ 1: Log cục bộ (Contextual Logs)**: Tích hợp tab nhật ký trực tiếp bên trong từng phân hệ nghiệp vụ cụ thể (như Sub-tab trong *Quản lý Tài khoản*, *Quản lý Điều khoản & Chính sách*...). Giúp người quản trị tra cứu nhanh lịch sử liên quan mà không phải chuyển trang.
+  - **Cấp độ 1: Log cục bộ (Contextual Logs)**: Tích hợp tab nhật ký trực tiếp bên trong từng phân hệ nghiệp vụ thuộc quyền Admin (như Sub-tab trong *Quản lý Tài khoản*, *Quản lý Điều khoản & Chính sách*...). Giúp Admin tra cứu nhanh lịch sử liên quan mà không phải chuyển trang.
   - **Cấp độ 2: Log tổng hợp (Centralized Logs)**: Xây dựng màn hình tổng hợp độc lập tại `/admin/logs` (`Nhật Ký Hoạt Động`).
 - **Nguyên tắc cấu trúc bảng Log (Quan trọng)**:
   - **TUYỆT ĐỐI KHÔNG gộp chung tất cả các loại log vào một bảng duy nhất** vì mỗi phân hệ có cấu trúc dữ liệu và trường nghiệp vụ hoàn toàn khác nhau (ví dụ: Log Tài khoản có lý do khóa, tài khoản đích; Log Điều khoản có số hiệu phiên bản, số lượng mục...).
@@ -85,6 +88,43 @@ Tài liệu này ghi nhận toàn bộ kiến trúc, bài học và quy chuẩn 
   - Chứa các trường: `Date` (YYYY-MM-DD), `PlayerCount` (chỉ đếm Người Chơi tạo trong ngày đó), `EmailCount`, `GoogleCount`, `GuestCount`, `LastUpdated`.
   - Phục vụ biểu đồ tăng trưởng, phân tích dữ liệu lịch sử theo chuỗi thời gian (time-series).
 - **Lưu ý tiên quyết**: *Chỉ đếm tài khoản Người Chơi (`Role: Player`)*. Tuyệt đối không đếm tài khoản Quản Trị Viên (Admin) hay Quản Lý (Manager) vào các thông số này.
+
+---
+
+## 8. Quy chuẩn Phân Quyền Quản Trị (Manager RBAC & Fine-grained Permissions)
+- **Nguyên tắc Đồng Bộ Bắt Buộc (MANDATORY)**:
+  - Bất cứ khi nào xây dựng một **Chức Năng Lớn** (Module) hoặc một **Cụm Chức Năng Nhỏ** (Sub-features/Actions) mới cho phân hệ **Manager**, **BẮT BUỘC PHẢI CẬP NHẬT ĐỒNG THỜI HỆ THỐNG PHÂN QUYỀN CHO ADMIN**:
+    1. **Khai báo cấu hình**: Khai báo Nhóm lớn (`PermissionGroup`) và danh sách các quyền con (`SubPermission`) trong `src/data/permissions.ts`.
+    2. **Cập nhật giao diện Admin**: Phân hệ Phân Quyền Quản Trị được **tách riêng độc lập tại `/admin/permissions`** (`AdminPermissionsView.tsx`), tách biệt hoàn toàn khỏi Quản Lý Tài Khoản (`/admin/accounts`). Đảm bảo hiển thị nhóm lớn và danh mục quyền nhỏ trong bảng Quản Lý (`ManagerPermissionsTable.tsx`), Modal phân quyền (`AccountPermissionsModal.tsx`), và danh mục quyền hệ thống (`PermissionsGroupsDirectory.tsx`).
+    3. **Ràng buộc kiểm soát phía Manager**: Kiểm tra quyền hiển thị trên `ManagerSidebar.tsx` (`hasPermissionGroup`), chặn route trái phép ở cấp trang (`ManagerPortalView.tsx`), và ẩn/vô hiệu hóa các nút thao tác nhỏ tương ứng (`hasPermission`).
+- **Quy chuẩn Lưu Trữ Dữ Liệu Phân Quyền Firestore**:
+  - **CHỈ LƯU TRONG SUBCOLLECTION `Users/{userId}/Permissions/{groupId}`**:
+    - Mỗi document con đại diện cho một Nhóm chức năng lớn (ID document là `{groupId}`, ví dụ: `content_management`).
+    - Chứa các trường: `GroupId`, `GroupName`, `GroupCode`, `IsEnabled: true`, `SubPermissions: string[]`, `GrantedBy`, `UpdatedAt`.
+  - **TUYỆT ĐỐI KHÔNG lưu các mảng `PermissionGroups` hay `Permissions` trong Document cha `Users/{userId}`** nhằm bảo vệ document cha luôn gọn nhẹ, sạch sẽ và tuân thủ đúng kiến trúc Subcollection.
+
+---
+
+## 9. Quy chuẩn Bảo Mật Thông Tin Giao Diện Quản Trị (UI Information Security & Anonymization)
+- **Tuyệt đối KHÔNG làm lộ chi tiết công nghệ, hạ tầng lưu trữ và mã nội bộ trên giao diện Quản Lý/Người Dùng**:
+  - Không hiển thị tên cơ sở dữ liệu hoặc cơ chế lưu trữ như: `Firestore`, `Subcollection`, `Firebase`, `Firestore Rules`, `Collection`, `Document ID`.
+  - Không hiển thị các mã định danh kỹ thuật nhạy cảm: `Page ID: 1422359914290932`, raw UIDs, API Tokens, `Token vĩnh viễn`, `Access Token`...
+  - Thay thế toàn bộ bằng ngôn ngữ quản trị chuẩn mực, trung lập và thân thiện với người vận hành:
+    - Thay vì *"Lưu Subcollection an toàn"* -> Hiển thị *"Phân quyền tài khoản bảo mật"*.
+    - Thay vì *"Cloud Firestore"* -> Hiển thị *"Hệ Thống Dữ Liệu: Đã Kết Nối"*.
+    - Thay vì *"Page ID: 1422359914290932"* -> Hiển thị *"Kênh Truyền Thông Chính Thức"*.
+    - Thay vì *"Token vĩnh viễn"* -> Hiển thị *"Đã Kết Nối Chính Thức"*.
+    - Thay vì *"Lỗi Firestore Rules"* -> Hiển thị *"Vui lòng kiểm tra quyền truy cập hoặc thử lại sau"*.
+
+---
+
+## 10. Quy chuẩn Tách Biệt Frontend Hiển Thị & Backend Nghiệp Vụ (Zero Frontend Business Logic)
+- **Nguyên tắc bắt buộc (MANDATORY)**:
+  - **Frontend (`frontend/`) chỉ đóng vai trò hiển thị UI và gọi API Backend**: Tuyệt đối **KHÔNG đặt logic nghiệp vụ, validate quy tắc hệ thống, tính toán/xử lý dữ liệu nhạy cảm hay thao tác ghi/xóa Database trực tiếp ở phía Frontend (Client JS)** nhằm tránh lộ toàn bộ logic khi người dùng mở DevTools (F12).
+  - **Backend (`backend/`) nắm toàn bộ logic xử lý**: Mọi quy trình validate dữ liệu đầu vào, kiểm tra quyền (Admin/Manager & Sub-permissions từ Firebase ID Token), CRUD cơ sở dữ liệu, ký URL/xóa file lưu trữ (Cloudflare R2) và ghi Nhật ký Kiểm toán (`Logs`) phải thực thi tập trung ở NestJS Backend (`/api/*`).
+  - Các dữ liệu chưa công khai (ví dụ mùa Banner ở trạng thái bản nháp) phải được bảo vệ chặt chẽ ở tầng Security Rules và API Backend để tránh rò rỉ dữ liệu chưa phát hành.
+
+
 
 
 

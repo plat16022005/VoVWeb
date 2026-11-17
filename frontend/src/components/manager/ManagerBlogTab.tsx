@@ -7,6 +7,7 @@ import FacebookSocialHubModal from "./FacebookSocialHubModal";
 import { soundEngine } from "@/services/audio.service";
 import { useAuth } from "@/services/auth.service";
 import { uploadMediaToR2 } from "@/services/r2Upload.service";
+import { hasPermission } from "@/data/permissions";
 import {
   BLOG_CATEGORIES,
   BlogInput,
@@ -46,6 +47,13 @@ const toForm = (p: BlogPost): BlogInput => ({
 export default function ManagerBlogTab() {
   const currentUser = useAuth();
   const canManage = currentUser?.role === "Admin" || currentUser?.role === "Manager";
+
+  // Phân quyền chi tiết cho cụm Blog & Fanpage
+  const canEdit = currentUser?.role === "Admin" || hasPermission(currentUser, "content.blog.edit");
+  const canPublish = currentUser?.role === "Admin" || hasPermission(currentUser, "content.blog.publish");
+  const canDelete = currentUser?.role === "Admin" || hasPermission(currentUser, "content.blog.delete");
+  const canPublishFB = currentUser?.role === "Admin" || hasPermission(currentUser, "content.facebook.publish");
+  const canViewFB = currentUser?.role === "Admin" || hasPermission(currentUser, "content.facebook.view");
 
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +116,7 @@ export default function ManagerBlogTab() {
     } catch (err) {
       console.error(err);
       setLoadError(
-        "Không thể tải danh sách bài viết. Kiểm tra quyền truy cập (Admin/Manager) và Firestore Rules."
+        "Không thể tải danh sách bài viết. Vui lòng thử lại sau hoặc liên hệ Quản Trị Viên."
       );
     } finally {
       setLoading(false);
@@ -130,7 +138,7 @@ export default function ManagerBlogTab() {
         console.error(err);
         if (active) {
           setLoadError(
-            "Không thể tải danh sách bài viết. Kiểm tra quyền truy cập (Admin/Manager) và Firestore Rules."
+            "Không thể tải danh sách bài viết. Vui lòng thử lại sau hoặc liên hệ Quản Trị Viên."
           );
           setLoading(false);
         }
@@ -263,12 +271,18 @@ export default function ManagerBlogTab() {
       <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-6">
         {/* Danh sách bài viết */}
       <aside className="p-4 rounded-2xl bg-[#090d24]/90 border border-white/10 h-fit space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
-        <button
-          onClick={startNew}
-          className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#f5c767] to-[#e67e22] text-[#060814] hover:brightness-110 transition-all"
-        >
-          + Viết Bài Mới
-        </button>
+        {canEdit ? (
+          <button
+            onClick={startNew}
+            className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#f5c767] to-[#e67e22] text-[#060814] hover:brightness-110 transition-all cursor-pointer shadow-md"
+          >
+            + Viết Bài Mới
+          </button>
+        ) : (
+          <div className="p-2 text-center rounded-xl bg-slate-800/40 border border-slate-700/50 text-[11px] font-mono text-slate-400">
+            🔒 Chế độ xem bài viết
+          </div>
+        )}
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -454,7 +468,7 @@ export default function ManagerBlogTab() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {!isNew && selected && (
+                  {!isNew && selected && ((selected.facebookPostId && canViewFB) || (!selected.facebookPostId && canPublishFB)) && (
                     <button
                       type="button"
                       onClick={() => {
@@ -477,36 +491,41 @@ export default function ManagerBlogTab() {
                     </button>
                   )}
 
-                  {!isNew && (
+                  {!isNew && canDelete && (
                     <button
                       onClick={handleDelete}
                       disabled={busy}
-                      className="px-3 py-2 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 disabled:opacity-40"
+                      className="px-3 py-2 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 disabled:opacity-40 cursor-pointer"
                     >
                       Xóa
                     </button>
                   )}
-                  {selected?.status === "Published" && (
+
+                  {selected?.status === "Published" && canPublish && (
                     <button
                       onClick={handleUnpublish}
                       disabled={busy}
-                      className="px-3 py-2 rounded-xl text-xs bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 disabled:opacity-40"
+                      className="px-3 py-2 rounded-xl text-xs bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 disabled:opacity-40 cursor-pointer"
                     >
                       Gỡ Về Nháp
                     </button>
                   )}
-                  <button
-                    onClick={handleSaveDraft}
-                    disabled={busy || !dirty}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 disabled:opacity-40"
-                  >
-                    {busy ? "Đang lưu..." : selected?.status === "Published" ? "Lưu Thay Đổi" : "Lưu Nháp"}
-                  </button>
-                  {selected?.status !== "Published" && (
+
+                  {canEdit && (
+                    <button
+                      onClick={handleSaveDraft}
+                      disabled={busy || !dirty}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 disabled:opacity-40 cursor-pointer"
+                    >
+                      {busy ? "Đang lưu..." : selected?.status === "Published" ? "Lưu Thay Đổi" : "Lưu Nháp"}
+                    </button>
+                  )}
+
+                  {selected?.status !== "Published" && canPublish && (
                     <button
                       onClick={handlePublish}
                       disabled={busy}
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#3fe9d6] to-[#9b51e0] text-[#060814] hover:brightness-110 disabled:opacity-40"
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#3fe9d6] to-[#9b51e0] text-[#060814] hover:brightness-110 disabled:opacity-40 cursor-pointer"
                     >
                       Xuất Bản
                     </button>

@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   type User,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, deleteField, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { auth, db, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { playersService } from "./players.service";
 
@@ -122,6 +122,8 @@ export interface AuthUser {
   isBanned?: boolean;
   createdAt?: string;
   lastLogin?: string;
+  permissionGroups?: string[];
+  permissions?: string[];
 }
 
 const AUTH_CACHE_KEY = "vov_auth_commander";
@@ -140,12 +142,18 @@ function notifyAuthListeners() {
   authListeners.forEach((fn) => fn());
 }
 
+let managerPermissionsUnsubscribe: (() => void) | null = null;
 let isGlobalAuthInit = false;
 function ensureGlobalAuthInit() {
   if (isGlobalAuthInit || typeof window === "undefined" || !auth) return;
   isGlobalAuthInit = true;
 
   onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+    if (managerPermissionsUnsubscribe) {
+      managerPermissionsUnsubscribe();
+      managerPermissionsUnsubscribe = null;
+    }
+
     if (firebaseUser) {
       let username = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Chỉ Huy";
       let role: UserRole = "Player";
@@ -153,6 +161,8 @@ function ensureGlobalAuthInit() {
       let lastLogin: string | undefined = undefined;
       let isBanned = false;
       let status: "active" | "banned" | "pending" = "active";
+      let permissionGroups: string[] = [];
+      let permissions: string[] = [];
 
       // 1. Kiểm tra trạng thái trong Firestore TRƯỚC TIÊN
       if (db) {
@@ -160,11 +170,41 @@ function ensureGlobalAuthInit() {
           const snap = await getDoc(doc(db, "Users", firebaseUser.uid));
           if (snap.exists()) {
             const data = snap.data();
+            // Tự động dọn dẹp các trường phân quyền cũ còn sót trên document cha
+            if (data.PermissionGroups !== undefined || data.Permissions !== undefined) {
+              updateDoc(doc(db, "Users", firebaseUser.uid), {
+                PermissionGroups: deleteField(),
+                Permissions: deleteField(),
+              }).catch(() => {});
+            }
             isBanned = data.IsBanned === true || data.Status === "banned";
             if (data.Username) username = data.Username;
             if (data.Role) role = normalizeRole(data.Role);
             if (data.CreatedAt) createdAt = data.CreatedAt;
             if (data.LastLogin) lastLogin = data.LastLogin;
+
+            // Đọc trực tiếp từ Subcollection Users/{uid}/Permissions nếu là Manager
+            if (role === "Manager") {
+              try {
+                const subSnap = await getDocs(collection(db, "Users", firebaseUser.uid, "Permissions"));
+                if (!subSnap.empty) {
+                  const subGroups: string[] = [];
+                  const subPerms: string[] = [];
+                  subSnap.docs.forEach((d) => {
+                    const sData = d.data();
+                    if (sData.IsEnabled !== false) {
+                      subGroups.push(d.id);
+                      if (Array.isArray(sData.SubPermissions)) {
+                        subPerms.push(...sData.SubPermissions);
+                      }
+                    }
+                  });
+                  permissionGroups = Array.from(new Set(subGroups));
+                  permissions = Array.from(new Set(subPerms));
+                }
+              } catch {}
+            }
+
             status = isBanned ? "banned" : data.Status === "pending" ? "pending" : "active";
           }
         } catch {
@@ -194,11 +234,52 @@ function ensureGlobalAuthInit() {
         isBanned: false,
         createdAt,
         lastLogin,
+        permissionGroups,
+        permissions,
       };
       try {
         localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(inMemoryUser));
       } catch {}
       notifyAuthListeners();
+
+      // 4. LẮNG NGHE REAL-TIME SUBCOLLECTION PERMISSIONS CHO MANAGER:
+      // Giúp cập nhật phân quyền tức thời khi Admin thay đổi mà không cần đăng xuất/tải lại trang
+      if (role === "Manager" && db) {
+        try {
+          managerPermissionsUnsubscribe = onSnapshot(
+            collection(db, "Users", firebaseUser.uid, "Permissions"),
+            (subSnap) => {
+              const subGroups: string[] = [];
+              const subPerms: string[] = [];
+              subSnap.docs.forEach((d) => {
+                const sData = d.data();
+                if (sData.IsEnabled !== false) {
+                  subGroups.push(d.id);
+                  if (Array.isArray(sData.SubPermissions)) {
+                    subPerms.push(...sData.SubPermissions);
+                  }
+                }
+              });
+              const newGroups = Array.from(new Set(subGroups));
+              const newPerms = Array.from(new Set(subPerms));
+              if (inMemoryUser && inMemoryUser.id === firebaseUser.uid) {
+                inMemoryUser = {
+                  ...inMemoryUser,
+                  permissionGroups: newGroups,
+                  permissions: newPerms,
+                };
+                try {
+                  localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(inMemoryUser));
+                } catch {}
+                notifyAuthListeners();
+              }
+            },
+            (err) => {
+              console.warn("Lỗi realtime sync Permissions:", err);
+            }
+          );
+        } catch {}
+      }
     } else {
       inMemoryUser = null;
       try {
@@ -313,6 +394,11 @@ export const authService = {
           // Bổ sung Provider cho tài khoản cũ chưa có
           if (!existingData.Provider && userData.provider) {
             updates.Provider = userData.provider;
+          }
+          // Tự động dọn dẹp các trường phân quyền cũ còn sót trên document cha
+          if ((existingData as any).PermissionGroups !== undefined || (existingData as any).Permissions !== undefined) {
+            updates.PermissionGroups = deleteField();
+            updates.Permissions = deleteField();
           }
           await setDoc(userDocRef, updates, { merge: true });
 
@@ -450,16 +536,37 @@ export const authService = {
         isNewUser: false,
       });
 
+      // Đọc quyền từ Subcollection Permissions nếu là Manager
+      let permissionGroups: string[] = [];
+      let permissions: string[] = [];
+      const userRole = normalizeRole(firestoreUser?.Role);
+      if (userRole === "Manager" && db) {
+        try {
+          const subSnap = await getDocs(collection(db, "Users", credential.user.uid, "Permissions"));
+          subSnap.docs.forEach((d) => {
+            const sData = d.data();
+            if (sData.IsEnabled !== false) {
+              permissionGroups.push(d.id);
+              if (Array.isArray(sData.SubPermissions)) {
+                permissions.push(...sData.SubPermissions);
+              }
+            }
+          });
+        } catch {}
+      }
+
       return {
         id: credential.user.uid,
         username: firestoreUser?.Username || username,
         email: credential.user.email || data.email,
         level: 1,
-        role: normalizeRole(firestoreUser?.Role),
+        role: userRole,
         status: firestoreUser?.Status || "active",
         isBanned: false,
         createdAt: firestoreUser?.CreatedAt,
         lastLogin: firestoreUser?.LastLogin,
+        permissionGroups: Array.from(new Set(permissionGroups)),
+        permissions: Array.from(new Set(permissions)),
       };
     } catch (err: unknown) {
       if (err instanceof BannedAccountError || (err as any)?.name === "BannedAccountError") {
@@ -528,16 +635,37 @@ export const authService = {
         // Backend optional
       }
 
+      // Đọc quyền từ Subcollection Permissions nếu là Manager
+      let permissionGroups: string[] = [];
+      let permissions: string[] = [];
+      const userRole = normalizeRole(firestoreUser?.Role);
+      if (userRole === "Manager" && db) {
+        try {
+          const subSnap = await getDocs(collection(db, "Users", credential.user.uid, "Permissions"));
+          subSnap.docs.forEach((d) => {
+            const sData = d.data();
+            if (sData.IsEnabled !== false) {
+              permissionGroups.push(d.id);
+              if (Array.isArray(sData.SubPermissions)) {
+                permissions.push(...sData.SubPermissions);
+              }
+            }
+          });
+        } catch {}
+      }
+
       return {
         id: credential.user.uid,
         username: firestoreUser?.Username || username,
         email: credential.user.email || "",
         level: 1,
-        role: normalizeRole(firestoreUser?.Role),
+        role: userRole,
         status: firestoreUser?.Status || "active",
         isBanned: false,
         createdAt: firestoreUser?.CreatedAt,
         lastLogin: firestoreUser?.LastLogin,
+        permissionGroups: Array.from(new Set(permissionGroups)),
+        permissions: Array.from(new Set(permissions)),
       };
     } catch (err: unknown) {
       if (err instanceof BannedAccountError || (err as any)?.name === "BannedAccountError") {

@@ -63,7 +63,7 @@ export default function AdminSettingsView() {
       setPolicyList(pData);
       setGameInfo(gData);
     } catch {
-      showToast("error", "Không thể tải đầy đủ cấu hình từ Firebase Firestore.", "Lỗi Tải Dữ Liệu");
+      showToast("error", "Không thể tải đầy đủ cấu hình từ máy chủ.", "Lỗi Tải Dữ Liệu");
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export default function AdminSettingsView() {
       setTermsList(items);
       showToast(
         "success",
-        `Điều khoản phiên bản ${meta.version} (${items.length} mục) đã được lưu vào GameConfig/Terms và ghi nhật ký Logs.`,
+        `Điều khoản phiên bản ${meta.version} (${items.length} mục) đã được lưu và xuất bản thành công trên hệ thống.`,
         "Xuất Bản Thành Công"
       );
     } catch (err: any) {
@@ -110,7 +110,7 @@ export default function AdminSettingsView() {
       setPolicyList(items);
       showToast(
         "success",
-        `Chính sách phiên bản ${meta.version} (${items.length} mục) đã được lưu vào GameConfig/Policy và ghi nhật ký Logs.`,
+        `Chính sách phiên bản ${meta.version} (${items.length} mục) đã được lưu và xuất bản thành công trên hệ thống.`,
         "Xuất Bản Thành Công"
       );
     } catch (err: any) {
@@ -127,8 +127,8 @@ export default function AdminSettingsView() {
       setGameInfo((prev) => ({ ...prev, ...data }));
       showToast(
         "success",
-        "Thông tin game và link tải đã được lưu vào Firestore.",
-        "Cập Nhật Thành Công"
+        "Thông tin game và liên kết tải đã được cập nhật thành công.",
+        "Đã Cập Nhật"
       );
     } catch (err: any) {
       showToast("error", err?.message || "Lỗi khi lưu thông số game.", "Lỗi Lưu Cấu Hình");
@@ -181,8 +181,8 @@ export default function AdminSettingsView() {
               </div>
               <h1 className="text-lg sm:text-xl font-bold font-[family-name:var(--font-rajdhani)] text-white tracking-wide uppercase flex items-center gap-2.5">
                 CẤU HÌNH HỆ THỐNG & ĐIỀU KHOẢN
-                <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30">
-                  Firebase Live
+                <span className="text-xs font-mono font-normal px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                  Hệ Thống Trực Tuyến
                 </span>
               </h1>
             </div>
@@ -217,8 +217,8 @@ export default function AdminSettingsView() {
                   setActiveTab(tab.id as ActiveTab);
                 }}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-mono whitespace-nowrap transition-all cursor-pointer ${activeTab === tab.id
-                    ? "bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_15px_rgba(63,233,214,0.2)] font-semibold"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                  ? "bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_15px_rgba(63,233,214,0.2)] font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                   }`}
               >
                 <span>{tab.icon}</span>
@@ -300,10 +300,10 @@ export default function AdminSettingsView() {
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
           <div
             className={`px-4 py-3 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-center gap-3 text-xs sm:text-sm font-sans max-w-md ${toast.type === "success"
-                ? "bg-[#0c1822]/95 border-emerald-500/50 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                : toast.type === "error"
-                  ? "bg-[#1f0e14]/95 border-rose-500/50 text-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.3)]"
-                  : "bg-[#0b1324]/95 border-sky-500/50 text-sky-200 shadow-[0_0_20px_rgba(14,165,233,0.3)]"
+              ? "bg-[#0c1822]/95 border-emerald-500/50 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+              : toast.type === "error"
+                ? "bg-[#1f0e14]/95 border-rose-500/50 text-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.3)]"
+                : "bg-[#0b1324]/95 border-sky-500/50 text-sky-200 shadow-[0_0_20px_rgba(14,165,233,0.3)]"
               }`}
           >
             <div className="text-lg">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// Các loại MIME được phép tải lên bài blog
+// Các loại MIME được phép tải lên bài blog & nhân vật
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
@@ -18,15 +18,41 @@ const ALLOWED_VIDEO_TYPES = [
 ];
 
 function slugifyFileName(str: string): string {
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 50) || "file";
+  return (
+    str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 50) || "file"
+  );
+}
+
+function getR2Client() {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucketName = process.env.R2_BUCKET_NAME;
+  const publicDomain =
+    process.env.R2_PUBLIC_DOMAIN || process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
+    return null;
+  }
+
+  const s3 = new S3Client({
+    region: "auto",
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+
+  return { s3, accountId, bucketName, publicDomain };
 }
 
 export async function POST(req: Request) {
@@ -41,8 +67,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const isImage = ALLOWED_IMAGE_TYPES.includes(contentType.toLowerCase());
-    const isVideo = ALLOWED_VIDEO_TYPES.includes(contentType.toLowerCase());
+    const normalizedType = String(contentType).toLowerCase();
+    const isImage = ALLOWED_IMAGE_TYPES.includes(normalizedType);
+    const isVideo = ALLOWED_VIDEO_TYPES.includes(normalizedType);
 
     if (!isImage && !isVideo) {
       return NextResponse.json(
@@ -68,15 +95,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Đọc thông tin cấu hình Cloudflare R2 từ biến môi trường
-    const accountId = process.env.R2_ACCOUNT_ID;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-    const bucketName = process.env.R2_BUCKET_NAME;
-    const publicDomain =
-      process.env.R2_PUBLIC_DOMAIN || process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
-
-    if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
+    const r2 = getR2Client();
+    if (!r2) {
       return NextResponse.json(
         {
           error:
@@ -86,22 +106,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Khởi tạo S3Client kết nối tới Cloudflare R2
-    const s3 = new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
+    const { s3, accountId, bucketName, publicDomain } = r2;
+    const parts = String(filename).split(".");
+    const rawExt = (parts.length > 1 ? parts.pop() : isVideo ? "mp4" : "png")?.toLowerCase() || "png";
 
-    // Tạo đường dẫn lưu trữ có tổ chức: blogs/images/... hoặc blogs/videos/...
     const folder = isVideo ? "videos" : "images";
-    const parts = filename.split(".");
-    const ext = (parts.length > 1 ? parts.pop() : isVideo ? "mp4" : "png")?.toLowerCase();
+    const customFolder =
+      typeof body.folder === "string" && body.folder.trim()
+        ? body.folder.trim().replace(/^\/+|\/+$/g, "")
+        : null;
     const baseName = slugifyFileName(parts.join("."));
-    const key = `blogs/${folder}/${Date.now()}-${baseName}.${ext}`;
+    const key = customFolder
+      ? `${customFolder}/${Date.now()}-${baseName}.${rawExt}`
+      : `blogs/${folder}/${Date.now()}-${baseName}.${rawExt}`;
 
     // Sinh Presigned URL (có hiệu lực trong 5 phút để client tải trực tiếp lên R2)
     const command = new PutObjectCommand({
@@ -112,7 +129,6 @@ export async function POST(req: Request) {
 
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
-    // Tạo link công khai để hiển thị trong bài viết
     const cleanDomain = publicDomain
       ? publicDomain.replace(/\/+$/, "")
       : `https://${bucketName}.${accountId}.r2.dev`;
@@ -133,4 +149,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

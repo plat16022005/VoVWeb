@@ -177,8 +177,8 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 Nhật Ký Quản Trị Tài Khoản
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30 text-xs font-mono">
-                Firestore: Logs/AccountManagement/Activities
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
+                Nhật Ký Trực Tuyến: Đã Kết Nối
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-1">
@@ -245,11 +245,10 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
                     soundEngine.playClick();
                     setSelectedAction(btn.id);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                    active
+                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${active
                       ? "bg-[#3fe9d6] text-black shadow-[0_0_15px_rgba(63,233,214,0.35)]"
                       : "bg-[#0e122b] text-slate-400 hover:text-slate-200 hover:bg-[#151a3b] border border-white/5"
-                  }`}
+                    }`}
                 >
                   <span className="text-xs">{btn.icon}</span>
                   <span>{btn.label}</span>

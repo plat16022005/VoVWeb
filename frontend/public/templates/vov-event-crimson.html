@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Huyết Ấn Chiến Trường — Valkyria of Veyra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --crimson-obsidian: #0a0506;
+      --crimson-surface: #160a0d;
+      --crimson-red: #e14d43;
+      --crimson-deep: #8f1d1d;
+      --brass-gold: #d4a373;
+      --brass-dim: rgba(212, 163, 115, 0.28);
+      --ivory-text: #f3ebe0;
+      --muted-ash: #9f8f8b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--crimson-obsidian);
+      color: var(--ivory-text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    /* Sân khấu chuẩn 960x600 ở chế độ thường & 100vw x 100vh khi Toàn màn hình */
+    #vov-unity-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(165, 29, 36, 0.24) 0%, rgba(20, 9, 12, 0.96) 62%, #070304 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Họa tiết sọc chéo chiến trường & ánh biên huyết ấn */
+    .crimson-hatch {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.45;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(225, 77, 67, 0.045) 0px,
+        rgba(225, 77, 67, 0.045) 1px,
+        transparent 1px,
+        transparent 20px
+      );
+    }
+
+    .crimson-vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      box-shadow: inset 0 0 110px rgba(0, 0, 0, 0.85);
+    }
+
+    /* Khung viền đôi đồng cổ + 4 góc chiến ấn (luôn hiển thị sắc nét quanh khung 960x600) */
+    .crimson-frame {
+      position: fixed;
+      inset: 8px;
+      border: 1px solid rgba(212, 163, 115, 0.24);
+      outline: 1px solid rgba(225, 77, 67, 0.16);
+      outline-offset: -5px;
+      pointer-events: none !important;
+      z-index: 14;
+    }
+
+    .vov-corner {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      pointer-events: none !important;
+      z-index: 16;
+      transition: opacity 0.25s ease;
+    }
+    .vov-corner--tl {
+      top: 8px;
+      left: 8px;
+      border-top: 2px solid var(--crimson-red);
+      border-left: 2px solid var(--crimson-red);
+    }
+    .vov-corner--tr {
+      top: 8px;
+      right: 8px;
+      border-top: 2px solid var(--brass-gold);
+      border-right: 2px solid var(--brass-gold);
+    }
+    .vov-corner--bl {
+      bottom: 8px;
+      left: 8px;
+      border-bottom: 2px solid var(--brass-gold);
+      border-left: 2px solid var(--brass-gold);
+    }
+    .vov-corner--br {
+      bottom: 8px;
+      right: 8px;
+      border-bottom: 2px solid var(--crimson-red);
+      border-right: 2px solid var(--crimson-red);
+    }
+
+    /* Dải HUD biên trên & dưới (không chặn chuột Unity, tự ẩn khi Toàn màn hình) */
+    .vov-hud-top,
+    .vov-hud-bottom {
+      pointer-events: none !important;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .vov-hud-top {
+      background: linear-gradient(180deg, rgba(16, 7, 9, 0.88) 0%, rgba(16, 7, 9, 0) 100%);
+      border-top: 1px solid rgba(212, 163, 115, 0.2);
+    }
+
+    .vov-hud-bottom {
+      background: linear-gradient(0deg, rgba(16, 7, 9, 0.88) 0%, rgba(16, 7, 9, 0) 100%);
+      border-bottom: 1px solid rgba(212, 163, 115, 0.2);
+      color: var(--muted-ash);
+      letter-spacing: 0.16em;
+    }
+
+    .crimson-edition-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--crimson-red);
+      font-weight: 700;
+    }
+
+    .crimson-seal-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--crimson-red);
+      transform: rotate(45deg);
+      display: inline-block;
+    }
+
+    .crimson-hud-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--ivory-text);
+    }
+
+    .crimson-ticket-pill {
+      padding: 3px 10px;
+      background: rgba(24, 10, 13, 0.9);
+      border: 1px solid rgba(225, 77, 67, 0.5);
+      color: var(--brass-gold);
+      font-weight: 600;
+      letter-spacing: 0.16em;
+    }
+
+    .crimson-ticket-pill strong {
+      color: var(--ivory-text);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 14px;
+      margin-left: 4px;
+    }
+
+    /* Màn hình chờ phong cách Biên Niên Huyết Ấn (hiển thị trước khi build Unity chiếm canvas) */
+    .veyra-standby-plate {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 14px;
+      padding: 36px;
+    }
+
+    .crimson-crest-diamond {
+      width: 84px;
+      height: 84px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .crimson-crest-diamond::before,
+    .crimson-crest-diamond::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--crimson-red);
+      transform: rotate(45deg);
+    }
+
+    .crimson-crest-diamond::after {
+      inset: 11px;
+      border-color: var(--brass-gold);
+    }
+
+    .crimson-crest-num {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ivory-text);
+    }
+
+    .crimson-kicker {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: var(--crimson-red);
+    }
+
+    .crimson-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(28px, 4.2vw, 42px);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ivory-text);
+      line-height: 1.15;
+    }
+
+    .crimson-divider {
+      width: 180px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--brass-gold), transparent);
+    }
+
+    .crimson-meta {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-ash);
+    }
+
+    #unity-canvas {
+      position: relative;
+      z-index: 5;
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      background: transparent;
+      outline: none;
+      touch-action: none;
+    }
+
+    /* Tự động chuyển giao diện loading Unity sang tông Huyết Ấn & Đồng Cổ */
+    #vov-unity-loading-overlay {
+      background: radial-gradient(circle at 50% 42%, #240c10 0%, #100608 64%, #070304 100%) !important;
+      color: var(--ivory-text) !important;
+      font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    #vov-unity-progress-text {
+      font-family: 'Cormorant Garamond', Georgia, serif !important;
+      font-size: 36px !important;
+      color: var(--crimson-red) !important;
+    }
+    #vov-unity-progress-bar {
+      background: linear-gradient(90deg, var(--crimson-deep), var(--crimson-red), var(--brass-gold)) !important;
+    }
+    #vov-unity-loading-sub {
+      color: var(--brass-gold) !important;
+      letter-spacing: 0.14em !important;
+      text-transform: uppercase !important;
+      font-size: 10px !important;
+    }
+
+    body.vov-fullscreen-active .crimson-frame,
+    body.is-fullscreen .crimson-frame {
+      opacity: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="crimson-frame"></div>
+  <div class="vov-corner vov-corner--tl"></div>
+  <div class="vov-corner vov-corner--tr"></div>
+  <div class="vov-corner vov-corner--bl"></div>
+  <div class="vov-corner vov-corner--br"></div>
+
+  <div class="vov-hud-top">
+    <span class="crimson-edition-tag">
+      <span class="crimson-seal-dot"></span>
+      <span>HUYẾT ẤN CHIẾN TRƯỜNG</span>
+    </span>
+    <span class="crimson-hud-title" data-vov-title>BIÊN NIÊN SỰ KIỆN VEYRA</span>
+    <span class="crimson-ticket-pill">LƯỢT <strong data-vov-tickets>0</strong></span>
+  </div>
+
+  <div class="vov-hud-bottom">
+    <span id="crimson-commander-label">CHỈ HUY: KHÁCH VÃNG LAI</span>
+    <span>KHUNG CHUẨN 960 × 600 // VEYRA</span>
+  </div>
+
+  <div id="vov-unity-container">
+    <div class="crimson-hatch"></div>
+    <div class="crimson-vignette"></div>
+
+    <div class="veyra-standby-plate" id="veyra-standby-plate">
+      <div class="crimson-crest-diamond">
+        <span class="crimson-crest-num">II</span>
+      </div>
+      <div class="crimson-kicker">VALKYRIA OF VEYRA // CHIẾN TRƯỜNG HUYẾT ẤN</div>
+      <div class="crimson-title" data-vov-title>CHỈ THỊ SỰ KIỆN ĐẶC BIỆT</div>
+      <div class="crimson-divider"></div>
+      <div class="crimson-meta">KHÔNG GIAN TƯƠNG TÁC 960 × 600 · ĐỒNG BỘ CHỈ HUY</div>
+    </div>
+
+    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+  </div>
+
+  <script>
+    (function () {
+      function unlockBrowserAudio() {
+        try {
+          if (
+            window.unityInstance &&
+            window.unityInstance.Module &&
+            window.unityInstance.Module.WEBAudio &&
+            window.unityInstance.Module.WEBAudio.audioContext
+          ) {
+            var ctx = window.unityInstance.Module.WEBAudio.audioContext;
+            if (ctx && ctx.state === "suspended" && typeof ctx.resume === "function") {
+              ctx.resume().catch(function () {});
+            }
+          }
+        } catch (e) {}
+      }
+
+      window.addEventListener("pointerdown", unlockBrowserAudio, { passive: true });
+      window.addEventListener("keydown", unlockBrowserAudio, { passive: true });
+
+      window.addEventListener("vov:state-updated", function (ev) {
+        var detail = ev && ev.detail;
+        var cmdLabel = document.getElementById("crimson-commander-label");
+        if (cmdLabel && detail && detail.username) {
+          cmdLabel.textContent = "CHỈ HUY: " + String(detail.username).toUpperCase();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { soundEngine } from "@/services/audio.service";
 import { blogsService, BlogPost } from "@/services/blogs.service";
@@ -20,10 +20,13 @@ const CATEGORIES = [
   "SỰ KIỆN",
 ] as const;
 
+const ITEMS_PER_PAGE = 4;
+
 export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
   const [newsFilter, setNewsFilter] = useState<string>("TẤT CẢ");
   const [firestorePosts, setFirestorePosts] = useState<BlogPost[]>([]);
   const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Modal read blog state
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
@@ -49,6 +52,11 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
     };
   }, []);
 
+  // Reset về trang 1 mỗi khi đổi tab danh mục
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [newsFilter]);
+
   const formatDate = (ts: number | null) =>
     ts
       ? new Date(ts).toLocaleDateString("vi-VN", {
@@ -64,22 +72,40 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
     setIsModalOpen(true);
   };
 
-  // Filter Firestore Posts
-  const filteredPosts = firestorePosts.filter((p) => {
-    if (newsFilter === "TẤT CẢ") return true;
-    return (
-      p.category.toUpperCase().includes(newsFilter) ||
-      newsFilter.includes(p.category.toUpperCase())
-    );
-  });
+  // Lọc và sắp xếp bài viết theo thời gian mới nhất (Newest first)
+  const sortedFilteredPosts = useMemo(() => {
+    return [...firestorePosts]
+      .filter((p) => {
+        if (newsFilter === "TẤT CẢ") return true;
+        return (
+          p.category.toUpperCase().includes(newsFilter) ||
+          newsFilter.includes(p.category.toUpperCase())
+        );
+      })
+      .sort((a, b) => {
+        const timeA = a.publishedAt || a.updatedAt || a.createdAt || 0;
+        const timeB = b.publishedAt || b.updatedAt || b.createdAt || 0;
+        return timeB - timeA;
+      });
+  }, [firestorePosts, newsFilter]);
 
-  // Bài nổi bật ở cột trái: Bài đầu tiên có ảnh bìa hoặc bài mới nhất trong danh sách lọc
-  const featuredPost = filteredPosts.find((p) => Boolean(p.coverUrl)) || filteredPosts[0] || null;
-  // Các bài viết hiển thị ở cột phải (loại trừ bài đang được feature nếu có từ 2 bài trở lên)
-  const listPosts =
-    filteredPosts.length > 1 && featuredPost
-      ? filteredPosts.filter((p) => p.id !== featuredPost.id)
-      : filteredPosts;
+  // Bài nổi bật ở cột trái: LUÔN LUÔN là bài viết mới nhất
+  const featuredPost = sortedFilteredPosts[0] || null;
+
+  // Danh sách các bài viết còn lại ở cột phải (loại trừ bài nổi bật)
+  const remainingPosts = useMemo(() => {
+    if (!featuredPost) return [];
+    if (sortedFilteredPosts.length <= 1) return [];
+    return sortedFilteredPosts.filter((p) => p.id !== featuredPost.id);
+  }, [sortedFilteredPosts, featuredPost]);
+
+  const totalPages = Math.max(1, Math.ceil(remainingPosts.length / ITEMS_PER_PAGE));
+
+  // 4 bài viết mới nhất theo trang hiện tại
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return remainingPosts.slice(start, start + ITEMS_PER_PAGE);
+  }, [remainingPosts, currentPage]);
 
   return (
     <section
@@ -129,7 +155,7 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
               <div className="h-24 rounded-2xl bg-white/5 border border-white/10" />
             </div>
           </div>
-        ) : filteredPosts.length === 0 ? (
+        ) : sortedFilteredPosts.length === 0 ? (
           /* Empty State khi chưa có bài viết xuất bản */
           <div className="p-12 rounded-2xl bg-[#090d24]/90 border border-white/10 text-center space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
             <div className="text-4xl">📜</div>
@@ -145,7 +171,7 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
         ) : (
           /* News Grid Layout */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Column: Big Featured Event Banner */}
+            {/* Left Column: Big Featured Event Banner (Bài viết mới nhất) */}
             {featuredPost && (
               <div className="lg:col-span-5">
                 <div
@@ -162,8 +188,15 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
                         unoptimized
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-[#090d24] via-[#10173d] to-[#090d24] text-5xl">
-                        📰
+                      <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-tr from-[#090d24] via-[#10173d] to-[#090d24] overflow-hidden">
+                        <Image
+                          src="/images/hero_bg.jpg"
+                          alt={featuredPost.title}
+                          fill
+                          className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#090c1f] via-transparent to-transparent" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#090c1f] via-transparent to-transparent" />
@@ -190,40 +223,117 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
               </div>
             )}
 
-            {/* Right Column: List of News Articles */}
+            {/* Right Column: List of News Articles (Chỉ hiện 4 bài mới nhất mỗi trang, có phân trang) */}
             <div className={`${featuredPost ? "lg:col-span-7" : "lg:col-span-12"} flex flex-col gap-4`}>
-              {listPosts.map((post) => (
-                <div
-                  key={post.id}
-                  onClick={() => handleOpenBlog(post)}
-                  className="hsr-card p-5 hover:bg-[#131938] transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-[#3fe9d6]"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border border-[#3fe9d6]/40 bg-[#3fe9d6]/15 text-[#3fe9d6] uppercase font-[family-name:var(--font-rajdhani)]">
-                        {post.category}
-                      </span>
-                      <span className="text-xs text-slate-400 font-mono">
-                        {formatDate(post.publishedAt || post.createdAt)}
-                      </span>
-                      {post.authorName && (
-                        <span className="text-xs text-slate-500 font-mono hidden sm:inline">
-                          • {post.authorName}
+              {paginatedList.length === 0 ? (
+                <div className="p-8 rounded-xl bg-[#090d24]/60 border border-white/5 text-center text-slate-400 text-xs font-mono">
+                  Chưa có thêm bản tin nào khác trong danh mục này.
+                </div>
+              ) : (
+                paginatedList.map((post) => (
+                  <div
+                    key={post.id}
+                    onClick={() => handleOpenBlog(post)}
+                    className="hsr-card p-5 hover:bg-[#131938] transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-[#3fe9d6]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded border border-[#3fe9d6]/40 bg-[#3fe9d6]/15 text-[#3fe9d6] uppercase font-[family-name:var(--font-rajdhani)]">
+                          {post.category}
                         </span>
-                      )}
+                        <span className="text-xs text-slate-400 font-mono">
+                          {formatDate(post.publishedAt || post.createdAt)}
+                        </span>
+                        {post.authorName && (
+                          <span className="text-xs text-slate-500 font-mono hidden sm:inline">
+                            • {post.authorName}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-white group-hover:text-[#f5c767] transition-colors text-base leading-snug truncate">
+                        {post.title}
+                      </h4>
+                      <p className="text-slate-400 text-xs mt-1.5 line-clamp-2">
+                        {post.excerpt || "Bấm vào để xem chi tiết bài viết..."}
+                      </p>
                     </div>
-                    <h4 className="font-bold text-white group-hover:text-[#f5c767] transition-colors text-base leading-snug truncate">
-                      {post.title}
-                    </h4>
-                    <p className="text-slate-400 text-xs mt-1.5 line-clamp-2">
-                      {post.excerpt || "Bấm vào để xem chi tiết bài viết..."}
-                    </p>
+                    <div className="text-slate-500 group-hover:text-[#f5c767] transition-colors text-xl font-bold flex-shrink-0">
+                      →
+                    </div>
                   </div>
-                  <div className="text-slate-500 group-hover:text-[#f5c767] transition-colors text-xl font-bold flex-shrink-0">
-                    →
+                ))
+              )}
+
+              {/* Pagination Controls (Phân trang cho danh sách bài viết) */}
+              {remainingPosts.length > 0 && (
+                <div className="flex items-center justify-between pt-3 pb-1 border-t border-white/10 px-2 flex-wrap gap-3">
+                  <div className="text-xs font-mono text-slate-400">
+                    Trang <span className="text-[#3fe9d6] font-bold">{currentPage}</span> / <span className="text-white font-bold">{totalPages}</span>{" "}
+                    (Tổng <span className="text-[#f5c767] font-bold">{remainingPosts.length}</span> bài viết)
+                  </div>
+
+                  <div className="flex items-center gap-1.5 font-mono text-xs">
+                    {/* Previous Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (currentPage > 1) {
+                          soundEngine.playClick();
+                          setCurrentPage((p) => Math.max(1, p - 1));
+                        }
+                      }}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1 ${
+                        currentPage === 1
+                          ? "border-white/5 text-slate-600 cursor-not-allowed bg-transparent opacity-40"
+                          : "border-white/10 text-slate-300 hover:text-white hover:border-[#f5c767]/50 hover:bg-[#121636] cursor-pointer"
+                      }`}
+                    >
+                      <span>←</span>
+                      <span className="hidden sm:inline">Trước</span>
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playClick();
+                          setCurrentPage(pageNum);
+                        }}
+                        className={`w-8 h-8 rounded-lg font-bold transition-all cursor-pointer flex items-center justify-center ${
+                          currentPage === pageNum
+                            ? "bg-[#f5c767] text-[#04050d] shadow-[0_0_12px_rgba(245,199,103,0.4)] scale-105"
+                            : "border border-white/10 text-slate-400 hover:text-white hover:border-white/30 hover:bg-white/5"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+
+                    {/* Next Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (currentPage < totalPages) {
+                          soundEngine.playClick();
+                          setCurrentPage((p) => Math.min(totalPages, p + 1));
+                        }
+                      }}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1 ${
+                        currentPage === totalPages
+                          ? "border-white/5 text-slate-600 cursor-not-allowed bg-transparent opacity-40"
+                          : "border-white/10 text-slate-300 hover:text-white hover:border-[#f5c767]/50 hover:bg-[#121636] cursor-pointer"
+                      }`}
+                    >
+                      <span className="hidden sm:inline">Sau</span>
+                      <span>→</span>
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
 
               {/* Newsletter Subscription Box */}
               <div className="mt-4 p-5 rounded-lg bg-gradient-to-r from-[#111636] to-[#0c1029] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">

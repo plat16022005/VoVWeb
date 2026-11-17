@@ -90,8 +90,8 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 Nhật Ký Xuất Bản {label}
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30 text-xs font-mono">
-                Firestore: {path}
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
+                Nhật Ký Trực Tuyến: Đã Kết Nối
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-1">
@@ -194,9 +194,8 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
                   {filteredLogs.map((item, idx) => (
                     <tr
                       key={item.id}
-                      className={`hover:bg-white/[0.02] transition-colors ${
-                        idx === 0 ? "bg-[#3fe9d6]/[0.02]" : ""
-                      }`}
+                      className={`hover:bg-white/[0.02] transition-colors ${idx === 0 ? "bg-[#3fe9d6]/[0.02]" : ""
+                        }`}
                     >
                       {/* Thời gian */}
                       <td className="py-3.5 px-3 whitespace-nowrap text-slate-300">
@@ -252,11 +251,10 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
               {filteredLogs.map((item, idx) => (
                 <div
                   key={item.id}
-                  className={`p-4 rounded-xl border space-y-3 ${
-                    idx === 0
+                  className={`p-4 rounded-xl border space-y-3 ${idx === 0
                       ? "bg-[#0b1329] border-[#3fe9d6]/40"
                       : "bg-[#080b1d] border-white/10"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">

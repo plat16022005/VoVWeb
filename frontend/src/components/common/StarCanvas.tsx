@@ -68,14 +68,15 @@ export default function StarCanvas() {
   }, []);
 
   return (
-    <>
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 pointer-events-none z-0 opacity-70"
+        className="absolute inset-0 w-full h-full opacity-70"
       />
-      {/* Shooting star lines */}
+      {/* Shooting star lines (Bay đúng chiều song song với quỹ đạo rơi) */}
       <div className="shooting-star-1" />
       <div className="shooting-star-2" />
-    </>
+      <div className="shooting-star-3" />
+    </div>
   );
 }

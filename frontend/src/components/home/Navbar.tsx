@@ -43,49 +43,56 @@ export default function Navbar({
         </div>
 
         {/* Navigation Menu */}
-        <nav className="hidden lg:flex items-center gap-8 font-[family-name:var(--font-rajdhani)] text-base tracking-wider uppercase font-semibold">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 font-[family-name:var(--font-rajdhani)] text-base tracking-wider uppercase font-semibold whitespace-nowrap">
           <Link
             href="/"
             onClick={() => soundEngine.playClick()}
-            className="text-[#f5c767] hover:text-[#fff] transition-colors relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#f5c767] after:shadow-[0_0_8px_#f5c767]"
+            className="text-[#f5c767] hover:text-[#fff] transition-colors relative py-1 whitespace-nowrap after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#f5c767] after:shadow-[0_0_8px_#f5c767]"
           >
             Trang Chủ
           </Link>
           <a
             href="#news"
             onClick={() => soundEngine.playClick()}
-            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1"
+            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1 whitespace-nowrap"
           >
             Tin Tức
           </a>
           <a
             href="#characters"
             onClick={() => soundEngine.playClick()}
-            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1"
+            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1 whitespace-nowrap"
           >
             Valkyria
           </a>
           <a
             href="#worlds"
             onClick={() => soundEngine.playClick()}
-            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1"
+            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1 whitespace-nowrap"
           >
             Vùng Đất
           </a>
           <a
             href="#leaderboard"
             onClick={() => soundEngine.playClick()}
-            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1"
+            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1 whitespace-nowrap"
           >
             Bảng Chiến Tích
           </a>
           <a
             href="#milestones"
             onClick={() => soundEngine.playClick()}
-            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1"
+            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1 whitespace-nowrap"
           >
             Phúc Lợi
           </a>
+          <Link
+            href="/events"
+            onClick={() => soundEngine.playClick()}
+            className="text-slate-300 hover:text-[#f5c767] transition-colors py-1 whitespace-nowrap"
+          >
+            Sự Kiện
+          </Link>
         </nav>
 
         {/* Right Controls: Login & Play CTA */}

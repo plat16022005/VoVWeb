@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
-import { BlogPost, blogsService } from "@/services/blogs.service";
+import {
+  BlogPost,
+  blogsService,
+  DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE,
+} from "@/services/blogs.service";
 import {
   facebookSocialService,
   FacebookMetrics,
@@ -10,6 +15,8 @@ import {
 } from "@/services/facebookSocial.service";
 import { soundEngine } from "@/services/audio.service";
 import { formatNumber } from "@/utils/format";
+import { useAuth } from "@/services/auth.service";
+import { hasPermission } from "@/data/permissions";
 import {
   convertBlogToFacebookText,
   extractBlogMedia,
@@ -29,9 +36,18 @@ export default function FacebookSocialHubModal({
   post,
   onPostUpdated,
 }: FacebookSocialHubModalProps) {
+  const currentUser = useAuth();
+  const canPublishFB = currentUser?.role === "Admin" || hasPermission(currentUser, "content.facebook.publish");
+  const canBot = currentUser?.role === "Admin" || hasPermission(currentUser, "content.facebook.bot");
+
   const [activeTab, setActiveTab] = useState<"community" | "publish">(() =>
     post.facebookPostId ? "community" : "publish"
   );
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 1. Tự động trích xuất toàn bộ Media (Ảnh bìa, Ảnh trong bài, Video) theo thứ tự
   const initialMediaList = useMemo(
@@ -71,17 +87,286 @@ export default function FacebookSocialHubModal({
   const [activeReplyBoxId, setActiveReplyBoxId] = useState<string | null>(null);
   const [sendingReplyId, setSendingReplyId] = useState<string | null>(null);
 
+  // Auto-Reply Bot State
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState<boolean>(() =>
+    Boolean(post.facebookAutoReplyEnabled)
+  );
+  const [autoReplyMessage, setAutoReplyMessage] = useState<string>(() =>
+    post.facebookAutoReplyMessage || DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE
+  );
+  const [repliedCommentIds, setRepliedCommentIds] = useState<string[]>(() =>
+    post.facebookRepliedCommentIds || []
+  );
+  const [isSavingAutoReply, setIsSavingAutoReply] = useState(false);
+  const [autoReplySaveSuccess, setAutoReplySaveSuccess] = useState<string | null>(null);
+  const [isBatchReplying, setIsBatchReplying] = useState(false);
+  const [batchReplyNotice, setBatchReplyNotice] = useState<string | null>(null);
+  const autoReplyTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastProcessedCommentsKey = useRef<string>("");
+
+  // Đồng bộ cấu hình auto-reply khi post thay đổi
+  useEffect(() => {
+    setAutoReplyEnabled(Boolean(post.facebookAutoReplyEnabled));
+    setAutoReplyMessage(
+      post.facebookAutoReplyMessage || DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE
+    );
+    setRepliedCommentIds(post.facebookRepliedCommentIds || []);
+  }, [
+    post.facebookAutoReplyEnabled,
+    post.facebookAutoReplyMessage,
+    post.facebookRepliedCommentIds,
+  ]);
+
+  // Kiểm tra bình luận đã có reply của Fanpage chưa
+  const isAlreadyRepliedByPage = useCallback(
+    (cmt: FacebookCommentItem): boolean => {
+      // Đã có trong danh sách ID đã rep ở Firestore
+      if (repliedCommentIds.includes(cmt.id)) return true;
+      // Đã có sub-reply từ Official/Fanpage
+      if (cmt.replies && cmt.replies.length > 0) {
+        const hasOfficialReply = cmt.replies.some((r) => {
+          const author = (r.from?.name || "").toLowerCase();
+          return (
+            author.includes("official") ||
+            author.includes("valkyria") ||
+            author.includes("veyra") ||
+            author.includes("admin")
+          );
+        });
+        if (hasOfficialReply) return true;
+      }
+      return false;
+    },
+    [repliedCommentIds]
+  );
+
+  // Danh sách các bình luận hợp lệ đang chờ được trả lời tự động
+  const pendingCandidateComments = useMemo(() => {
+    return comments.filter((c) => !isAlreadyRepliedByPage(c));
+  }, [comments, isAlreadyRepliedByPage]);
+
+  // Hàm thực thi tự động trả lời bình luận (Batch Auto-Reply)
+  const handleRunBatchAutoReply = useCallback(
+    async (
+      candidatesToReply?: FacebookCommentItem[],
+      templateOverride?: string
+    ) => {
+      const candidates = candidatesToReply ?? pendingCandidateComments;
+      const template = (templateOverride ?? autoReplyMessage).trim();
+
+      if (!candidates || candidates.length === 0) {
+        setBatchReplyNotice("Hiện không có bình luận mới nào cần trả lời.");
+        setTimeout(() => setBatchReplyNotice(null), 3500);
+        return;
+      }
+
+      if (!template) {
+        setBatchReplyNotice("Vui lòng nhập nội dung mẫu tin nhắn tự động trả lời.");
+        setTimeout(() => setBatchReplyNotice(null), 3500);
+        return;
+      }
+
+      setIsBatchReplying(true);
+      setBatchReplyNotice(`Đang tự động trả lời ${candidates.length} bình luận...`);
+
+      const newlyRepliedIds: string[] = [];
+      const updatedRepliesMap: Record<string, { id: string; message: string }> = {};
+
+      try {
+        for (const cmt of candidates) {
+          const userDisplayName = cmt.from?.name || "Chỉ Huy";
+          const customizedText = template
+            .replace(/\{name\}/g, userDisplayName)
+            .replace(/\{post_title\}/g, post.title)
+            .trim();
+
+          try {
+            const res = await facebookSocialService.replyComment(cmt.id, customizedText);
+            if (res.success) {
+              newlyRepliedIds.push(cmt.id);
+              updatedRepliesMap[cmt.id] = {
+                id: res.replyId || `auto-${Date.now()}-${cmt.id}`,
+                message: customizedText,
+              };
+            }
+          } catch (replyErr) {
+            console.warn(`Lỗi khi auto-reply comment ${cmt.id}:`, replyErr);
+          }
+        }
+
+        if (newlyRepliedIds.length > 0) {
+          try {
+            const combined = await blogsService.addFacebookRepliedCommentIds(
+              post.id,
+              newlyRepliedIds
+            );
+            setRepliedCommentIds(combined);
+            onPostUpdated({
+              ...post,
+              facebookRepliedCommentIds: combined,
+            });
+          } catch (dbErr) {
+            console.warn("Không thể lưu cache comment ID vào Firestore:", dbErr);
+            setRepliedCommentIds((prev) =>
+              Array.from(new Set([...prev, ...newlyRepliedIds]))
+            );
+          }
+
+          // Cập nhật UI comments local ngay tức thì
+          setComments((prev) =>
+            prev.map((c) => {
+              if (updatedRepliesMap[c.id]) {
+                const currentSub = c.replies || [];
+                return {
+                  ...c,
+                  replies: [
+                    ...currentSub,
+                    {
+                      id: updatedRepliesMap[c.id].id,
+                      from: { name: "Valkyria of Veyra (Official)" },
+                      message: updatedRepliesMap[c.id].message,
+                      created_time: new Date().toISOString(),
+                    },
+                  ],
+                };
+              }
+              return c;
+            })
+          );
+
+          soundEngine.playCelestialChime();
+          setBatchReplyNotice(
+            `✓ Đã tự động trả lời ${newlyRepliedIds.length} bình luận thành công!`
+          );
+        } else {
+          setBatchReplyNotice("Không thể gửi phản hồi tự động. Vui lòng kiểm tra quyền truy cập Facebook.");
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Lỗi xử lý tự động trả lời";
+        setBatchReplyNotice(`✕ ${msg}`);
+      } finally {
+        setIsBatchReplying(false);
+        setTimeout(() => setBatchReplyNotice(null), 5000);
+      }
+    },
+    [pendingCandidateComments, autoReplyMessage, post, onPostUpdated]
+  );
+
+  // Lưu cấu hình Auto-Reply vào Firestore
+  const handleSaveAutoReplyConfig = async (
+    nextEnabled?: boolean,
+    nextMessage?: string
+  ) => {
+    const enabledToSave =
+      typeof nextEnabled === "boolean" ? nextEnabled : autoReplyEnabled;
+    const msgToSave =
+      typeof nextMessage === "string" ? nextMessage : autoReplyMessage;
+
+    setIsSavingAutoReply(true);
+    setAutoReplySaveSuccess(null);
+    try {
+      await blogsService.updateFacebookAutoReply(post.id, enabledToSave, msgToSave);
+      const updated: BlogPost = {
+        ...post,
+        facebookAutoReplyEnabled: enabledToSave,
+        facebookAutoReplyMessage: msgToSave,
+      };
+      onPostUpdated(updated);
+      soundEngine.playCelestialChime();
+      setAutoReplySaveSuccess(
+        enabledToSave
+          ? "✓ Đã kích hoạt & lưu cấu hình tự động trả lời!"
+          : "✓ Đã lưu cấu hình (tự động trả lời đang TẮT)."
+      );
+      setTimeout(() => setAutoReplySaveSuccess(null), 4000);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Lỗi lưu cấu hình tự động trả lời");
+    } finally {
+      setIsSavingAutoReply(false);
+    }
+  };
+
+  // Toggle Bật / Tắt Auto-Reply
+  const handleToggleAutoReply = async () => {
+    if (!canBot) {
+      alert("Tài khoản chưa được cấp quyền điều chỉnh Bot Auto-Reply.");
+      return;
+    }
+    soundEngine.playClick();
+    const next = !autoReplyEnabled;
+    setAutoReplyEnabled(next);
+    await handleSaveAutoReplyConfig(next, autoReplyMessage);
+    // Nếu vừa BẬT và có bình luận đang chờ, kích hoạt trả lời ngay
+    if (next && pendingCandidateComments.length > 0) {
+      handleRunBatchAutoReply(pendingCandidateComments, autoReplyMessage);
+    }
+  };
+
+  // Chèn thẻ placeholder vào tin nhắn mẫu
+  const handleInsertPlaceholder = (placeholder: string) => {
+    soundEngine.playClick();
+    const textarea = autoReplyTextareaRef.current;
+    if (!textarea) {
+      setAutoReplyMessage((prev) => prev + " " + placeholder);
+      return;
+    }
+    const start = textarea.selectionStart || 0;
+    const end = textarea.selectionEnd || 0;
+    const before = autoReplyMessage.substring(0, start);
+    const after = autoReplyMessage.substring(end);
+    const updated = `${before}${placeholder}${after}`;
+    setAutoReplyMessage(updated);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + placeholder.length;
+    }, 10);
+  };
+
+  // Khôi phục tin nhắn mẫu mặc định
+  const handleResetToDefaultTemplate = () => {
+    soundEngine.playClick();
+    setAutoReplyMessage(DEFAULT_FACEBOOK_AUTO_REPLY_MESSAGE);
+  };
+
+  // Tự động quét và rep comment mới khi mở modal hoặc refresh bình luận nếu bot đang BẬT
+  useEffect(() => {
+    if (!autoReplyEnabled || !isOpen || isBatchReplying) return;
+    if (comments.length === 0) return;
+
+    // Tránh quét liên tục nếu tập hợp comment không thay đổi
+    const currentKey = comments.map((c) => c.id).join(",");
+    if (currentKey === lastProcessedCommentsKey.current) return;
+
+    const unreplied = comments.filter((c) => !isAlreadyRepliedByPage(c));
+    if (unreplied.length > 0) {
+      lastProcessedCommentsKey.current = currentKey;
+      const timer = setTimeout(() => {
+        handleRunBatchAutoReply(unreplied, autoReplyMessage);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    comments,
+    autoReplyEnabled,
+    isOpen,
+    isBatchReplying,
+    isAlreadyRepliedByPage,
+    autoReplyMessage,
+    handleRunBatchAutoReply,
+  ]);
+
   // Tải dữ liệu tương tác & bình luận khi mở tab Community
   const loadCommunityData = useCallback(async (overridePostId?: unknown) => {
     const targetPostId = typeof overridePostId === "string" ? overridePostId : post.facebookPostId;
     if (!targetPostId || targetPostId === "[object Object]") return;
     setIsLoadingCommunity(true);
     try {
-      const [metricsData, commentsData] = await Promise.all([
+      const [metricsData, commentsData, storedRepliedIds] = await Promise.all([
         facebookSocialService.getMetrics(targetPostId).catch(() => null),
         facebookSocialService.getComments(targetPostId).catch(() => ({
           comments: [],
         })),
+        blogsService.getFacebookRepliedCommentIds(post.id).catch(() => []),
       ]);
 
       if (metricsData) {
@@ -90,12 +375,15 @@ export default function FacebookSocialHubModal({
       if (commentsData) {
         setComments(commentsData.comments || []);
       }
+      if (storedRepliedIds && storedRepliedIds.length > 0) {
+        setRepliedCommentIds(storedRepliedIds);
+      }
     } catch (err) {
       console.warn("Lỗi tải tương tác Facebook:", err);
     } finally {
       setIsLoadingCommunity(false);
     }
-  }, [post.facebookPostId]);
+  }, [post.facebookPostId, post.id]);
 
   useEffect(() => {
     if (!isOpen || !post.facebookPostId) return;
@@ -106,13 +394,17 @@ export default function FacebookSocialHubModal({
       facebookSocialService.getComments(post.facebookPostId).catch(() => ({
         comments: [],
       })),
-    ]).then(([metricsData, commentsData]) => {
+      blogsService.getFacebookRepliedCommentIds(post.id).catch(() => []),
+    ]).then(([metricsData, commentsData, storedRepliedIds]) => {
       if (!active) return;
       if (metricsData) {
         setMetrics(metricsData);
       }
       if (commentsData) {
         setComments(commentsData.comments || []);
+      }
+      if (storedRepliedIds && storedRepliedIds.length > 0) {
+        setRepliedCommentIds(storedRepliedIds);
       }
       setIsLoadingCommunity(false);
     });
@@ -126,6 +418,10 @@ export default function FacebookSocialHubModal({
 
   // Xử lý đăng bài lên Facebook
   const handlePublish = async () => {
+    if (!canPublishFB) {
+      setPublishError("Tài khoản chưa được cấp quyền đăng bài lên Fanpage Facebook.");
+      return;
+    }
     soundEngine.playClick();
     setIsPublishing(true);
     setPublishError(null);
@@ -214,8 +510,10 @@ export default function FacebookSocialHubModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in font-mono">
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in font-mono">
       <div className="relative w-full max-w-4xl max-h-[92vh] rounded-3xl bg-[#070a1e] border border-[#1877F2]/40 shadow-[0_0_60px_rgba(24,119,242,0.3)] flex flex-col overflow-hidden">
         {/* Header Bar */}
         <div className="p-5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#0c1438] via-[#080d24] to-[#0c1438]">
@@ -368,6 +666,190 @@ export default function FacebookSocialHubModal({
                 </div>
               </div>
 
+              {/* CARD: TỰ ĐỘNG TRẢ LỜI BÌNH LUẬN (AUTO-REPLY BOT) */}
+              <div
+                className={`p-5 rounded-2xl transition-all duration-300 border ${
+                  autoReplyEnabled
+                    ? "bg-gradient-to-b from-[#09152b] via-[#070e22] to-[#060a1a] border-[#10b981]/40 shadow-[0_0_35px_rgba(16,185,129,0.18)]"
+                    : "bg-[#080c24] border-white/10"
+                } space-y-4`}
+              >
+                {/* Header Card: Icon, Title & Toggle Switch */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl transition-all ${
+                        autoReplyEnabled
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                          : "bg-white/5 text-slate-400 border border-white/10"
+                      }`}
+                    >
+                      🤖
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                          Tự Động Trả Lời Bình Luận (Auto-Reply Bot)
+                        </h4>
+                        {autoReplyEnabled ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            ACTIVE
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-bold">
+                            OFF
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Tự động phản hồi bình luận mới của Chỉ Huy dưới danh nghĩa Fanpage
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* TOGGLE SWITCH BẬT / TẮT */}
+                  <div className="flex items-center gap-3 self-end sm:self-auto">
+                    <span
+                      className={`text-xs font-bold font-mono transition-colors ${
+                        autoReplyEnabled ? "text-emerald-400" : "text-slate-400"
+                      }`}
+                    >
+                      {autoReplyEnabled ? "ĐANG BẬT" : "ĐANG TẮT"}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={autoReplyEnabled}
+                      onClick={handleToggleAutoReply}
+                      disabled={isSavingAutoReply || !canBot}
+                      title={canBot ? "Bật / tắt bot tự động" : "Bạn chưa được cấp quyền điều chỉnh Bot Auto-Reply"}
+                      className={`relative inline-flex h-7 w-14 shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                        !canBot ? "cursor-not-allowed" : "cursor-pointer"
+                      } ${
+                        autoReplyEnabled
+                          ? "bg-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+                          : "bg-slate-800 border-slate-700"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out mt-0.5 ${
+                          autoReplyEnabled ? "translate-x-7" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Form Soạn Mẫu Tin Nhắn Trả Lời Tự Động */}
+                <div className="space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <span>✍️</span>
+                      <span>Mẫu Tin Nhắn Tự Động:</span>
+                    </label>
+
+                    {/* Quick Insert Placeholders */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="text-slate-400 text-[10px]">Chèn biến:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleInsertPlaceholder("{name}")}
+                        className="px-2 py-0.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-[#3fe9d6] border border-cyan-500/30 font-mono transition-colors cursor-pointer"
+                        title="Chèn tên của người bình luận"
+                      >
+                        + &#123;name&#125;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInsertPlaceholder("{post_title}")}
+                        className="px-2 py-0.5 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] border border-[#1877F2]/30 font-mono transition-colors cursor-pointer"
+                        title="Chèn tiêu đề bài viết"
+                      >
+                        + &#123;post_title&#125;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetToDefaultTemplate}
+                        className="px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                        title="Khôi phục lại tin nhắn mẫu mặc định"
+                      >
+                        ↺ Mặc định
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    ref={autoReplyTextareaRef}
+                    value={autoReplyMessage}
+                    onChange={(e) => setAutoReplyMessage(e.target.value)}
+                    rows={3}
+                    placeholder="Nhập nội dung tin nhắn bot sẽ gửi tự động đến Chỉ Huy..."
+                    className="w-full p-3 rounded-xl bg-[#050716] border border-white/10 focus:border-[#3fe9d6] text-xs text-white placeholder-slate-500 focus:outline-none transition-all leading-relaxed font-sans"
+                  />
+
+                  <p className="text-[10px] text-slate-400 leading-normal">
+                    💡 <strong className="text-slate-300">&#123;name&#125;</strong> sẽ được tự động thay thế bằng tên của Chỉ Huy để lại bình luận. Mỗi bình luận chỉ được trả lời một lần duy nhất.
+                  </p>
+                </div>
+
+                {/* Feedback Alerts */}
+                {autoReplySaveSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
+                    <span>✓</span>
+                    <span>{autoReplySaveSuccess}</span>
+                  </div>
+                )}
+
+                {batchReplyNotice && (
+                  <div className="p-3 rounded-xl bg-[#1877F2]/10 border border-[#1877F2]/30 text-cyan-300 text-xs flex items-center gap-2 animate-fade-in">
+                    <span className="animate-spin">⚙</span>
+                    <span>{batchReplyNotice}</span>
+                  </div>
+                )}
+
+                {/* Footer Bar: Thống kê & Thao tác */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/5">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300 font-mono">
+                      🛡️ Đã rep: <strong className="text-white">{repliedCommentIds.length}</strong>
+                    </span>
+
+                    {pendingCandidateComments.length > 0 ? (
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[#f5c767] font-mono">
+                        ⏳ <strong>{pendingCandidateComments.length}</strong> bình luận mới đang chờ
+                      </span>
+                    ) : (
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono">
+                        ✓ Đã phản hồi tất cả
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveAutoReplyConfig()}
+                      disabled={isSavingAutoReply}
+                      className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <span>💾</span>
+                      <span>{isSavingAutoReply ? "Đang lưu..." : "Lưu Cấu Hình"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRunBatchAutoReply()}
+                      disabled={isBatchReplying || pendingCandidateComments.length === 0}
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#0ea5e9] hover:from-[#166fe5] hover:to-[#0284c7] text-white text-xs font-bold shadow-[0_0_15px_rgba(24,119,242,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                      <span>⚡</span>
+                      <span>{isBatchReplying ? "Đang quét..." : "Quét & Trả Lời Ngay"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Comments Section */}
               <div className="p-5 rounded-2xl bg-[#090d26] border border-white/10 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -472,8 +954,27 @@ export default function FacebookSocialHubModal({
                         )}
 
                         {/* Reply Action Trigger */}
-                        <div className="pl-10 pt-1 flex items-center gap-3">
+                        <div className="pl-10 pt-1 flex flex-wrap items-center gap-2.5">
+                          {isAlreadyRepliedByPage(cmt) ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono flex items-center gap-1">
+                              <span>✓</span>
+                              <span>Đã có phản hồi</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRunBatchAutoReply([cmt])}
+                              disabled={isBatchReplying}
+                              className="text-[10px] px-2.5 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                              title="Gửi ngay mẫu tin nhắn tự động cho bình luận này"
+                            >
+                              <span>🤖</span>
+                              <span>Gửi tin nhắn mẫu bot</span>
+                            </button>
+                          )}
+
                           <button
+                            type="button"
                             onClick={() => {
                               soundEngine.playClick();
                               setActiveReplyBoxId(activeReplyBoxId === cmt.id ? null : cmt.id);
@@ -481,7 +982,7 @@ export default function FacebookSocialHubModal({
                             className="text-[11px] font-bold text-[#1877F2] hover:text-[#3fe9d6] transition-colors cursor-pointer flex items-center gap-1"
                           >
                             <span>↩</span>
-                            <span>{activeReplyBoxId === cmt.id ? "Hủy Phản Hồi" : "Trả lời dưới danh nghĩa Fanpage"}</span>
+                            <span>{activeReplyBoxId === cmt.id ? "Hủy Soạn" : "Trả lời thủ công"}</span>
                           </button>
                         </div>
 
@@ -732,8 +1233,8 @@ export default function FacebookSocialHubModal({
 
                     {/* Footer Box */}
                     <div className="p-2.5 bg-[#070918] border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                      <span>Fanpage: 1422359914290932</span>
-                      <span className="text-[#3fe9d6]">Meta Graph v19.0</span>
+                      <span>Fanpage: Valkyria of Veyra Official</span>
+                      <span className="text-[#3fe9d6]">Kênh Truyền Thông Chính Thức</span>
                     </div>
                   </div>
                 </div>
@@ -772,6 +1273,7 @@ export default function FacebookSocialHubModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
