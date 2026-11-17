@@ -15,6 +15,7 @@ import { soundEngine } from "@/services/audio.service";
 import { formatNumber } from "@/utils/format";
 import { useAuth } from "@/services/auth.service";
 import { hasPermission } from "@/data/permissions";
+import GameLogo from "@/components/common/GameLogo";
 
 export default function ManagerFacebookTab() {
   const currentUser = useAuth();
@@ -583,8 +584,11 @@ export default function ManagerFacebookTab() {
                           unoptimized
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs font-bold">
-                          VoV
+                        <div className="w-full h-full flex items-center justify-center p-1.5 bg-[#070a1c]">
+                          <GameLogo
+                            className="w-full h-full opacity-85 group-hover:scale-105 transition-transform duration-300"
+                            sizes="80px"
+                          />
                         </div>
                       )}
                       <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/70 text-slate-300 backdrop-blur-sm">

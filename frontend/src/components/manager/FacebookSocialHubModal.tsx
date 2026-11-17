@@ -22,6 +22,7 @@ import {
   extractBlogMedia,
   ExtractedMediaItem,
 } from "@/utils/facebookFormatter";
+import GameLogo from "@/components/common/GameLogo";
 
 interface FacebookSocialHubModalProps {
   isOpen: boolean;
@@ -1188,8 +1189,8 @@ export default function FacebookSocialHubModal({
                   <div className="rounded-2xl bg-[#0b0e24] border border-white/15 overflow-hidden shadow-2xl text-xs font-sans">
                     {/* Header Fanpage */}
                     <div className="p-3 flex items-center gap-2.5 border-b border-white/5">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1877F2] to-[#3fe9d6] flex items-center justify-center font-bold text-white text-base shadow">
-                        V
+                      <div className="w-9 h-9 rounded-full bg-[#0a0f2c] border border-[#f5c767]/40 p-1 flex items-center justify-center shadow-[0_0_10px_rgba(24,119,242,0.35)] shrink-0 overflow-hidden">
+                        <GameLogo className="w-full h-full" sizes="36px" />
                       </div>
                       <div>
                         <div className="font-bold text-white flex items-center gap-1">

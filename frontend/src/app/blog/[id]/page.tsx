@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import StarCanvas from "@/components/common/StarCanvas";
+import GameLogo from "@/components/common/GameLogo";
 import Footer from "@/components/home/Footer";
 import { blogsService, BlogPost } from "@/services/blogs.service";
 
@@ -96,11 +97,11 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
       <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#070919]/90 border-b border-[#f5c767]/20 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#f5c767] via-[#9b51e0] to-[#3fe9d6] p-[1.5px] shadow-[0_0_15px_rgba(245,199,103,0.35)] group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-[#060814] rounded-[10px] flex items-center justify-center font-[family-name:var(--font-rajdhani)] font-black text-xl text-[#f5c767]">
-                VOV
-              </div>
-            </div>
+            <GameLogo
+              className="w-14 h-10 drop-shadow-[0_0_12px_rgba(245,199,103,0.35)] group-hover:scale-105 transition-transform"
+              sizes="56px"
+              priority
+            />
             <div className="flex flex-col">
               <span className="font-[family-name:var(--font-rajdhani)] text-lg font-bold tracking-wider text-white uppercase">
                 VALKYRIA OF VEYRA

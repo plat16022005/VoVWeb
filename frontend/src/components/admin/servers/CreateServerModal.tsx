@@ -7,6 +7,7 @@ import {
   CreateServerPayload,
   CreateServerResult,
 } from "@/services/serverManagement.service";
+import GameLogo from "@/components/common/GameLogo";
 
 interface CreateServerModalProps {
   isOpen: boolean;
@@ -147,7 +148,10 @@ export default function CreateServerModal({
               <div className="relative w-16 h-16 flex items-center justify-center mb-4">
                 <div className="absolute inset-0 rounded-full border-2 border-white/10" />
                 <div className="absolute inset-0 rounded-full border-2 border-[#3fe9d6] border-t-transparent animate-spin" />
-                <span className="font-mono text-xs font-bold text-[#3fe9d6]">VOV</span>
+                <GameLogo
+                  className="w-11 h-8 drop-shadow-[0_0_8px_rgba(63,233,214,0.45)]"
+                  sizes="44px"
+                />
               </div>
               <h4 className="text-sm font-bold font-[family-name:var(--font-rajdhani)] text-white uppercase tracking-wider">
                 ĐANG CẤP PHÁT MÁY CHỦ TRÊN GOOGLE CLOUD...

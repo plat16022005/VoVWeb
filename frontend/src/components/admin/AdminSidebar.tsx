@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { soundEngine } from "@/services/audio.service";
 import { useAuth } from "@/services/auth.service";
+import GameLogo from "@/components/common/GameLogo";
 
 interface AdminSidebarProps {
   isMobileOpen: boolean;
@@ -100,11 +101,10 @@ export default function AdminSidebar({
               onClick={() => soundEngine.playClick()}
               className="flex items-center gap-3 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#9b51e0] via-[#3fe9d6] to-[#f5c767] p-[1.5px] shadow-[0_0_15px_rgba(63,233,214,0.4)] group-hover:scale-105 transition-transform">
-                <div className="w-full h-full bg-[#060814] rounded-[10px] flex items-center justify-center font-[family-name:var(--font-rajdhani)] font-black text-xl text-[#3fe9d6]">
-                  VOV
-                </div>
-              </div>
+              <GameLogo
+                className="w-14 h-10 drop-shadow-[0_0_12px_rgba(63,233,214,0.35)] group-hover:scale-105 transition-transform"
+                sizes="56px"
+              />
               <div className="flex flex-col">
                 <span className="font-[family-name:var(--font-rajdhani)] text-lg font-bold tracking-wider text-white uppercase flex items-center gap-1.5">
                   CORE CONTROL

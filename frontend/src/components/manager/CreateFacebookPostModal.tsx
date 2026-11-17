@@ -14,6 +14,7 @@ import { soundEngine } from "@/services/audio.service";
 import { useAuth } from "@/services/auth.service";
 import { hasPermission } from "@/data/permissions";
 import { convertBlogToFacebookText } from "@/utils/facebookFormatter";
+import GameLogo from "@/components/common/GameLogo";
 
 interface CreateFacebookPostModalProps {
   isOpen: boolean;
@@ -781,8 +782,8 @@ export default function CreateFacebookPostModal({
             <div className="rounded-2xl bg-[#090d24] border border-[#1877F2]/30 overflow-hidden shadow-2xl text-xs font-sans sticky top-2">
               {/* Header Fanpage */}
               <div className="p-3.5 flex items-center gap-3 border-b border-white/5 bg-[#060818]">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#1877F2] to-[#3fe9d6] flex items-center justify-center font-bold text-white text-base shadow shrink-0">
-                  V
+                <div className="w-10 h-10 rounded-full bg-[#0a0f2c] border border-[#f5c767]/40 p-1 flex items-center justify-center shadow-[0_0_10px_rgba(24,119,242,0.35)] shrink-0 overflow-hidden">
+                  <GameLogo className="w-full h-full" sizes="40px" />
                 </div>
                 <div>
                   <div className="font-bold text-white flex items-center gap-1.5">
