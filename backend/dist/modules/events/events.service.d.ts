@@ -31,10 +31,20 @@ export declare class EventsService {
         buffer: Buffer;
         contentType: string;
     }>;
+    private buildFirestorePlayerDoc;
+    private ensurePlayerInviteCode;
+    private normalizeReferralHelpList;
+    private listSortedHelpsForInviteCode;
+    private loadStoredPlayerState;
     getPlayerEventState(authHeader: string | undefined, rawEventId: string): Promise<PlayerEventState>;
     claimMissionReward(authHeader: string | undefined, rawEventId: string, rawMissionId: string): Promise<{
         mission: EventMissionConfig;
         addedTickets: number;
+        playerState: PlayerEventState;
+    }>;
+    redeemInviteCode(authHeader: string | undefined, rawEventId: string, rawCode: string): Promise<{
+        addedTickets: number;
+        targetUsername: string;
         playerState: PlayerEventState;
     }>;
     recordSpinAndSaveReward(authHeader: string | undefined, rawEventId: string, rawBody: Record<string, unknown>): Promise<{

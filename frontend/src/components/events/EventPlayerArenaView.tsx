@@ -69,6 +69,9 @@ export default function EventPlayerArenaView({
     "missions"
   );
   const [claimingMissionId, setClaimingMissionId] = useState<string | null>(null);
+  const [inviteCodeInput, setInviteCodeInput] = useState("");
+  const [redeemingCode, setRedeemingCode] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
   const [spinningFallback, setSpinningFallback] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [wonPopup, setWonPopup] = useState<PlayerSpinRecord | null>(null);
@@ -132,22 +135,53 @@ export default function EventPlayerArenaView({
     [currentUser, syncAuthToIframe]
   );
 
+  const fetchEventBundle = useCallback(
+    async (targetId?: string) => {
+      let chosen: WebEventDocument | null = null;
+      const activeList = await eventsService.getPublicActiveEvents();
+      const idToLoad = targetId || initialEventId;
+      if (idToLoad) {
+        chosen = await eventsService.getPublicEventById(idToLoad);
+      } else if (activeList.length > 0) {
+        chosen = activeList[0];
+      }
+      return { activeList, chosen };
+    },
+    [initialEventId]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchEventBundle()
+      .then(({ activeList, chosen }) => {
+        if (cancelled) return;
+        setAllEvents(activeList);
+        setEventDoc(chosen);
+        setErrorMsg(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setErrorMsg(
+          err instanceof Error
+            ? err.message
+            : "Hiện không tìm thấy sự kiện hoặc sự kiện đang tạm đóng."
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchEventBundle]);
+
   const loadEventData = useCallback(
     async (targetId?: string) => {
       setLoading(true);
       setErrorMsg(null);
       try {
-        let chosen: WebEventDocument | null = null;
-        const activeList = await eventsService.getPublicActiveEvents();
+        const { activeList, chosen } = await fetchEventBundle(targetId);
         setAllEvents(activeList);
-
-        const idToLoad = targetId || initialEventId;
-        if (idToLoad) {
-          chosen = await eventsService.getPublicEventById(idToLoad);
-        } else if (activeList.length > 0) {
-          chosen = activeList[0];
-        }
-
         setEventDoc(chosen);
       } catch (err: unknown) {
         setErrorMsg(
@@ -159,12 +193,8 @@ export default function EventPlayerArenaView({
         setLoading(false);
       }
     },
-    [initialEventId]
+    [fetchEventBundle]
   );
-
-  useEffect(() => {
-    loadEventData();
-  }, [loadEventData]);
 
   useEffect(() => {
     if (!eventDoc) return;
@@ -270,13 +300,62 @@ export default function EventPlayerArenaView({
       setPlayerState(res.playerState);
       syncAuthToIframe(eventDoc, res.playerState);
       soundEngine.playCelestialChime();
-      showToast(`Đã cộng +${res.addedTickets} lượt tham gia sự kiện.`);
+      showToast(`Đã cộng +${res.addedTickets} lượt tham gia từ điểm danh.`);
     } catch (err: unknown) {
       showToast(
-        err instanceof Error ? err.message : "Không thể nhận thưởng nhiệm vụ."
+        err instanceof Error ? err.message : "Không thể điểm danh nhận thưởng."
       );
     } finally {
       setClaimingMissionId(null);
+    }
+  };
+
+  const handleCopyInviteCode = async () => {
+    soundEngine.playClick();
+    if (!playerState?.InviteCode) {
+      showToast("Vui lòng đăng nhập tài khoản Chỉ Huy để lấy mã hỗ trợ.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(playerState.InviteCode);
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2500);
+      showToast(`Đã sao chép mã hỗ trợ: ${playerState.InviteCode}`);
+    } catch {
+      showToast(`Mã hỗ trợ của bạn: ${playerState.InviteCode}`);
+    }
+  };
+
+  const handleRedeemInviteCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventDoc) return;
+    if (!currentUser) {
+      showToast("Vui lòng đăng nhập tài khoản Chỉ Huy để nhập mã hỗ trợ.");
+      return;
+    }
+    const cleanCode = inviteCodeInput.trim();
+    if (!cleanCode) {
+      showToast("Vui lòng nhập mã hỗ trợ của người chơi khác.");
+      return;
+    }
+
+    setRedeemingCode(true);
+    soundEngine.playClick();
+    try {
+      const res = await eventsService.redeemInviteCode(eventDoc.EventId, cleanCode);
+      setPlayerState(res.playerState);
+      setInviteCodeInput("");
+      syncAuthToIframe(eventDoc, res.playerState);
+      soundEngine.playCelestialChime();
+      showToast(
+        `Đã hỗ trợ ${res.targetUsername} và nhận +${res.addedTickets} lượt quay!`
+      );
+    } catch (err: unknown) {
+      showToast(
+        err instanceof Error ? err.message : "Không thể sử dụng mã hỗ trợ này."
+      );
+    } finally {
+      setRedeemingCode(false);
     }
   };
 
@@ -323,9 +402,9 @@ export default function EventPlayerArenaView({
     soundEngine.playClick();
     if (!stageWrapperRef.current) return;
     if (!document.fullscreenElement) {
-      stageWrapperRef.current.requestFullscreen().catch(() => {});
+      stageWrapperRef.current.requestFullscreen().catch(() => { });
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
     }
   };
 
@@ -333,6 +412,26 @@ export default function EventPlayerArenaView({
   const inventoryItems = Object.values(playerState?.Inventory || {});
   const ticketDisplay = String(playerState?.SpinTickets ?? 0).padStart(2, "0");
   const latestReward = playerState?.RecentRewards?.[0];
+
+  const dailyMission =
+    eventDoc?.Missions.find((m) => m.MissionId === "daily_checkin") ||
+    eventDoc?.Missions[0] || {
+      MissionId: "daily_checkin",
+      Title: "Điểm Danh Hàng Ngày Tại Veyra",
+      Description: "Điểm danh mỗi ngày để nhận lượt quay miễn phí.",
+      TicketReward: 1,
+      MissionType: "daily" as const,
+    };
+  const dailyClaimIso = playerState?.ClaimedMissions?.[dailyMission.MissionId];
+  const isDailyClaimed = Boolean(
+    dailyClaimIso && dailyClaimIso.startsWith(todayKey)
+  );
+  const referralReward = eventDoc?.ReferralTicketReward ?? 1;
+  const maxHelpGiven = playerState?.MaxHelpGiven ?? 5;
+  const maxHelpReceived = playerState?.MaxHelpReceived ?? 5;
+  const helpGivenCount = playerState?.HelpGivenCount ?? 0;
+  const helpReceivedCount = playerState?.HelpReceivedCount ?? 0;
+  const hasExhaustedGiving = helpGivenCount >= maxHelpGiven;
 
   return (
     <div className="relative min-h-screen w-full bg-[#04050d] text-[#eef2ff] flex flex-col selection:bg-[#f5c767]/30 selection:text-white">
@@ -462,11 +561,10 @@ export default function EventPlayerArenaView({
                         soundEngine.playClick();
                         loadEventData(ev.EventId);
                       }}
-                      className={`text-xs font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)] pb-1 border-b-2 transition-colors cursor-pointer ${
-                        active
-                          ? "text-[#f5c767] border-[#f5c767]"
-                          : "text-slate-400 border-transparent hover:text-white"
-                      }`}
+                      className={`text-xs font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)] pb-1 border-b-2 transition-colors cursor-pointer ${active
+                        ? "text-[#f5c767] border-[#f5c767]"
+                        : "text-slate-400 border-transparent hover:text-white"
+                        }`}
                     >
                       {ev.Title}
                     </button>
@@ -567,7 +665,7 @@ export default function EventPlayerArenaView({
                   {/* Editorial Underline Tabs */}
                   <div className="grid grid-cols-3 border-b border-white/10 bg-[#050816]">
                     {[
-                      { id: "missions" as const, label: `Nhiệm Vụ (${eventDoc.Missions.length})` },
+                      { id: "missions" as const, label: "Nhận Lượt (2)" },
                       { id: "rewards" as const, label: `Phần Thưởng (${eventDoc.Rewards.length})` },
                       { id: "inventory" as const, label: `Túi Đồ (${inventoryItems.length})` },
                     ].map((tab) => {
@@ -580,11 +678,10 @@ export default function EventPlayerArenaView({
                             soundEngine.playClick();
                             setFolioTab(tab.id);
                           }}
-                          className={`py-3 px-2 text-xs font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)] border-b-2 transition-colors cursor-pointer ${
-                            active
-                              ? "text-[#f5c767] border-[#f5c767] bg-white/[0.03]"
-                              : "text-slate-400 border-transparent hover:text-white"
-                          }`}
+                          className={`py-3 px-2 text-xs font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)] border-b-2 transition-colors cursor-pointer ${active
+                            ? "text-[#f5c767] border-[#f5c767] bg-white/[0.03]"
+                            : "text-slate-400 border-transparent hover:text-white"
+                            }`}
                         >
                           {tab.label}
                         </button>
@@ -596,68 +693,224 @@ export default function EventPlayerArenaView({
                   <div className="flex-1 overflow-y-auto max-h-[585px] divide-y divide-white/10 custom-scrollbar">
                     {folioTab === "missions" && (
                       <>
-                        {eventDoc.Missions.map((m, idx) => {
-                          const claimedIso =
-                            playerState?.ClaimedMissions?.[m.MissionId];
-                          const isClaimed =
-                            m.MissionType === "once"
-                              ? Boolean(claimedIso)
-                              : Boolean(
-                                  claimedIso && claimedIso.startsWith(todayKey)
-                                );
-
-                          return (
-                            <div
-                              key={m.MissionId}
-                              className={`p-4 space-y-2.5 transition-colors ${
-                                isClaimed ? "opacity-60" : "hover:bg-white/[0.02]"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-baseline gap-2 min-w-0">
-                                  <span className="text-[11px] font-bold text-[#f5c767] font-[family-name:var(--font-chakra-petch)] shrink-0">
-                                    {String(idx + 1).padStart(2, "0")}
-                                  </span>
-                                  <span className="text-xs font-semibold text-white leading-snug">
-                                    {m.Title}
-                                  </span>
-                                </div>
-                                <span className="text-[11px] font-bold text-[#3fe9d6] shrink-0">
-                                  +{m.TicketReward} Lượt
-                                </span>
-                              </div>
-
-                              <p className="text-[11px] text-slate-400 leading-relaxed pl-5">
-                                {m.Description}
-                              </p>
-
-                              <div className="flex items-center justify-between pl-5 pt-0.5">
-                                <span className="text-[10px] uppercase tracking-wider text-slate-500">
-                                  {m.MissionType === "daily" ? "Làm mới mỗi ngày" : "Một lần"}
-                                </span>
-
-                                {isClaimed ? (
-                                  <span className="text-[11px] font-semibold text-emerald-400">
-                                    Đã Nhận
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    disabled={claimingMissionId === m.MissionId}
-                                    onClick={() =>
-                                      handleClaimMission(m.MissionId, m.ActionUrl)
-                                    }
-                                    className="px-3 py-1 bg-[#f5c767] hover:bg-[#ffdc8a] text-[#060814] font-bold text-[11px] uppercase tracking-wider font-[family-name:var(--font-rajdhani)] transition-colors cursor-pointer disabled:opacity-50"
-                                  >
-                                    {claimingMissionId === m.MissionId
-                                      ? "Đang nhận..."
-                                      : "Nhận Lượt"}
-                                  </button>
-                                )}
-                              </div>
+                        {/* 01. Điểm Danh Hằng Ngày */}
+                        <div
+                          className={`p-4 space-y-2.5 transition-colors ${
+                            isDailyClaimed ? "opacity-75" : "hover:bg-white/[0.02]"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-baseline gap-2 min-w-0">
+                              <span className="text-[11px] font-bold text-[#f5c767] font-[family-name:var(--font-chakra-petch)] shrink-0">
+                                01
+                              </span>
+                              <span className="text-xs font-semibold text-white leading-snug">
+                                {dailyMission.Title}
+                              </span>
                             </div>
-                          );
-                        })}
+                            <span className="text-[11px] font-bold text-[#3fe9d6] shrink-0">
+                              +{dailyMission.TicketReward} Lượt
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-slate-400 leading-relaxed pl-5">
+                            {dailyMission.Description}
+                          </p>
+
+                          <div className="flex items-center justify-between pl-5 pt-0.5">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                              Làm mới mỗi ngày
+                            </span>
+
+                            {isDailyClaimed ? (
+                              <span className="text-[11px] font-semibold text-emerald-400">
+                                Đã Điểm Danh
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={claimingMissionId === dailyMission.MissionId}
+                                onClick={() =>
+                                  handleClaimMission(dailyMission.MissionId)
+                                }
+                                className="px-3 py-1 bg-[#f5c767] hover:bg-[#ffdc8a] text-[#060814] font-bold text-[11px] uppercase tracking-wider font-[family-name:var(--font-rajdhani)] transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                {claimingMissionId === dailyMission.MissionId
+                                  ? "Đang nhận..."
+                                  : "Điểm Danh"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 02. Mã Hỗ Trợ Chỉ Huy (Không Làm Mới) */}
+                        <div className="p-4 space-y-4">
+                          <div className="space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-baseline gap-2 min-w-0">
+                                <span className="text-[11px] font-bold text-[#f5c767] font-[family-name:var(--font-chakra-petch)] shrink-0">
+                                  02
+                                </span>
+                                <span className="text-xs font-semibold text-white leading-snug">
+                                  Mã Hỗ Trợ Chỉ Huy
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-bold text-[#3fe9d6] shrink-0">
+                                +{referralReward} Lượt/lần
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-relaxed pl-5">
+                              Nhập mã giúp người khác hoặc chia sẻ mã để được hỗ trợ. Giới hạn vĩnh viễn 5 lần mỗi chiều, không làm mới.
+                            </p>
+                          </div>
+
+                          {/* Mã Của Bạn (Chiều được người khác nhập: tối đa 5) */}
+                          <div className="p-3 bg-[#050815] border border-[#f5c767]/25 space-y-2.5">
+                            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
+                              <span className="text-slate-400 font-semibold">
+                                Mã Của Bạn (Được Nhập)
+                              </span>
+                              <span className="font-bold text-[#f5c767] tabular-nums">
+                                {helpReceivedCount} / {maxHelpReceived}
+                              </span>
+                            </div>
+
+                            {currentUser ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 px-2.5 py-1.5 bg-[#0a0f25] border border-white/15 font-mono text-xs font-bold tracking-[0.18em] text-[#3fe9d6] text-center select-all">
+                                  {playerState?.InviteCode || "ĐANG TẠO..."}
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={!playerState?.InviteCode}
+                                  onClick={handleCopyInviteCode}
+                                  className="px-3 py-1.5 bg-[#f5c767]/15 hover:bg-[#f5c767]/25 border border-[#f5c767]/40 text-[#f5c767] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                  {copiedInvite ? "Đã Chép" : "Sao Chép"}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-500">
+                                Đăng nhập để tạo mã hỗ trợ riêng cho sự kiện này.
+                              </div>
+                            )}
+
+                            {/* Progress Ticks 0..5 */}
+                            <div className="grid grid-cols-5 gap-1">
+                              {Array.from({ length: maxHelpReceived }).map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`h-1 ${
+                                    i < helpReceivedCount
+                                      ? "bg-[#f5c767]"
+                                      : "bg-white/10"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+
+                            {playerState?.ReceivedHelps &&
+                              playerState.ReceivedHelps.length > 0 && (
+                                <div className="pt-1 border-t border-white/10 space-y-1">
+                                  {playerState.ReceivedHelps.map((h, idx) => (
+                                    <div
+                                      key={`${h.Username}-${idx}`}
+                                      className="flex items-center justify-between text-[11px]"
+                                    >
+                                      <span className="text-slate-300 truncate">
+                                        {h.Username}
+                                      </span>
+                                      <span className="text-emerald-400 font-semibold shrink-0">
+                                        +{h.TicketsEarned} Lượt
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                          </div>
+
+                          {/* Nhập Mã Giúp Người Khác (Chiều đi giúp: tối đa 5) */}
+                          <form
+                            onSubmit={handleRedeemInviteCode}
+                            className="p-3 bg-[#050815] border border-[#3fe9d6]/25 space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
+                              <span className="text-slate-400 font-semibold">
+                                Nhập Mã Giúp Người Khác
+                              </span>
+                              <span className="font-bold text-[#3fe9d6] tabular-nums">
+                                {helpGivenCount} / {maxHelpGiven}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={inviteCodeInput}
+                                onChange={(e) =>
+                                  setInviteCodeInput(e.target.value)
+                                }
+                                disabled={!currentUser || hasExhaustedGiving || redeemingCode}
+                                placeholder={
+                                  hasExhaustedGiving
+                                    ? "Đã hết 5/5 lượt"
+                                    : "Nhập mã 8 ký tự (VD: aB3xK9m2)"
+                                }
+                                maxLength={24}
+                                className="flex-1 min-w-0 px-2.5 py-1.5 bg-[#0a0f25] border border-white/15 text-xs font-mono tracking-wider text-white placeholder:text-slate-600 focus:outline-none focus:border-[#3fe9d6] disabled:opacity-50"
+                              />
+                              <button
+                                type="submit"
+                                disabled={
+                                  !currentUser ||
+                                  hasExhaustedGiving ||
+                                  redeemingCode ||
+                                  !inviteCodeInput.trim()
+                                }
+                                className="px-3 py-1.5 bg-[#3fe9d6] hover:bg-[#6ef5e5] text-[#050814] font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                              >
+                                {redeemingCode
+                                  ? "Đang gửi"
+                                  : hasExhaustedGiving
+                                    ? "Hết Lượt"
+                                    : "Hỗ Trợ"}
+                              </button>
+                            </div>
+
+                            {/* Progress Ticks 0..5 */}
+                            <div className="grid grid-cols-5 gap-1">
+                              {Array.from({ length: maxHelpGiven }).map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`h-1 ${
+                                    i < helpGivenCount
+                                      ? "bg-[#3fe9d6]"
+                                      : "bg-white/10"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+
+                            {playerState?.UsedHelps &&
+                              playerState.UsedHelps.length > 0 && (
+                                <div className="pt-1 border-t border-white/10 space-y-1">
+                                  {playerState.UsedHelps.map((h, idx) => (
+                                    <div
+                                      key={`${h.Username}-${idx}`}
+                                      className="flex items-center justify-between text-[11px]"
+                                    >
+                                      <span className="text-slate-300 truncate">
+                                        Đã giúp {h.Username}
+                                      </span>
+                                      <span className="text-[#3fe9d6] font-semibold shrink-0">
+                                        +{h.TicketsEarned} Lượt
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                          </form>
+                        </div>
                       </>
                     )}
 
@@ -743,7 +996,7 @@ export default function EventPlayerArenaView({
                             </span>
                           </div>
                           {!playerState?.RecentRewards ||
-                          playerState.RecentRewards.length === 0 ? (
+                            playerState.RecentRewards.length === 0 ? (
                             <div className="text-xs text-slate-500">
                               Chưa ghi nhận lượt tham gia nào.
                             </div>

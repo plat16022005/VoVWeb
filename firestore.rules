@@ -181,6 +181,49 @@ service cloud.firestore {
       }
     }
 
+    // Kiểm tra dữ liệu mã mời sự kiện WebEvents hợp lệ (dùng chung cho create và update)
+    // Assumed Data Model (WebEvents/{eventId}/InviteCodes/{inviteCode}):
+    // - Required: InviteCode (string == inviteCode, 4..24), OwnerUid (string 1..128),
+    //             EventId (string == eventId, 1..128), CreatedAt (string 1..64)
+    // - Optional: OwnerUsername (string <= 100)
+    // - Immutable khi update: InviteCode, OwnerUid, EventId, CreatedAt
+    function isValidEventInviteCode(data, eventId, inviteCode) {
+      return eventId.size() > 0 && eventId.size() <= 128
+        && inviteCode.size() >= 4 && inviteCode.size() <= 24
+        && inviteCode.matches('^[A-Za-z0-9_-]{4,24}$')
+        && data.keys().hasAll(['InviteCode', 'OwnerUid', 'EventId', 'CreatedAt'])
+        && data.keys().hasOnly(['InviteCode', 'OwnerUid', 'OwnerUsername', 'EventId', 'CreatedAt'])
+        && data.InviteCode is string && data.InviteCode == inviteCode
+        && data.OwnerUid is string && data.OwnerUid.size() > 0 && data.OwnerUid.size() <= 128
+        && data.EventId is string && data.EventId == eventId
+        && data.CreatedAt is string && data.CreatedAt.size() > 0 && data.CreatedAt.size() <= 64
+        && (!('OwnerUsername' in data) || (data.OwnerUsername is string && data.OwnerUsername.size() <= 100));
+    }
+
+    // Kiểm tra dữ liệu lượt hỗ trợ mã mời sự kiện WebEvents hợp lệ (dùng chung cho create và update)
+    // Assumed Data Model (WebEvents/{eventId}/InviteCodes/{inviteCode}/Helps/{helperUid}):
+    // - Required: HelperUid (string == helperUid, 1..128), OwnerUid (string != HelperUid, khớp InviteCode.OwnerUid),
+    //             InviteCode (string == inviteCode, 4..24), CreatedAt (string 1..64)
+    // - Optional: HelperUsername (string <= 100), TicketsEarned (int 1..10)
+    // - Immutable khi update: HelperUid, OwnerUid, InviteCode, CreatedAt
+    function isValidEventHelp(data, eventId, inviteCode, helperUid) {
+      return eventId.size() > 0 && eventId.size() <= 128
+        && inviteCode.size() >= 4 && inviteCode.size() <= 24
+        && helperUid.size() > 0 && helperUid.size() <= 128
+        && data.keys().hasAll(['HelperUid', 'OwnerUid', 'InviteCode', 'CreatedAt'])
+        && data.keys().hasOnly(['HelperUid', 'HelperUsername', 'OwnerUid', 'InviteCode', 'TicketsEarned', 'CreatedAt'])
+        && data.HelperUid is string && data.HelperUid == helperUid
+        && data.OwnerUid is string && data.OwnerUid.size() > 0 && data.OwnerUid.size() <= 128
+        && data.OwnerUid != helperUid
+        && data.InviteCode is string && data.InviteCode == inviteCode
+        && exists(/databases/$(database)/documents/WebEvents/$(eventId)/InviteCodes/$(inviteCode))
+        && ('OwnerUid' in get(/databases/$(database)/documents/WebEvents/$(eventId)/InviteCodes/$(inviteCode)).data)
+        && data.OwnerUid == get(/databases/$(database)/documents/WebEvents/$(eventId)/InviteCodes/$(inviteCode)).data.OwnerUid
+        && data.CreatedAt is string && data.CreatedAt.size() > 0 && data.CreatedAt.size() <= 64
+        && (!('HelperUsername' in data) || (data.HelperUsername is string && data.HelperUsername.size() <= 100))
+        && (!('TicketsEarned' in data) || (data.TicketsEarned is int && data.TicketsEarned >= 1 && data.TicketsEarned <= 10));
+    }
+
     // Sự kiện Web & Minigame Unity WebGL (WebEvents):
     // Công khai đọc cho Web & Game Client (tương tự GachaBanners); chỉ Admin hoặc Manager được tạo/sửa/xóa
     match /WebEvents/{eventId} {
@@ -198,6 +241,49 @@ service cloud.firestore {
         allow read: if true;
         allow create, update: if request.auth != null || isAdminOrManager();
         allow delete: if isAdminOrManager();
+      }
+
+      // Mã mời giới thiệu sự kiện (InviteCodes):
+      // - ĐỌC: Người dùng đã đăng nhập (phục vụ tra cứu mã mời và danh sách hỗ trợ)
+      // - TẠO: Chính chủ sở hữu (OwnerUid == request.auth.uid) khi sự kiện tồn tại, hoặc Admin/Manager
+      // - CẬP NHẬT: Chỉ Admin/Manager (giữ nguyên schema và khóa cứng InviteCode, OwnerUid, EventId, CreatedAt)
+      // - XÓA: Chỉ Admin/Manager
+      match /InviteCodes/{inviteCode} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && isValidEventInviteCode(request.resource.data, eventId, inviteCode)
+          && (
+            (request.resource.data.OwnerUid == request.auth.uid &&
+             exists(/databases/$(database)/documents/WebEvents/$(eventId))) ||
+            isAdminOrManager()
+          );
+        allow update: if isAdminOrManager()
+          && isValidEventInviteCode(request.resource.data, eventId, inviteCode)
+          && request.resource.data.InviteCode == resource.data.InviteCode
+          && request.resource.data.OwnerUid == resource.data.OwnerUid
+          && request.resource.data.EventId == resource.data.EventId
+          && request.resource.data.CreatedAt == resource.data.CreatedAt;
+        allow delete: if isAdminOrManager();
+
+        // Lượt nhập mã hỗ trợ (Helps):
+        // - ĐỌC: Người dùng đã đăng nhập (phục vụ kiểm tra giới hạn và thứ tự ghi nhận)
+        // - TẠO: Chính người hỗ trợ (helperUid == request.auth.uid) hoặc Admin/Manager;
+        //        chống giả mạo HelperUid/OwnerUid, chống tự hỗ trợ và bắt buộc InviteCode cha tồn tại
+        // - CẬP NHẬT: Chỉ Admin/Manager (giữ nguyên schema và khóa cứng HelperUid, OwnerUid, InviteCode, CreatedAt)
+        // - XÓA: Chỉ Admin/Manager
+        match /Helps/{helperUid} {
+          allow read: if request.auth != null;
+          allow create: if request.auth != null
+            && (helperUid == request.auth.uid || isAdminOrManager())
+            && isValidEventHelp(request.resource.data, eventId, inviteCode, helperUid);
+          allow update: if isAdminOrManager()
+            && isValidEventHelp(request.resource.data, eventId, inviteCode, helperUid)
+            && request.resource.data.HelperUid == resource.data.HelperUid
+            && request.resource.data.OwnerUid == resource.data.OwnerUid
+            && request.resource.data.InviteCode == resource.data.InviteCode
+            && request.resource.data.CreatedAt == resource.data.CreatedAt;
+          allow delete: if isAdminOrManager();
+        }
       }
     }
 

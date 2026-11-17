@@ -15,6 +15,13 @@ export declare class EventsController {
         addedTickets: number;
         playerState: import("./events.types.js").PlayerEventState;
     }>;
+    redeemInviteCode(eventId: string, authHeader: string | undefined, body: {
+        code?: string;
+    }): Promise<{
+        addedTickets: number;
+        targetUsername: string;
+        playerState: import("./events.types.js").PlayerEventState;
+    }>;
     recordSpinAndSaveReward(eventId: string, authHeader: string | undefined, body: Record<string, unknown>): Promise<{
         reward: import("./events.types.js").PlayerSpinRecord;
         playerState: import("./events.types.js").PlayerEventState;

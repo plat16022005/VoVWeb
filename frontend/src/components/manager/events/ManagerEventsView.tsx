@@ -288,25 +288,22 @@ const res = await window.VoVSDK.rollServerSpin();`}
           {events.map((ev) => (
             <div
               key={ev.EventId}
-              className={`p-6 rounded-2xl bg-[#090d24]/95 border transition-all shadow-lg flex flex-col lg:flex-row lg:items-center justify-between gap-6 ${
-                ev.IsActive
-                  ? "border-[#f5c767]/45"
-                  : "border-white/10"
-              }`}
+              className={`p-6 rounded-2xl bg-[#090d24]/95 border transition-all shadow-lg flex flex-col lg:flex-row lg:items-center justify-between gap-6 ${ev.IsActive
+                ? "border-[#f5c767]/45"
+                : "border-white/10"
+                }`}
             >
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold ${
-                      ev.IsActive
-                        ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/35"
-                        : "bg-slate-700/30 text-slate-300 border border-white/10"
-                    }`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold ${ev.IsActive
+                      ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/35"
+                      : "bg-slate-700/30 text-slate-300 border border-white/10"
+                      }`}
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        ev.IsActive ? "bg-emerald-400" : "bg-slate-400"
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full ${ev.IsActive ? "bg-emerald-400" : "bg-slate-400"
+                        }`}
                     />
                     <span>{ev.IsActive ? "ĐANG MỞ CÔNG KHAI" : "BẢN NHÁP / TẠM ĐÓNG"}</span>
                   </span>
@@ -334,11 +331,10 @@ const res = await window.VoVSDK.rollServerSpin();`}
                   </div>
 
                   <div
-                    className={`px-3 py-1.5 rounded-lg bg-[#060814] border ${
-                      ev.UnityBuild
-                        ? "border-emerald-500/30 text-emerald-300"
-                        : "border-amber-500/30 text-amber-300"
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg bg-[#060814] border ${ev.UnityBuild
+                      ? "border-emerald-500/30 text-emerald-300"
+                      : "border-amber-500/30 text-amber-300"
+                      }`}
                   >
                     Unity WebGL (.zip):{" "}
                     <strong>
@@ -378,11 +374,10 @@ const res = await window.VoVSDK.rollServerSpin();`}
                   <button
                     type="button"
                     onClick={() => handleToggleActive(ev)}
-                    className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                      ev.IsActive
-                        ? "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40"
-                        : "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40"
-                    }`}
+                    className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${ev.IsActive
+                      ? "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40"
+                      : "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40"
+                      }`}
                   >
                     {ev.IsActive ? "Tạm Đóng" : "Mở Công Khai"}
                   </button>

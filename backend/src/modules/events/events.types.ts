@@ -44,6 +44,7 @@ export interface WebEventDocument {
   StartTime: string;
   EndTime: string;
   InitialTickets: number;
+  ReferralTicketReward?: number;
   UnityTargetObject: string;
   HtmlLayoutUrl: string;
   HtmlLayoutKey: string;
@@ -77,6 +78,12 @@ export interface PlayerInventoryEntry {
   UpdatedAt: string;
 }
 
+export interface ReferralHelpEntry {
+  Username: string;
+  TicketsEarned: number;
+  CreatedAt: string;
+}
+
 export interface PlayerEventState {
   Uid: string;
   Username: string;
@@ -86,6 +93,13 @@ export interface PlayerEventState {
   ClaimedMissions: Record<string, string>;
   Inventory: Record<string, PlayerInventoryEntry>;
   RecentRewards: PlayerSpinRecord[];
+  InviteCode: string;
+  HelpGivenCount: number;
+  HelpReceivedCount: number;
+  MaxHelpGiven: number;
+  MaxHelpReceived: number;
+  UsedHelps: ReferralHelpEntry[];
+  ReceivedHelps: ReferralHelpEntry[];
   LastUpdated: string;
 }
 

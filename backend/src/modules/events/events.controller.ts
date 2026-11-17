@@ -94,6 +94,19 @@ export class EventsController {
     );
   }
 
+  @Post(':eventId/referral/redeem')
+  async redeemInviteCode(
+    @Param('eventId') eventId: string,
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: { code?: string },
+  ) {
+    return this.eventsService.redeemInviteCode(
+      authHeader,
+      eventId,
+      body?.code ?? '',
+    );
+  }
+
   @Post(':eventId/spin')
   async recordSpinAndSaveReward(
     @Param('eventId') eventId: string,

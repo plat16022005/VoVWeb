@@ -52,6 +52,9 @@ let EventsController = class EventsController {
     async claimMissionReward(eventId, missionId, authHeader) {
         return this.eventsService.claimMissionReward(authHeader, eventId, missionId);
     }
+    async redeemInviteCode(eventId, authHeader, body) {
+        return this.eventsService.redeemInviteCode(authHeader, eventId, body?.code ?? '');
+    }
     async recordSpinAndSaveReward(eventId, authHeader, body) {
         return this.eventsService.recordSpinAndSaveReward(authHeader, eventId, body ?? {});
     }
@@ -177,6 +180,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], EventsController.prototype, "claimMissionReward", null);
+__decorate([
+    Post(':eventId/referral/redeem'),
+    __param(0, Param('eventId')),
+    __param(1, Headers('authorization')),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "redeemInviteCode", null);
 __decorate([
     Post(':eventId/spin'),
     __param(0, Param('eventId')),

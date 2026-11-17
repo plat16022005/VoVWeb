@@ -121,9 +121,9 @@ export function mergeHtmlWithUnityBuild(options: {
   const baseHtml = (options.rawHtml || '').trim()
     ? options.rawHtml
     : generateDefaultEventHtmlLayout(
-        options.eventTitle || 'Sự Kiện Minigame Veyra',
-        'Tham gia làm nhiệm vụ và nhận thưởng đồng bộ trực tiếp',
-      );
+      options.eventTitle || 'Sự Kiện Minigame Veyra',
+      'Tham gia làm nhiệm vụ và nhận thưởng đồng bộ trực tiếp',
+    );
 
   // Xóa script bridge cũ nếu HTML đã từng được merge trước đó
   let cleanedHtml = baseHtml.replace(

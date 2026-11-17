@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   EventMissionConfig,
   EventRewardItemConfig,
@@ -19,169 +19,160 @@ interface EventEditorModalProps {
   onSaved: (saved: WebEventDocument, message: string) => void;
 }
 
+const DEFAULT_REWARD_PRESET: EventRewardItemConfig[] = [
+  {
+    ItemId: "item_01",
+    ItemName: "Chip cải tiến sơ cấp",
+    Rarity: "R",
+    Quantity: 5,
+    Probability: 22,
+  },
+  {
+    ItemId: "item_02",
+    ItemName: "Chip cải tiến trung cấp",
+    Rarity: "SR",
+    Quantity: 3,
+    Probability: 15,
+  },
+  {
+    ItemId: "item_03",
+    ItemName: "Chip cải tiến cao cấp",
+    Rarity: "SSR",
+    Quantity: 1,
+    Probability: 8,
+  },
+  {
+    ItemId: "item_04",
+    ItemName: "Lõi cộng hưởng sơ cấp",
+    Rarity: "SR",
+    Quantity: 2,
+    Probability: 13,
+  },
+  {
+    ItemId: "item_05",
+    ItemName: "Lõi cộng hưởng cao cấp",
+    Rarity: "UR",
+    Quantity: 1,
+    Probability: 4,
+  },
+  {
+    ItemId: "item_06",
+    ItemName: "Năng lượng tia sét",
+    Rarity: "R",
+    Quantity: 20,
+    Probability: 16,
+  },
+  {
+    ItemId: "item_07",
+    ItemName: "Xu vàng Veyra",
+    Rarity: "R",
+    Quantity: 500,
+    Probability: 15,
+  },
+  {
+    ItemId: "item_08",
+    ItemName: "Pha lê Veyra",
+    Rarity: "SSR",
+    Quantity: 100,
+    Probability: 7,
+  },
+];
+
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return "0 KB";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-export default function EventEditorModal({
-  isOpen,
+export default function EventEditorModal(props: EventEditorModalProps) {
+  if (!props.isOpen) return null;
+  return (
+    <EventEditorModalContent
+      key={props.editingEvent?.EventId || "new"}
+      editingEvent={props.editingEvent}
+      onClose={props.onClose}
+      onSaved={props.onSaved}
+    />
+  );
+}
+
+function EventEditorModalContent({
   editingEvent,
   onClose,
   onSaved,
-}: EventEditorModalProps) {
+}: Omit<EventEditorModalProps, "isOpen">) {
   const isEditing = Boolean(editingEvent);
   const [activeTab, setActiveTab] = useState<"build" | "missions" | "rewards">("build");
 
   // Basic Info
-  const [eventId, setEventId] = useState("");
-  const [title, setTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [initialTickets, setInitialTickets] = useState(2);
-  const [unityTargetObject, setUnityTargetObject] = useState("LuckyWheelManager");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [eventId, setEventId] = useState(
+    () => editingEvent?.EventId || "lucky_wheel_2026"
+  );
+  const [title, setTitle] = useState(
+    () => editingEvent?.Title || "Vòng Quay Định Mệnh Veyra"
+  );
+  const [subtitle, setSubtitle] = useState(
+    () =>
+      editingEvent?.Subtitle ||
+      "Điểm danh hằng ngày hoặc dùng mã hỗ trợ để nhận lượt quay"
+  );
+  const [description] = useState(
+    () =>
+      editingEvent?.Description ||
+      "Sự kiện Vòng Quay May Mắn tích hợp trực tiếp từ Unity WebGL và đồng bộ phần thưởng thời gian thực."
+  );
+  const [initialTickets, setInitialTickets] = useState(
+    () => editingEvent?.InitialTickets ?? 2
+  );
+  const [unityTargetObject, setUnityTargetObject] = useState(
+    () => editingEvent?.UnityTargetObject || "LuckyWheelManager"
+  );
+  const [startTime] = useState(() =>
+    editingEvent
+      ? editingEvent.StartTime.slice(0, 16)
+      : new Date().toISOString().slice(0, 16)
+  );
+  const [endTime] = useState(() =>
+    editingEvent
+      ? editingEvent.EndTime.slice(0, 16)
+      : new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 16)
+  );
 
   // HTML Layout (.html) & Unity Build (.zip)
-  const [rawHtmlContent, setRawHtmlContent] = useState("");
+  const [rawHtmlContent, setRawHtmlContent] = useState(
+    () => editingEvent?.RawHtmlContent || ""
+  );
   const [selectedHtmlFileName, setSelectedHtmlFileName] = useState("");
   const [selectedZipFile, setSelectedZipFile] = useState<File | null>(null);
   const [zipInspection, setZipInspection] = useState<UnityZipInspectionResult | null>(null);
 
-  // Missions & Rewards
-  const [missions, setMissions] = useState<EventMissionConfig[]>([]);
-  const [rewards, setRewards] = useState<EventRewardItemConfig[]>([]);
+  // Check-in & Referral & Rewards
+  const [dailyMission, setDailyMission] = useState<EventMissionConfig>(() => {
+    const existingDaily =
+      editingEvent?.Missions?.find((m) => m.MissionId === "daily_checkin") ||
+      editingEvent?.Missions?.[0];
+    return {
+      MissionId: "daily_checkin",
+      Title: existingDaily?.Title || "Điểm Danh Hàng Ngày Tại Veyra",
+      Description:
+        existingDaily?.Description ||
+        "Điểm danh mỗi ngày để nhận lượt quay miễn phí (Làm mới mỗi ngày).",
+      TicketReward: existingDaily?.TicketReward || 1,
+      MissionType: "daily",
+    };
+  });
+  const [referralTicketReward, setReferralTicketReward] = useState(
+    () => editingEvent?.ReferralTicketReward ?? 1
+  );
+  const [rewards, setRewards] = useState<EventRewardItemConfig[]>(
+    () => editingEvent?.Rewards || DEFAULT_REWARD_PRESET
+  );
 
   // Status
   const [submitting, setSubmitting] = useState(false);
   const [uploadStatusText, setUploadStatusText] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setActiveTab("build");
-    setErrorMessage(null);
-    setSelectedZipFile(null);
-    setZipInspection(null);
-    setSelectedHtmlFileName("");
-    setUploadStatusText("");
-    setUploadProgress(0);
-
-    if (editingEvent) {
-      setEventId(editingEvent.EventId);
-      setTitle(editingEvent.Title);
-      setSubtitle(editingEvent.Subtitle);
-      setDescription(editingEvent.Description || "");
-      setInitialTickets(editingEvent.InitialTickets ?? 2);
-      setUnityTargetObject(editingEvent.UnityTargetObject || "LuckyWheelManager");
-      setStartTime(editingEvent.StartTime.slice(0, 16));
-      setEndTime(editingEvent.EndTime.slice(0, 16));
-      setRawHtmlContent(editingEvent.RawHtmlContent || "");
-      setMissions(editingEvent.Missions || []);
-      setRewards(editingEvent.Rewards || []);
-    } else {
-      const now = new Date();
-      const nextMonth = new Date(Date.now() + 30 * 86400_000);
-      setEventId("lucky_wheel_2026");
-      setTitle("Vòng Quay Định Mệnh Veyra");
-      setSubtitle("Hoàn thành nhiệm vụ nhận lượt quay và rinh báu vật Valkyria");
-      setDescription(
-        "Sự kiện Vòng Quay May Mắn tích hợp trực tiếp từ Unity WebGL và đồng bộ phần thưởng thời gian thực."
-      );
-      setInitialTickets(2);
-      setUnityTargetObject("LuckyWheelManager");
-      setStartTime(now.toISOString().slice(0, 16));
-      setEndTime(nextMonth.toISOString().slice(0, 16));
-      setRawHtmlContent("");
-      setMissions([
-        {
-          MissionId: "daily_checkin",
-          Title: "Điểm Danh Hàng Ngày Tại Veyra",
-          Description: "Đăng nhập vào cổng sự kiện mỗi ngày để nhận lượt quay miễn phí.",
-          TicketReward: 1,
-          MissionType: "daily",
-        },
-        {
-          MissionId: "share_event",
-          Title: "Lan Tỏa Sự Kiện Cùng Chỉ Huy",
-          Description: "Chia sẻ thông tin sự kiện đến cộng đồng người chơi Valkyria of Veyra.",
-          TicketReward: 2,
-          MissionType: "daily",
-        },
-        {
-          MissionId: "explore_roster",
-          Title: "Khám Phá Hồ Sơ Chiến Binh Valkyria",
-          Description: "Tìm hiểu danh sách các Valkyria trên trang chủ (Thưởng 1 lần).",
-          TicketReward: 2,
-          MissionType: "once",
-          ActionUrl: "/#characters",
-        },
-      ]);
-      setRewards([
-        {
-          ItemId: "item_01",
-          ItemName: "Chip cải tiến sơ cấp",
-          Rarity: "R",
-          Quantity: 5,
-          Probability: 22,
-        },
-        {
-          ItemId: "item_02",
-          ItemName: "Chip cải tiến trung cấp",
-          Rarity: "SR",
-          Quantity: 3,
-          Probability: 15,
-        },
-        {
-          ItemId: "item_03",
-          ItemName: "Chip cải tiến cao cấp",
-          Rarity: "SSR",
-          Quantity: 1,
-          Probability: 8,
-        },
-        {
-          ItemId: "item_04",
-          ItemName: "Lõi cộng hưởng sơ cấp",
-          Rarity: "SR",
-          Quantity: 2,
-          Probability: 13,
-        },
-        {
-          ItemId: "item_05",
-          ItemName: "Lõi cộng hưởng cao cấp",
-          Rarity: "UR",
-          Quantity: 1,
-          Probability: 4,
-        },
-        {
-          ItemId: "item_06",
-          ItemName: "Năng lượng tia sét",
-          Rarity: "R",
-          Quantity: 20,
-          Probability: 16,
-        },
-        {
-          ItemId: "item_07",
-          ItemName: "Xu vàng Veyra",
-          Rarity: "R",
-          Quantity: 500,
-          Probability: 15,
-        },
-        {
-          ItemId: "item_08",
-          ItemName: "Pha lê Veyra",
-          Rarity: "SSR",
-          Quantity: 100,
-          Probability: 7,
-        },
-      ]);
-    }
-  }, [isOpen, editingEvent]);
-
-  if (!isOpen) return null;
 
   const handleSelectHtmlFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,25 +224,6 @@ export default function EventEditorModal({
     } catch {
       setErrorMessage("Không thể đọc cấu trúc tệp .zip đã chọn.");
     }
-  };
-
-  const handleAddMission = () => {
-    soundEngine.playClick();
-    setMissions((prev) => [
-      ...prev,
-      {
-        MissionId: `mission_${prev.length + 1}`,
-        Title: "Nhiệm Vụ Sự Kiện Mới",
-        Description: "Hoàn thành mục tiêu để nhận thêm lượt quay.",
-        TicketReward: 1,
-        MissionType: "daily",
-      },
-    ]);
-  };
-
-  const handleRemoveMission = (idx: number) => {
-    soundEngine.playClick();
-    setMissions((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleAddReward = () => {
@@ -318,6 +290,7 @@ export default function EventEditorModal({
         Subtitle: subtitle.trim(),
         Description: description.trim(),
         InitialTickets: Number(initialTickets) || 0,
+        ReferralTicketReward: Math.max(1, Math.min(10, Number(referralTicketReward) || 1)),
         UnityTargetObject: unityTargetObject.trim() || "LuckyWheelManager",
         StartTime: startTime ? new Date(startTime).toISOString() : new Date().toISOString(),
         EndTime: endTime
@@ -325,7 +298,7 @@ export default function EventEditorModal({
           : new Date(Date.now() + 30 * 86400_000).toISOString(),
         RawHtmlContent: rawHtmlContent,
         UnityBuild: unityBuildToSave,
-        Missions: missions,
+        Missions: [dailyMission],
         Rewards: rewards,
       };
 
@@ -387,7 +360,7 @@ export default function EventEditorModal({
             },
             {
               id: "missions" as const,
-              label: `2. Nhiệm Vụ Nhận Lượt (${missions.length})`,
+              label: "2. Cách Nhận Lượt Quay (2 Kênh)",
             },
             {
               id: "rewards" as const,
@@ -691,119 +664,121 @@ export default function EventEditorModal({
           )}
 
           {activeTab === "missions" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-white uppercase font-[family-name:var(--font-rajdhani)]">
-                    Danh Sách Nhiệm Vụ Nhận Lượt Quay
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Khi Chỉ Huy hoàn thành nhiệm vụ, hệ thống cộng lượt quay và truyền thẳng vào trong Game Unity.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddMission}
-                  className="px-3.5 py-2 rounded-xl bg-[#3fe9d6]/15 hover:bg-[#3fe9d6]/25 text-[#3fe9d6] border border-[#3fe9d6]/40 text-xs font-mono font-bold cursor-pointer"
-                >
-                  + Thêm Nhiệm Vụ
-                </button>
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase font-[family-name:var(--font-rajdhani)]">
+                  Cấu Hình 2 Kênh Nhận Lượt Quay Chính Thức
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Người chơi chỉ nhận thêm lượt qua <strong>Điểm danh hằng ngày</strong> và <strong>Mã hỗ trợ chéo</strong> (tối đa 5 lần nhập giúp người khác &amp; 5 lần được người khác nhập mã, không reset).
+                </p>
               </div>
 
-              <div className="space-y-3">
-                {missions.map((m, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-2xl bg-[#060919] border border-white/10 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
-                  >
-                    <div className="sm:col-span-3">
-                      <label className="block text-[10px] font-mono text-slate-400 mb-1">
-                        Mã Nhiệm Vụ (MissionId)
-                      </label>
-                      <input
-                        type="text"
-                        value={m.MissionId}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setMissions((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, MissionId: val } : item
-                            )
-                          );
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs font-mono text-[#3fe9d6]"
-                      />
+              {/* Kênh 1: Điểm Danh Hằng Ngày */}
+              <div className="p-5 rounded-2xl bg-[#060919] border border-[#f5c767]/25 space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-[#f5c767]">
+                      01. Điểm Danh Hằng Ngày
                     </div>
-                    <div className="sm:col-span-4">
-                      <label className="block text-[10px] font-mono text-slate-400 mb-1">
-                        Tên Nhiệm Vụ
-                      </label>
-                      <input
-                        type="text"
-                        value={m.Title}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setMissions((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, Title: val } : item
-                            )
-                          );
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs text-white"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-[10px] font-mono text-slate-400 mb-1">
-                        Thưởng Lượt
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={m.TicketReward}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          setMissions((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, TicketReward: val } : item
-                            )
-                          );
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs font-mono font-bold text-[#f5c767]"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-[10px] font-mono text-slate-400 mb-1">
-                        Chu Kỳ
-                      </label>
-                      <select
-                        value={m.MissionType}
-                        onChange={(e) => {
-                          const val = e.target.value as "daily" | "once";
-                          setMissions((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, MissionType: val } : item
-                            )
-                          );
-                        }}
-                        className="w-full px-2.5 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs text-slate-200"
-                      >
-                        <option value="daily">Mỗi Ngày</option>
-                        <option value="once">1 Lần Duy Nhất</option>
-                      </select>
-                    </div>
-                    <div className="sm:col-span-1 flex justify-end pt-4">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMission(idx)}
-                        className="px-2.5 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-mono cursor-pointer"
-                        title="Xóa nhiệm vụ"
-                      >
-                        Xóa
-                      </button>
+                    <div className="text-[11px] text-slate-400">
+                      Chu kỳ làm mới mỗi ngày · Tối đa 1 lần / ngày
                     </div>
                   </div>
-                ))}
+                  <span className="px-2.5 py-1 rounded-lg bg-[#f5c767]/10 border border-[#f5c767]/30 text-[11px] font-mono text-[#f5c767]">
+                    Làm mới mỗi ngày
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  <div className="sm:col-span-5">
+                    <label className="block text-[10px] font-mono text-slate-400 mb-1">
+                      Tiêu Đề Điểm Danh
+                    </label>
+                    <input
+                      type="text"
+                      value={dailyMission.Title}
+                      onChange={(e) =>
+                        setDailyMission((prev) => ({ ...prev, Title: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-5">
+                    <label className="block text-[10px] font-mono text-slate-400 mb-1">
+                      Mô Tả Ngắn
+                    </label>
+                    <input
+                      type="text"
+                      value={dailyMission.Description}
+                      onChange={(e) =>
+                        setDailyMission((prev) => ({
+                          ...prev,
+                          Description: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs text-slate-200"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-mono text-slate-400 mb-1">
+                      Lượt / Ngày
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={dailyMission.TicketReward}
+                      onChange={(e) =>
+                        setDailyMission((prev) => ({
+                          ...prev,
+                          TicketReward: Math.max(1, Math.min(50, Number(e.target.value) || 1)),
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs font-mono font-bold text-[#f5c767]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Kênh 2: Mã Hỗ Trợ Chỉ Huy */}
+              <div className="p-5 rounded-2xl bg-[#060919] border border-[#3fe9d6]/25 space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-[#3fe9d6]">
+                      02. Nhập Mã Giúp Người Khác &amp; Nhận Hỗ Trợ
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Giới hạn cố định: Tối đa 5 lần nhập mã cho người khác &amp; 5 lần được người khác nhập mã (Không reset)
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-[11px] font-mono text-rose-300">
+                    Không Reset
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  <div className="sm:col-span-4">
+                    <label className="block text-[10px] font-mono text-slate-400 mb-1">
+                      Số Lượt Thưởng Mỗi Lần Nhập Mã Hợp Lệ
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={referralTicketReward}
+                      onChange={(e) =>
+                        setReferralTicketReward(
+                          Math.max(1, Math.min(10, Number(e.target.value) || 1))
+                        )
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-[#090d24] border border-white/10 text-xs font-mono font-bold text-[#3fe9d6]"
+                    />
+                  </div>
+                  <div className="sm:col-span-8 text-xs text-slate-400 leading-relaxed pt-3 sm:pt-4">
+                    Khi Người chơi A nhập mã của Người chơi B: cả A (đã giúp) và B (được giúp) đều nhận <strong className="text-[#3fe9d6]">+{referralTicketReward} lượt quay</strong>. Không cho phép tự nhập mã của bản thân hoặc nhập trùng 1 người.
+                  </div>
+                </div>
               </div>
             </div>
           )}
