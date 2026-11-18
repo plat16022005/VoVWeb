@@ -1,5 +1,5 @@
 import { initializeApp, deleteApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, deleteUser, updateProfile, signOut } from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -569,9 +569,27 @@ export const adminService = {
           LastLogin: "Chưa đăng nhập",
         };
 
-        // Ghi Firestore ngay khi user mới đang có context đăng nhập trên secondaryApp
-        // Quyền request.auth.uid == newUid sẽ hợp lệ 100%
-        await setDoc(doc(secondaryDb, USERS_COLLECTION, newUid), firestoreData);
+        // Ưu tiên ghi bằng phiên Admin chính (db) để tạo được cả Manager và Player;
+        // nếu tạo Player và db chính chưa có quyền admin trên Firestore thì dự phòng qua secondaryDb (request.auth.uid == newUid)
+        try {
+          await setDoc(doc(db, USERS_COLLECTION, newUid), firestoreData);
+        } catch (primaryWriteErr: unknown) {
+          if (data.role === "Player") {
+            try {
+              await setDoc(doc(secondaryDb, USERS_COLLECTION, newUid), firestoreData);
+            } catch (secondaryWriteErr) {
+              try {
+                await deleteUser(cred.user);
+              } catch {}
+              throw secondaryWriteErr;
+            }
+          } else {
+            try {
+              await deleteUser(cred.user);
+            } catch {}
+            throw primaryWriteErr;
+          }
+        }
 
         await signOut(secondaryAuth);
         await deleteApp(secondaryApp);

@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInAnonymously,
+  deleteUser,
   updateProfile,
   signInWithPopup,
   signOut,
@@ -323,6 +325,7 @@ export const authService = {
     username: string;
     isNewUser?: boolean;
     provider?: "Email" | "Google" | "Guest";
+    throwOnError?: boolean;
   }): Promise<FirestoreUserData | null> {
     if (!db) return null;
     try {
@@ -419,8 +422,19 @@ export const authService = {
           };
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn("Lỗi lưu document vào Firestore collection Users:", err);
+      const fsErr = err as { code?: string; message?: string };
+      if (userData.throwOnError) {
+        if (fsErr?.code === "permission-denied") {
+          throw new Error(
+            "Không có quyền ghi hồ sơ vào Firestore (Users). Vui lòng kiểm tra và deploy Firestore Rules mới nhất."
+          );
+        }
+        throw new Error(
+          fsErr?.message || "Không thể lưu hồ sơ người dùng vào Firestore (Users)."
+        );
+      }
       return null;
     }
   },
@@ -450,13 +464,23 @@ export const authService = {
 
       // Tạo Document trong Firestore Users theo motip chuẩn:
       // UserId, Username, Email, Role, Status, IsBanned, CreatedAt, LastLogin
-      const firestoreUser = await this.saveUserToFirestore({
-        uid: credential.user.uid,
-        email: credential.user.email || data.email.trim(),
-        username,
-        isNewUser: true,
-        provider: "Email",
-      });
+      let firestoreUser: FirestoreUserData | null = null;
+      try {
+        firestoreUser = await this.saveUserToFirestore({
+          uid: credential.user.uid,
+          email: credential.user.email || data.email.trim(),
+          username,
+          isNewUser: true,
+          provider: "Email",
+          throwOnError: true,
+        });
+      } catch (fsErr) {
+        // Dọn tài khoản Auth vừa tạo nếu không ghi được hồ sơ Firestore Users (tránh tạo tài khoản rỗng)
+        try {
+          await deleteUser(credential.user);
+        } catch {}
+        throw fsErr;
+      }
 
       // Đồng bộ sang NestJS Backend (/api/players) nếu Backend đang chạy
       try {
@@ -678,9 +702,20 @@ export const authService = {
 
   // 3b. Đăng nhập / Trải nghiệm nhanh dưới dạng Khách (Guest)
   async loginAsGuest(): Promise<AuthUser> {
-    const guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    let guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const guestUsername = `Chỉ Huy Khách #${Math.floor(1000 + Math.random() * 9000)}`;
     const now = new Date().toISOString();
+
+    if (auth && isFirebaseConfigured) {
+      try {
+        const anonCred = await signInAnonymously(auth);
+        if (anonCred.user?.uid) {
+          guestId = anonCred.user.uid;
+        }
+      } catch {
+        // Dự phòng nếu Anonymous Auth chưa được bật trong Firebase Console
+      }
+    }
 
     if (db) {
       try {

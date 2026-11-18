@@ -74,42 +74,130 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Kiểm tra dữ liệu hồ sơ người dùng (Users) hợp lệ (dùng chung cho create và update)
+    function isValidUser(data) {
+      return data.keys().size() <= 30
+        && (!('UserId' in data) || (data.UserId is string && data.UserId.size() > 0 && data.UserId.size() <= 128))
+        && (!('Username' in data) || data.Username == null || (data.Username is string && data.Username.size() <= 200))
+        && (!('username' in data) || data.username == null || (data.username is string && data.username.size() <= 200))
+        && (!('Email' in data) || data.Email == null || (data.Email is string && data.Email.size() <= 320))
+        && (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 320))
+        && (!('Role' in data) || data.Role == null || (data.Role is string && data.Role.size() <= 32))
+        && (!('role' in data) || data.role == null || (data.role is string && data.role.size() <= 32))
+        && (!('Status' in data) || (data.Status is string && data.Status.size() <= 32))
+        && (!('status' in data) || (data.status is string && data.status.size() <= 32))
+        && (!('IsBanned' in data) || data.IsBanned is bool)
+        && (!('isBanned' in data) || data.isBanned is bool)
+        && (!('Provider' in data) || data.Provider == null || (data.Provider is string && data.Provider.size() <= 32))
+        && (!('provider' in data) || data.provider == null || (data.provider is string && data.provider.size() <= 32))
+        && (!('CreatedAt' in data) || data.CreatedAt == null || data.CreatedAt is timestamp || data.CreatedAt is number || (data.CreatedAt is string && data.CreatedAt.size() <= 64))
+        && (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp || data.createdAt is number || (data.createdAt is string && data.createdAt.size() <= 64))
+        && (!('LastLogin' in data) || data.LastLogin == null || data.LastLogin is timestamp || data.LastLogin is number || (data.LastLogin is string && data.LastLogin.size() <= 64))
+        && (!('lastLogin' in data) || data.lastLogin == null || data.lastLogin is timestamp || data.lastLogin is number || (data.lastLogin is string && data.lastLogin.size() <= 64))
+        && (!('BanDetails' in data) || data.BanDetails == null || (data.BanDetails is map && data.BanDetails.keys().size() <= 20))
+        && (!('banDetails' in data) || data.banDetails == null || (data.banDetails is map && data.banDetails.keys().size() <= 20));
+    }
+
+    // Kiểm tra dữ liệu phân quyền chi tiết của Manager (Users/{userId}/Permissions/{permissionId})
+    function isValidUserPermission(data, permissionId) {
+      return permissionId.size() > 0 && permissionId.size() <= 100
+        && data.keys().hasAll(['GroupId', 'GroupName', 'GroupCode', 'IsEnabled', 'SubPermissions'])
+        && data.keys().hasOnly(['GroupId', 'GroupName', 'GroupCode', 'IsEnabled', 'SubPermissions', 'GrantedBy', 'UpdatedAt'])
+        && data.GroupId is string && data.GroupId == permissionId
+        && data.GroupName is string && data.GroupName.size() > 0 && data.GroupName.size() <= 200
+        && data.GroupCode is string && data.GroupCode.size() > 0 && data.GroupCode.size() <= 100
+        && data.IsEnabled is bool
+        && data.SubPermissions is list && data.SubPermissions.size() <= 100
+        && (!('GrantedBy' in data) || (data.GrantedBy is string && data.GrantedBy.size() <= 320))
+        && (!('UpdatedAt' in data) || data.UpdatedAt is number || data.UpdatedAt is timestamp || (data.UpdatedAt is string && data.UpdatedAt.size() <= 64));
+    }
+
+    // Kiểm tra dữ liệu vật phẩm túi đồ người chơi (Users/{userId}/Inventory/{itemId})
+    function isValidUserInventoryItem(data) {
+      return data.keys().size() <= 30
+        && (!('ItemId' in data) || (data.ItemId is string && data.ItemId.size() > 0 && data.ItemId.size() <= 128))
+        && (!('ItemName' in data) || (data.ItemName is string && data.ItemName.size() <= 200))
+        && (!('Rarity' in data) || (data.Rarity is string && data.Rarity.size() <= 64))
+        && (!('Quantity' in data) || (data.Quantity is number && data.Quantity >= 0))
+        && (!('UpdatedAt' in data) || data.UpdatedAt is timestamp || data.UpdatedAt is number || (data.UpdatedAt is string && data.UpdatedAt.size() <= 64));
+    }
+
+    // Kiểm tra dữ liệu trạng thái sự kiện của người chơi (Users/{userId}/EventStates/{eventId})
+    function isValidUserEventState(data) {
+      return data.keys().size() <= 30
+        && (!('EventId' in data) || (data.EventId is string && data.EventId.size() > 0 && data.EventId.size() <= 128))
+        && (!('EventTitle' in data) || (data.EventTitle is string && data.EventTitle.size() <= 200))
+        && (!('SpinTickets' in data) || (data.SpinTickets is number && data.SpinTickets >= 0))
+        && (!('TotalSpins' in data) || (data.TotalSpins is number && data.TotalSpins >= 0))
+        && (!('LastUpdated' in data) || data.LastUpdated is timestamp || data.LastUpdated is number || (data.LastUpdated is string && data.LastUpdated.size() <= 64));
+    }
+
     // Hồ sơ người dùng (Users):
     // - Cho phép ĐỌC CÔNG KHAI (allow read: if true) để kiểm tra trạng thái tài khoản (IsBanned, Role, Profile) mượt mà mà không bao giờ bị lỗi missing quyền
-    // - GHI: Người dùng tự cập nhật hồ sơ của chính mình (request.auth.uid == userId); Admin hoặc Manager có quyền cập nhật, khóa/mở khóa hồ sơ người khác
-    // - CHỐNG LEO THANG ĐẶC QUYỀN: Người dùng thông thường không được tự phong Role hoặc tự gỡ IsBanned
+    // - GHI: Người dùng tự cập nhật hồ sơ của chính mình (request.auth.uid == userId); chỉ Admin mới có quyền tạo/cập nhật/xóa hồ sơ người khác và phân quyền
+    // - CHỐNG LEO THANG ĐẶC QUYỀN: Người dùng thông thường chỉ được tự tạo với Role 'Player'/'player', không được tự phong Role hoặc tự gỡ IsBanned/Status 'banned'
     match /Users/{userId} {
       allow read: if true;
-      allow create: if request.auth != null && (
-        isAdminOrManager() ||
-        (request.auth.uid == userId &&
-         (!('Role' in request.resource.data) || request.resource.data.Role == 'player') &&
-         (!('IsBanned' in request.resource.data) || request.resource.data.IsBanned == false))
-      );
-      allow update: if request.auth != null && (
-        isAdminOrManager() ||
-        (request.auth.uid == userId &&
-         (!('Role' in request.resource.data) || request.resource.data.Role == resource.data.Role) &&
-         (!('IsBanned' in request.resource.data) || request.resource.data.IsBanned == resource.data.IsBanned))
-      );
+      allow create: if request.auth != null
+        && isValidUser(request.resource.data)
+        && (
+          (request.auth.uid == userId
+           && request.resource.data.keys().hasOnly(['UserId', 'Username', 'Email', 'Role', 'Status', 'IsBanned', 'Provider', 'CreatedAt', 'LastLogin'])
+           && (!('UserId' in request.resource.data) || request.resource.data.UserId == userId)
+           && (!('Role' in request.resource.data) || request.resource.data.Role in ['Player', 'player'])
+           && (!('IsBanned' in request.resource.data) || request.resource.data.IsBanned == false)
+           && (!('Status' in request.resource.data) || request.resource.data.Status in ['active', 'pending'])
+           && (!('Provider' in request.resource.data) || request.resource.data.Provider in ['Email', 'Google', 'Guest']))
+          || isAdmin()
+        );
+      allow update: if request.auth != null
+        && isValidUser(request.resource.data)
+        && (
+          (request.auth.uid == userId
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['Username', 'Role', 'LastLogin', 'Status', 'IsBanned', 'Provider', 'PermissionGroups', 'Permissions'])
+           && (!('Role' in request.resource.data) ||
+               ('Role' in resource.data && request.resource.data.Role == resource.data.Role) ||
+               (!('Role' in resource.data) && request.resource.data.Role in ['Player', 'player']))
+           && (!('IsBanned' in request.resource.data) ||
+               ('IsBanned' in resource.data && request.resource.data.IsBanned == resource.data.IsBanned) ||
+               (!('IsBanned' in resource.data) && request.resource.data.IsBanned == false && (!('Status' in resource.data) || resource.data.Status != 'banned')))
+           && (!('Status' in request.resource.data) ||
+               ('Status' in resource.data && request.resource.data.Status == resource.data.Status) ||
+               (!('Status' in resource.data) && (request.resource.data.Status == 'banned' || (request.resource.data.Status == 'active' && (!('IsBanned' in resource.data) || resource.data.IsBanned != true)))))
+           && (!('Provider' in request.resource.data) ||
+               ('Provider' in resource.data && request.resource.data.Provider == resource.data.Provider) ||
+               request.resource.data.Provider in ['Email', 'Google', 'Guest'])
+           && (!('PermissionGroups' in request.resource.data) ||
+               ('PermissionGroups' in resource.data && request.resource.data.PermissionGroups == resource.data.PermissionGroups))
+           && (!('Permissions' in request.resource.data) ||
+               ('Permissions' in resource.data && request.resource.data.Permissions == resource.data.Permissions)))
+          || isAdmin()
+        );
       allow delete: if isAdmin();
 
       // Phân quyền chi tiết cho tài khoản Manager (Subcollection Permissions)
       match /Permissions/{permissionId} {
         allow read: if true;
-        allow write: if isAdminOrManager();
+        allow create, update: if isAdmin() && isValidUserPermission(request.resource.data, permissionId);
+        allow delete: if isAdmin();
       }
 
       // Túi đồ người chơi (Subcollection Inventory)
       match /Inventory/{itemId} {
         allow read: if true;
-        allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
+        allow create, update: if request.auth != null
+          && (request.auth.uid == userId || isAdminOrManager())
+          && isValidUserInventoryItem(request.resource.data);
+        allow delete: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
       }
 
       // Trạng thái sự kiện của người chơi (Subcollection EventStates)
       match /EventStates/{eventId} {
         allow read: if true;
-        allow write: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
+        allow create, update: if request.auth != null
+          && (request.auth.uid == userId || isAdminOrManager())
+          && isValidUserEventState(request.resource.data);
+        allow delete: if request.auth != null && (request.auth.uid == userId || isAdminOrManager());
       }
     }
 
