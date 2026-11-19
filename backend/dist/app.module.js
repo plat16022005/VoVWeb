@@ -12,11 +12,19 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { ServersModule } from './modules/servers/servers.module.js';
 import { GachaModule } from './modules/gacha/gacha.module.js';
 import { EventsModule } from './modules/events/events.module.js';
+import { ItemsModule } from './modules/items/items.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
     Module({
-        imports: [PlayersModule, AuthModule, ServersModule, GachaModule, EventsModule],
+        imports: [
+            PlayersModule,
+            AuthModule,
+            ServersModule,
+            GachaModule,
+            EventsModule,
+            ItemsModule,
+        ],
         controllers: [AppController],
         providers: [AppService],
     })

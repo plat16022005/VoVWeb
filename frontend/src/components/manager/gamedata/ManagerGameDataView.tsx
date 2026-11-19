@@ -11,6 +11,7 @@ import ValkyriaDetailModal from "./ValkyriaDetailModal";
 import ValkyriaFormModal from "./ValkyriaFormModal";
 import ValkyriaDeleteModal from "./ValkyriaDeleteModal";
 import GachaSeasonsManager from "../gacha/GachaSeasonsManager";
+import GameItemsManager from "../items/GameItemsManager";
 
 export type GameDataSubTab = "characters" | "gacha" | "items" | "worlds";
 
@@ -40,11 +41,22 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     canGachaActivate ||
     canGachaDelete;
 
+  const canItemEdit = hasPermission(currentUser, "gamedata.item.edit");
+  const canItemDelete = hasPermission(currentUser, "gamedata.item.delete");
+  const hasItemAccess =
+    hasPermission(currentUser, "gamedata.item.view") ||
+    canItemEdit ||
+    canItemDelete;
+
   const [currentSubTab, setCurrentSubTab] = useState<GameDataSubTab>(() => {
     if (initialSubTab === "gacha" && hasGachaAccess) return "gacha";
+    if (initialSubTab === "items" && hasItemAccess) return "items";
     if (initialSubTab === "characters" && hasCharacterAccess) return "characters";
-    if (initialSubTab === "items" || initialSubTab === "worlds") return initialSubTab;
-    return hasCharacterAccess ? "characters" : "gacha";
+    if (initialSubTab === "worlds") return initialSubTab;
+    if (hasCharacterAccess) return "characters";
+    if (hasGachaAccess) return "gacha";
+    if (hasItemAccess) return "items";
+    return "characters";
   });
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loadedOnce, setLoadedOnce] = useState(false);
@@ -69,14 +81,20 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
   };
 
   const activeSubTab: GameDataSubTab = useMemo(() => {
-    if (currentSubTab === "characters" && !hasCharacterAccess && hasGachaAccess) {
-      return "gacha";
+    if (currentSubTab === "characters" && !hasCharacterAccess) {
+      if (hasGachaAccess) return "gacha";
+      if (hasItemAccess) return "items";
     }
-    if (currentSubTab === "gacha" && !hasGachaAccess && hasCharacterAccess) {
-      return "characters";
+    if (currentSubTab === "gacha" && !hasGachaAccess) {
+      if (hasCharacterAccess) return "characters";
+      if (hasItemAccess) return "items";
+    }
+    if (currentSubTab === "items" && !hasItemAccess) {
+      if (hasCharacterAccess) return "characters";
+      if (hasGachaAccess) return "gacha";
     }
     return currentSubTab;
-  }, [currentSubTab, hasCharacterAccess, hasGachaAccess]);
+  }, [currentSubTab, hasCharacterAccess, hasGachaAccess, hasItemAccess]);
 
   const loading = hasCharacterAccess && !loadedOnce;
 
@@ -237,7 +255,7 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     }
   };
 
-  if (!hasCharacterAccess && !hasGachaAccess) {
+  if (!hasCharacterAccess && !hasGachaAccess && !hasItemAccess) {
     return (
       <div className="py-20 p-8 rounded-3xl bg-[#090d24]/90 border border-amber-500/30 text-center space-y-3">
         <div className="text-4xl">⚠️</div>
@@ -245,7 +263,7 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
           Chưa Được Cấp Quyền Thao Tác Chi Tiết
         </h3>
         <p className="text-xs text-slate-400 max-w-md mx-auto font-sans">
-          Tài khoản của bạn thuộc nhóm Dữ Liệu Game nhưng tất cả quyền thao tác nhỏ (Nhân Vật Valkyria, Banner Gacha) đều đang bị hạn chế. Vui lòng liên hệ Quản Trị Viên để mở quyền.
+          Tài khoản của bạn thuộc nhóm Dữ Liệu Game nhưng tất cả quyền thao tác nhỏ (Nhân Vật Valkyria, Banner Gacha, Vật Phẩm & Trang Bị) đều đang bị hạn chế. Vui lòng liên hệ Quản Trị Viên để mở quyền.
         </p>
       </div>
     );
@@ -254,6 +272,8 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
   const hasCurrentWritePermission =
     activeSubTab === "gacha"
       ? canGachaEdit || canGachaActivate || canGachaDelete
+      : activeSubTab === "items"
+      ? canItemEdit || canItemDelete
       : canEdit || canEditSkills || canDelete;
 
   return (
@@ -345,22 +365,23 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={() => {
-            soundEngine.playClick();
-            setCurrentSubTab("items");
-          }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeSubTab === "items"
-              ? "bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40"
-              : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-          }`}
-        >
-          <span>🛡️</span>
-          <span>Vật Phẩm & Trang Bị</span>
-          <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-400 font-normal">Sắp mở</span>
-        </button>
+        {hasItemAccess && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEngine.playClick();
+              setCurrentSubTab("items");
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeSubTab === "items"
+                ? "bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_20px_rgba(63,233,214,0.2)]"
+                : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
+            }`}
+          >
+            <span>🛡️</span>
+            <span>Vật Phẩm & Trang Bị</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -399,16 +420,13 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
 
       {activeSubTab === "gacha" && hasGachaAccess && <GachaSeasonsManager />}
 
-      {activeSubTab === "items" && (
-        <div className="py-20 text-center rounded-2xl bg-[#090d24]/50 border border-dashed border-white/10 space-y-3">
-          <div className="text-4xl">🛡️</div>
-          <h4 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)]">
-            Phân Hệ Quản Lý Vật Phẩm & Trang Bị
-          </h4>
-          <p className="text-xs text-slate-400 max-w-md mx-auto font-sans leading-relaxed">
-            Chức năng quản lý kho vật phẩm, nguyên liệu nâng cấp, tiền tệ ingame và trang bị đang được hoàn thiện ở giai đoạn kế tiếp theo lộ trình hệ thống.
-          </p>
-        </div>
+      {activeSubTab === "items" && hasItemAccess && (
+        <GameItemsManager
+          canEdit={canItemEdit}
+          canDelete={canItemDelete}
+          heroIdSuggestions={characters.map((c) => ({ id: c.id, name: c.name }))}
+          onNotify={showToast}
+        />
       )}
 
       {activeSubTab === "worlds" && (

@@ -710,7 +710,24 @@ let GachaService = GachaService_1 = class GachaService {
             const rawType = data.Type ?? data.ItemType ?? data.type ?? 0;
             const itemType = Number.isFinite(Number(rawType)) ? Number(rawType) : 0;
             const description = String(data.Description || data.description || data.Desc || '').trim();
-            const rarity = String(data.Rarity || data.rarity || '').trim();
+            const rawRarity = data.Rarity ?? data.rarity;
+            let rarity = '';
+            if (typeof rawRarity === 'number' && Number.isFinite(rawRarity)) {
+                const rNum = Math.trunc(rawRarity);
+                rarity =
+                    rNum >= 4
+                        ? 'UR'
+                        : rNum === 3
+                            ? 'SSR'
+                            : rNum === 2
+                                ? 'SR'
+                                : rNum === 1
+                                    ? 'R'
+                                    : 'N';
+            }
+            else if (typeof rawRarity === 'string') {
+                rarity = rawRarity.trim();
+            }
             const iconUrl = String(data.IconUrl || data.ImageUrl || data.Image || data.iconUrl || '').trim();
             return {
                 ItemId: itemId,

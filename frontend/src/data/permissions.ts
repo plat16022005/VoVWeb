@@ -2,7 +2,7 @@ export interface SubPermission {
   id: string;
   title: string;
   description: string;
-  category: "blog" | "facebook" | "character" | "gacha" | "event" | "general";
+  category: "blog" | "facebook" | "character" | "gacha" | "item" | "event" | "general";
   categoryTitle: string;
 }
 
@@ -140,6 +140,28 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         description: "Xóa các mùa ở trạng thái bản nháp hoặc gỡ bỏ banner con kèm dọn dẹp ảnh lưu trữ.",
         category: "gacha",
         categoryTitle: "Quản Lý Banner Gacha",
+      },
+      // Nhánh 3: Kho Vật Phẩm, Nguyên Liệu & Trang Bị
+      {
+        id: "gamedata.item.view",
+        title: "Xem Kho Vật Phẩm, Nguyên Liệu & Trang Bị",
+        description: "Xem danh sách vật phẩm tiêu hao, nguyên liệu đột phá, vé chiêu mộ, mảnh tướng và chỉ số trang bị.",
+        category: "item",
+        categoryTitle: "Quản Lý Vật Phẩm & Trang Bị",
+      },
+      {
+        id: "gamedata.item.edit",
+        title: "Tạo Mới, Chỉnh Sửa & Đồng Bộ Vật Phẩm Mẫu",
+        description: "Khởi tạo vật phẩm mới, cấu hình hiệu ứng tiêu hao, chỉ số trang bị, mảnh ghép tướng và đồng bộ bộ mẫu Unity.",
+        category: "item",
+        categoryTitle: "Quản Lý Vật Phẩm & Trang Bị",
+      },
+      {
+        id: "gamedata.item.delete",
+        title: "Xóa Vật Phẩm Khỏi Danh Mục Game",
+        description: "Xóa vĩnh viễn cấu hình vật phẩm hoặc trang bị khỏi hệ thống dữ liệu trò chơi.",
+        category: "item",
+        categoryTitle: "Quản Lý Vật Phẩm & Trang Bị",
       },
     ],
   },

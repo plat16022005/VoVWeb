@@ -10,9 +10,10 @@ import ServerLogsTable from "./ServerLogsTable";
 import GameDataLogsTable from "./GameDataLogsTable";
 import GachaLogsTable from "./GachaLogsTable";
 import EventLogsTable from "./EventLogsTable";
+import ItemLogsTable from "./ItemLogsTable";
 import { soundEngine } from "@/services/audio.service";
 
-type ActiveLogTab = "accounts" | "terms" | "policy" | "blogs" | "servers" | "gamedata" | "gacha" | "events";
+type ActiveLogTab = "accounts" | "terms" | "policy" | "blogs" | "servers" | "gamedata" | "gacha" | "items" | "events";
 
 interface LogCategoryGroup {
   groupName: string;
@@ -85,6 +86,13 @@ export default function AdminLogsView() {
           icon: "🌠",
           badge: "Gacha Audit",
           description: "Tạo mùa, kích hoạt mùa, cấu hình tỷ lệ quay, Pity & pool Banner Gacha",
+        },
+        {
+          id: "items",
+          label: "Kho Vật Phẩm & Trang Bị",
+          icon: "🛡️",
+          badge: "Item Audit",
+          description: "Khởi tạo, điều chỉnh chỉ số trang bị, đồng bộ mẫu & gỡ bỏ vật phẩm game",
         },
         {
           id: "events",
@@ -329,6 +337,7 @@ export default function AdminLogsView() {
             {activeTab === "servers" && <ServerLogsTable />}
             {activeTab === "gamedata" && <GameDataLogsTable />}
             {activeTab === "gacha" && <GachaLogsTable />}
+            {activeTab === "items" && <ItemLogsTable />}
             {activeTab === "events" && <EventLogsTable />}
           </div>
         </main>
