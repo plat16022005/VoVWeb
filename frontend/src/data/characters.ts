@@ -15,6 +15,9 @@ export interface Character {
   rarity: number; // 3 (R), 4 (SR), 5 (SSR / UR)
   rarityLabel?: string; // "R" | "SR" | "SSR" | "UR"
   cv: string;
+  height?: string; // VD: "165 cm"
+  weight?: string; // VD: "48 kg"
+  birthday?: string; // VD: "14/02"
   image: string;
   quote: string;
   lore: string;

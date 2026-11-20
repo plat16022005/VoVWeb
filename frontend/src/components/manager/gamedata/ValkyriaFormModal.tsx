@@ -49,6 +49,9 @@ export default function ValkyriaFormModal({
   const [rarityLabel, setRarityLabel] = useState("R");
   const [rarity, setRarity] = useState<number>(3);
   const [cv, setCv] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [image, setImage] = useState(DEFAULT_HERO_IMAGE);
   const [quote, setQuote] = useState("");
   const [lore, setLore] = useState("");
@@ -88,6 +91,9 @@ export default function ValkyriaFormModal({
       setRarityLabel(initialData.rarityLabel || (initialData.rarity === 5 ? "SSR" : initialData.rarity === 4 ? "SR" : "R"));
       setRarity(initialData.rarity || 3);
       setCv(initialData.cv || "");
+      setHeight(initialData.height || "");
+      setWeight(initialData.weight || "");
+      setBirthday(initialData.birthday || "");
       setImage(initialData.image || DEFAULT_HERO_IMAGE);
       setQuote(initialData.quote || "");
       setLore(initialData.lore || "");
@@ -127,6 +133,9 @@ export default function ValkyriaFormModal({
       setRarityLabel("R");
       setRarity(3);
       setCv("");
+      setHeight("");
+      setWeight("");
+      setBirthday("");
       setImage(DEFAULT_HERO_IMAGE);
       setQuote("");
       setLore("");
@@ -247,6 +256,9 @@ export default function ValkyriaFormModal({
         elementColor: "",
         path: role,
         cv: cv.trim() || "Chưa cập nhật",
+        height: height.trim(),
+        weight: weight.trim(),
+        birthday: birthday.trim(),
         image: finalImage,
         quote: quote.trim() || "Vì hòa bình đại lục Veyra!",
         lore: lore.trim() || "Nữ chiến binh dũng cảm của đại lục Veyra.",
@@ -498,6 +510,48 @@ export default function ValkyriaFormModal({
                       value={cv}
                       onChange={(e) => setCv(e.target.value)}
                       placeholder="vd: Hayami Saori / Laura Post"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans focus:outline-none focus:border-[#3fe9d6]"
+                    />
+                  </div>
+                </div>
+
+                {/* Personal Profile: Height, Weight, Birthday */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                      Chiều Cao (Height)
+                    </label>
+                    <input
+                      type="text"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      placeholder="vd: 165 cm"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans focus:outline-none focus:border-[#3fe9d6]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                      Cân Nặng (Weight)
+                    </label>
+                    <input
+                      type="text"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      placeholder="vd: 48 kg"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans focus:outline-none focus:border-[#3fe9d6]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                      Ngày Sinh (Birthday)
+                    </label>
+                    <input
+                      type="text"
+                      value={birthday}
+                      onChange={(e) => setBirthday(e.target.value)}
+                      placeholder="vd: 14/02"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans focus:outline-none focus:border-[#3fe9d6]"
                     />
                   </div>

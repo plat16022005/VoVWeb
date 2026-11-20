@@ -604,7 +604,37 @@ export default function CharacterShowcase({
                 ))}
               </div>
             ) : (
-              <div className="p-5 rounded-lg bg-[#0d122e]/80 border border-white/5 text-slate-300 text-sm leading-relaxed">
+              <div className="p-5 rounded-lg bg-[#0d122e]/80 border border-white/5 text-slate-300 text-sm leading-relaxed space-y-4">
+                {(selectedChar.height?.trim() ||
+                  selectedChar.weight?.trim() ||
+                  selectedChar.birthday?.trim()) && (
+                  <div className="grid grid-cols-3 gap-3 pb-4 border-b border-white/10">
+                    <div className="p-2.5 rounded-lg bg-[#080c21]/80 border border-white/10">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                        Chiều Cao
+                      </div>
+                      <div className="text-xs sm:text-sm font-bold text-white mt-0.5 font-mono">
+                        {selectedChar.height?.trim() || "—"}
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-[#080c21]/80 border border-white/10">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                        Cân Nặng
+                      </div>
+                      <div className="text-xs sm:text-sm font-bold text-white mt-0.5 font-mono">
+                        {selectedChar.weight?.trim() || "—"}
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-[#080c21]/80 border border-white/10">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                        Ngày Sinh
+                      </div>
+                      <div className="text-xs sm:text-sm font-bold text-[#f5c767] mt-0.5 font-mono">
+                        {selectedChar.birthday?.trim() || "—"}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <p>{selectedChar.lore}</p>
               </div>
             )}

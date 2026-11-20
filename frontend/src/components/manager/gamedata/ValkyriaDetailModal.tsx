@@ -168,6 +168,28 @@ export default function ValkyriaDetailModal({
                   </>
                 )}
               </div>
+
+              {/* Personal Profile Info: Height, Weight, Birthday */}
+              <div className="grid grid-cols-3 gap-2.5 pt-1">
+                <div className="px-3 py-2 rounded-xl bg-black/35 border border-white/10">
+                  <div className="text-[10px] font-mono uppercase text-slate-400">Chiều Cao</div>
+                  <div className="text-xs font-bold text-white mt-0.5">
+                    {character.height?.trim() || "Chưa cập nhật"}
+                  </div>
+                </div>
+                <div className="px-3 py-2 rounded-xl bg-black/35 border border-white/10">
+                  <div className="text-[10px] font-mono uppercase text-slate-400">Cân Nặng</div>
+                  <div className="text-xs font-bold text-white mt-0.5">
+                    {character.weight?.trim() || "Chưa cập nhật"}
+                  </div>
+                </div>
+                <div className="px-3 py-2 rounded-xl bg-black/35 border border-white/10">
+                  <div className="text-[10px] font-mono uppercase text-slate-400">Ngày Sinh</div>
+                  <div className="text-xs font-bold text-[#f5c767] mt-0.5">
+                    {character.birthday?.trim() || "Chưa cập nhật"}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
