@@ -375,5 +375,144 @@ service cloud.firestore {
       }
     }
 
+    // ===============================================================
+    // Assumed Data Model: Giftcodes & Redemptions
+    // ===============================================================
+    //
+    // Collection: Giftcodes/{code}
+    // Document ID: {code} (string matching ^[A-Z0-9_-]{4,32}$)
+    // Fields:
+    //   - Code: string (required, immutable, == code)
+    //   - Title: string (required, 1..150 chars)
+    //   - Description: string (required, 0..1000 chars)
+    //   - CodeType: string (required, enum ['COMMON', 'SINGLE_USE'])
+    //   - CampaignCategory: string (optional, enum ['LAUNCH', 'EVENT', 'LIVESTREAM', 'COMPENSATION', 'PARTNER', 'OTHER'])
+    //   - CampaignName: string (optional, 0..120 chars)
+    //   - BatchId: string (optional, 0..80 chars)
+    //   - IsActive: bool (required)
+    //   - IsPublicDisplay: bool (required; must be false when CodeType == 'SINGLE_USE')
+    //   - MaxRedemptions: int (required, 0..10000000)
+    //   - CurrentRedemptions: int (required, 0..10000000; == 0 on create, immutable on update)
+    //   - MaxPerUser: int (required, 1..100)
+    //   - AllowedServers: list of string (required, size 1..50)
+    //   - StartsAt: string (required, 0..64 chars)
+    //   - ExpiresAt: string (required, 0..64 chars)
+    //   - Rewards: map (required, exact keys: Gold int 0..1000000000, Gems int 0..10000000,
+    //                   Energy int 0..100000, Items list size 0..30)
+    //   - CreatedAt: string (required, immutable, 1..64 chars)
+    //   - UpdatedAt: string (required, 1..64 chars)
+    //   - CreatedBy: string (required, immutable, 1..200 chars)
+    //   - UpdatedBy: string (required, 1..200 chars)
+    //
+    // Subcollection: Giftcodes/{code}/Redemptions/{redemptionId}
+    // Document ID: {redemptionId} (user UID or server-generated redemption record ID)
+    // Fields: written exclusively by trusted server / Cloud Functions Admin SDK
+    //   - UserId: string (owner UID for player read authorization)
+    // ===============================================================
+
+    // Kiểm tra cấu trúc một vật phẩm thưởng trong Giftcodes.Rewards.Items
+    function isValidGiftcodeRewardItem(item) {
+      return item is map
+        && item.keys().hasAll(['ItemId', 'Quantity'])
+        && item.keys().hasOnly(['ItemId', 'ItemName', 'Quantity', 'Rarity'])
+        && item.ItemId is string && item.ItemId.size() >= 1 && item.ItemId.size() <= 80
+        && item.Quantity is int && item.Quantity >= 1 && item.Quantity <= 999999
+        && (!('ItemName' in item) || (item.ItemName is string && item.ItemName.size() <= 120))
+        && (!('Rarity' in item) || (item.Rarity is int && item.Rarity >= 0 && item.Rarity <= 4));
+    }
+
+    // Kiểm tra cấu trúc bản đồ phần thưởng (Rewards) của Giftcode
+    function isValidGiftcodeRewards(rewards) {
+      return rewards is map
+        && rewards.keys().hasAll(['Gold', 'Gems', 'Energy', 'Items'])
+        && rewards.keys().hasOnly(['Gold', 'Gems', 'Energy', 'Items'])
+        && rewards.Gold is int && rewards.Gold >= 0 && rewards.Gold <= 1000000000
+        && rewards.Gems is int && rewards.Gems >= 0 && rewards.Gems <= 10000000
+        && rewards.Energy is int && rewards.Energy >= 0 && rewards.Energy <= 100000
+        && rewards.Items is list && rewards.Items.size() <= 30
+        && (rewards.Items.size() == 0 || isValidGiftcodeRewardItem(rewards.Items[0]));
+    }
+
+    // Kiểm tra dữ liệu mã quà tặng (Giftcodes/{code}) hợp lệ (dùng chung cho create và update)
+    function isValidGiftcode(data, code) {
+      return code.size() >= 4 && code.size() <= 32
+        && code.matches('^[A-Z0-9_-]{4,32}$')
+        && data.keys().hasAll([
+          'Code', 'Title', 'Description', 'CodeType', 'IsActive', 'IsPublicDisplay',
+          'MaxRedemptions', 'CurrentRedemptions', 'MaxPerUser', 'AllowedServers',
+          'StartsAt', 'ExpiresAt', 'Rewards', 'CreatedAt', 'UpdatedAt', 'CreatedBy', 'UpdatedBy'
+        ])
+        && data.keys().hasOnly([
+          'Code', 'Title', 'Description', 'CodeType', 'CampaignCategory', 'CampaignName',
+          'BatchId', 'IsActive', 'IsPublicDisplay',
+          'MaxRedemptions', 'CurrentRedemptions', 'MaxPerUser', 'AllowedServers',
+          'StartsAt', 'ExpiresAt', 'Rewards', 'CreatedAt', 'UpdatedAt', 'CreatedBy', 'UpdatedBy'
+        ])
+        && data.Code is string && data.Code == code
+        && data.Title is string && data.Title.size() >= 1 && data.Title.size() <= 150
+        && data.Description is string && data.Description.size() <= 1000
+        && data.CodeType is string && data.CodeType in ['COMMON', 'SINGLE_USE']
+        && (!('CampaignCategory' in data) || (data.CampaignCategory is string && data.CampaignCategory in ['LAUNCH', 'EVENT', 'LIVESTREAM', 'COMPENSATION', 'PARTNER', 'OTHER']))
+        && (!('CampaignName' in data) || (data.CampaignName is string && data.CampaignName.size() <= 120))
+        && (!('BatchId' in data) || (data.BatchId is string && data.BatchId.size() <= 80))
+        && data.IsActive is bool
+        && data.IsPublicDisplay is bool
+        && (data.CodeType == 'COMMON' || data.IsPublicDisplay == false)
+        && data.MaxRedemptions is int && data.MaxRedemptions >= 0 && data.MaxRedemptions <= 10000000
+        && data.CurrentRedemptions is int && data.CurrentRedemptions >= 0 && data.CurrentRedemptions <= 10000000
+        && data.MaxPerUser is int && data.MaxPerUser >= 1 && data.MaxPerUser <= 100
+        && data.AllowedServers is list && data.AllowedServers.size() >= 1 && data.AllowedServers.size() <= 50
+        && data.AllowedServers[0] is string && data.AllowedServers[0].size() >= 1 && data.AllowedServers[0].size() <= 64
+        && data.StartsAt is string && data.StartsAt.size() <= 64
+        && data.ExpiresAt is string && data.ExpiresAt.size() <= 64
+        && isValidGiftcodeRewards(data.Rewards)
+        && data.CreatedAt is string && data.CreatedAt.size() >= 1 && data.CreatedAt.size() <= 64
+        && data.UpdatedAt is string && data.UpdatedAt.size() >= 1 && data.UpdatedAt.size() <= 64
+        && data.CreatedBy is string && data.CreatedBy.size() >= 1 && data.CreatedBy.size() <= 200
+        && data.UpdatedBy is string && data.UpdatedBy.size() >= 1 && data.UpdatedBy.size() <= 200;
+    }
+
+    // Mã quà tặng (Giftcodes):
+    // - ĐỌC: Admin/Manager đọc toàn bộ; khách/người chơi CHỈ đọc được mã dùng chung công khai đang hoạt động
+    //        (chống quét/lộ mã riêng tư và lô mã đơn lẻ SINGLE_USE)
+    // - TẠO: Chỉ Admin/Manager, chuẩn hóa schema, Code == document ID, CurrentRedemptions == 0
+    // - CẬP NHẬT: Chỉ Admin/Manager, chuẩn hóa schema, khóa cứng Code, CreatedAt, CreatedBy, CurrentRedemptions
+    // - XÓA: Chỉ Admin/Manager
+    match /Giftcodes/{code} {
+      allow read: if isAdminOrManager()
+        || (
+          resource.data.IsActive == true
+          && resource.data.IsPublicDisplay == true
+          && resource.data.CodeType == 'COMMON'
+        );
+      allow create: if isAdminOrManager()
+        && isValidGiftcode(request.resource.data, code)
+        && request.resource.data.CurrentRedemptions == 0;
+      allow update: if isAdminOrManager()
+        && isValidGiftcode(request.resource.data, code)
+        && request.resource.data.Code == resource.data.Code
+        && request.resource.data.CreatedAt == resource.data.CreatedAt
+        && request.resource.data.CreatedBy == resource.data.CreatedBy
+        && request.resource.data.CurrentRedemptions == resource.data.CurrentRedemptions;
+      allow delete: if isAdminOrManager();
+
+      // Lịch sử đổi mã quà tặng (Redemptions):
+      // - ĐỌC: Admin/Manager hoặc chính chủ tài khoản đã đổi mã
+      // - TẠO / CẬP NHẬT: Từ chối mọi truy cập Client (chỉ ghi qua Server / Cloud Functions Admin SDK)
+      // - XÓA: Chỉ Admin/Manager
+      match /Redemptions/{redemptionId} {
+        allow read: if isAdminOrManager()
+          || (
+            request.auth != null
+            && (
+              redemptionId == request.auth.uid
+              || (resource != null && resource.data.UserId == request.auth.uid)
+            )
+          );
+        allow create, update: if false;
+        allow delete: if isAdminOrManager();
+      }
+    }
+
   }
 }

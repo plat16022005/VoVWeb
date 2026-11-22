@@ -11,7 +11,6 @@ import {
   ITEM_RARITY_OPTIONS,
   ITEM_TYPE_OPTIONS,
   ItemConfigDocument,
-  formatEquipmentStatsSummary,
   itemConfigService,
 } from "@/services/itemConfig.service";
 import { soundEngine } from "@/services/audio.service";
@@ -74,28 +73,11 @@ function ItemFormModalContent({
     () => editingItem?.EffectValue ?? 500
   );
 
-  // Equipment (Type === 2)
+  // Equipment (Type === 2 - mẫu Slot & SetId, chỉ số sinh động trên Server)
   const [slot, setSlot] = useState<GameEquipSlot>(
     () => editingItem?.Slot ?? GameEquipSlot.Weapon
   );
-  const [bonusHp, setBonusHp] = useState<number>(
-    () => editingItem?.BonusHp ?? 0
-  );
-  const [bonusAtk, setBonusAtk] = useState<number>(
-    () => editingItem?.BonusAtk ?? 0
-  );
-  const [bonusDef, setBonusDef] = useState<number>(
-    () => editingItem?.BonusDef ?? 0
-  );
-  const [bonusSpeed, setBonusSpeed] = useState<number>(
-    () => editingItem?.BonusSpeed ?? 0
-  );
-  const [bonusCritRate, setBonusCritRate] = useState<number>(
-    () => editingItem?.BonusCritRate ?? 0
-  );
-  const [bonusCritDamage, setBonusCritDamage] = useState<number>(
-    () => editingItem?.BonusCritDamage ?? 0
-  );
+  const [setId, setSetId] = useState<string>(() => editingItem?.SetId || "");
 
   // Shard (Type === 3)
   const [targetHeroId, setTargetHeroId] = useState(
@@ -165,15 +147,7 @@ function ItemFormModalContent({
         EffectValue:
           type === GameItemType.Consumable ? Number(effectValue) || 0 : 0,
         Slot: type === GameItemType.Equipment ? slot : GameEquipSlot.None,
-        BonusHp: type === GameItemType.Equipment ? Number(bonusHp) || 0 : 0,
-        BonusAtk: type === GameItemType.Equipment ? Number(bonusAtk) || 0 : 0,
-        BonusDef: type === GameItemType.Equipment ? Number(bonusDef) || 0 : 0,
-        BonusSpeed:
-          type === GameItemType.Equipment ? Number(bonusSpeed) || 0 : 0,
-        BonusCritRate:
-          type === GameItemType.Equipment ? Number(bonusCritRate) || 0 : 0,
-        BonusCritDamage:
-          type === GameItemType.Equipment ? Number(bonusCritDamage) || 0 : 0,
+        SetId: type === GameItemType.Equipment ? setId.trim() : "",
         TargetHeroId:
           type === GameItemType.Shard ? targetHeroId.trim() : "",
         RequiredShardsToSummon:
@@ -204,27 +178,6 @@ function ItemFormModalContent({
       setSubmitting(false);
     }
   };
-
-  const previewEquipmentSummary = formatEquipmentStatsSummary({
-    ItemId: itemId,
-    ItemName: itemName,
-    Description: description,
-    Type: type,
-    Rarity: rarity,
-    MaxStack: maxStack,
-    DropLocationHint: dropLocationHint,
-    ConsumableType: consumableType,
-    EffectValue: effectValue,
-    Slot: slot,
-    BonusHp: bonusHp,
-    BonusAtk: bonusAtk,
-    BonusDef: bonusDef,
-    BonusSpeed: bonusSpeed,
-    BonusCritRate: bonusCritRate,
-    BonusCritDamage: bonusCritDamage,
-    TargetHeroId: targetHeroId,
-    RequiredShardsToSummon: requiredShardsToSummon,
-  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
@@ -467,10 +420,10 @@ function ItemFormModalContent({
             <div className="p-5 rounded-2xl bg-[#060919] border border-[#f5c767]/35 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-mono uppercase text-[#f5c767] font-bold">
-                  3. Thuộc Tính Trang Bị Chiến Binh (Equipment)
+                  3. Định Danh Mẫu Trang Bị (Equipment — Chỉ Số Động)
                 </span>
                 <span className="px-2.5 py-0.5 rounded bg-[#f5c767]/15 border border-[#f5c767]/30 text-[11px] font-mono text-[#f5c767]">
-                  {previewEquipmentSummary}
+                  Chỉ số chính &amp; dòng phụ sinh ngẫu nhiên trên Server
                 </span>
               </div>
 
@@ -494,101 +447,16 @@ function ItemFormModalContent({
                   </select>
                 </div>
 
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-6">
                   <label className="block text-[11px] font-mono text-slate-300 mb-1">
-                    Máu Cộng Thêm (BonusHp)
+                    Mã Bộ Trang Bị (SetId — Tùy chọn)
                   </label>
                   <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={bonusHp}
-                    onChange={(e) =>
-                      setBonusHp(Math.max(0, Number(e.target.value) || 0))
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-emerald-300 focus:outline-none focus:border-[#f5c767]"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-mono text-slate-300 mb-1">
-                    Tấn Công Cộng Thêm (BonusAtk)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={bonusAtk}
-                    onChange={(e) =>
-                      setBonusAtk(Math.max(0, Number(e.target.value) || 0))
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-rose-300 focus:outline-none focus:border-[#f5c767]"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-mono text-slate-300 mb-1">
-                    Phòng Thủ (BonusDef)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={bonusDef}
-                    onChange={(e) =>
-                      setBonusDef(Math.max(0, Number(e.target.value) || 0))
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-sky-300 focus:outline-none focus:border-[#f5c767]"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-mono text-slate-300 mb-1">
-                    Tốc Độ (BonusSpeed)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={bonusSpeed}
-                    onChange={(e) =>
-                      setBonusSpeed(Math.max(0, Number(e.target.value) || 0))
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-cyan-300 focus:outline-none focus:border-[#f5c767]"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-mono text-slate-300 mb-1">
-                    Tỷ Lệ Bạo Kích (% CritRate)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={bonusCritRate}
-                    onChange={(e) =>
-                      setBonusCritRate(Math.max(0, Number(e.target.value) || 0))
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-[#f5c767] focus:outline-none focus:border-[#f5c767]"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-mono text-slate-300 mb-1">
-                    ST Bạo Kích (% CritDamage)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={bonusCritDamage}
-                    onChange={(e) =>
-                      setBonusCritDamage(
-                        Math.max(0, Number(e.target.value) || 0)
-                      )
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-purple-300 focus:outline-none focus:border-[#f5c767]"
+                    type="text"
+                    value={setId}
+                    onChange={(e) => setSetId(e.target.value)}
+                    placeholder="VD: set_valkyria (để trống nếu không thuộc bộ)"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-[#f5c767] focus:outline-none focus:border-[#f5c767]"
                   />
                 </div>
               </div>

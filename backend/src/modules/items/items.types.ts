@@ -21,6 +21,7 @@ export enum GameEquipSlot {
   Armor = 3,
   Boots = 4,
   Accessory = 5,
+  Gloves = 6,
 }
 
 export enum GameConsumableEffectType {
@@ -50,14 +51,9 @@ export interface ItemConfigDocument {
   ConsumableType: GameConsumableEffectType;
   EffectValue: number;
 
-  // Thuộc tính Trang bị (Equipment - Type === 2)
+  // Thuộc tính Trang bị (Equipment - Type === 2: chỉ mẫu Slot & SetId, chỉ số sinh động trên Server)
   Slot: GameEquipSlot;
-  BonusHp: number;
-  BonusAtk: number;
-  BonusDef: number;
-  BonusSpeed: number;
-  BonusCritRate: number;
-  BonusCritDamage: number;
+  SetId: string;
 
   // Thuộc tính Mảnh ghép (Shard - Type === 3)
   TargetHeroId: string;

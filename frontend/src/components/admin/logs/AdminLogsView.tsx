@@ -11,9 +11,20 @@ import GameDataLogsTable from "./GameDataLogsTable";
 import GachaLogsTable from "./GachaLogsTable";
 import EventLogsTable from "./EventLogsTable";
 import ItemLogsTable from "./ItemLogsTable";
+import GiftcodeLogsTable from "./GiftcodeLogsTable";
 import { soundEngine } from "@/services/audio.service";
 
-type ActiveLogTab = "accounts" | "terms" | "policy" | "blogs" | "servers" | "gamedata" | "gacha" | "items" | "events";
+type ActiveLogTab =
+  | "accounts"
+  | "terms"
+  | "policy"
+  | "blogs"
+  | "servers"
+  | "gamedata"
+  | "gacha"
+  | "items"
+  | "events"
+  | "giftcodes";
 
 interface LogCategoryGroup {
   groupName: string;
@@ -100,6 +111,13 @@ export default function AdminLogsView() {
           icon: "◆",
           badge: "Event Audit",
           description: "Tạo sự kiện, tải bản build Unity (.zip), cập nhật layout (.html) & phần thưởng",
+        },
+        {
+          id: "giftcodes",
+          label: "Mã Quà Tặng (Giftcode)",
+          icon: "✦",
+          badge: "Giftcode Audit",
+          description: "Tạo mã quà tặng, sinh lô hàng loạt, cấu hình gói thưởng, khóa & xóa mã",
         },
       ],
     },
@@ -339,6 +357,7 @@ export default function AdminLogsView() {
             {activeTab === "gacha" && <GachaLogsTable />}
             {activeTab === "items" && <ItemLogsTable />}
             {activeTab === "events" && <EventLogsTable />}
+            {activeTab === "giftcodes" && <GiftcodeLogsTable />}
           </div>
         </main>
 

@@ -84,7 +84,7 @@ export default function ManagerSidebar({
             id: "events" as ManagerTab,
             title: "Quản Lý Sự Kiện",
             href: "/manager/events",
-            badge: "WebGL & Event",
+            badge: "Event & Code",
             badgeColor: "border-[#f5c767]/40 text-[#f5c767] bg-[#f5c767]/10",
             icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

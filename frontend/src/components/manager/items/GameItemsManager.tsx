@@ -6,7 +6,6 @@ import {
   GameItemType,
   ITEM_RARITY_OPTIONS,
   ItemConfigDocument,
-  formatEquipmentStatsSummary,
   getConsumableEffectMeta,
   getEquipSlotMeta,
   getItemRarityMeta,
@@ -113,7 +112,8 @@ export default function GameItemsManager({
         const matchDesc = it.Description.toLowerCase().includes(q);
         const matchHint = it.DropLocationHint.toLowerCase().includes(q);
         const matchHero = it.TargetHeroId?.toLowerCase().includes(q);
-        return matchId || matchName || matchDesc || matchHint || matchHero;
+        const matchSet = it.SetId?.toLowerCase().includes(q);
+        return matchId || matchName || matchDesc || matchHint || matchHero || matchSet;
       }
       return true;
     });
@@ -188,13 +188,14 @@ export default function GameItemsManager({
 
     if (item.Type === GameItemType.Equipment) {
       const slotMeta = getEquipSlotMeta(item.Slot);
-      const summary = formatEquipmentStatsSummary(item);
       return (
         <div className="space-y-0.5 text-[11px] font-mono">
           <div className="text-[#f5c767] font-semibold">
             Vị trí: {slotMeta.label}
           </div>
-          <div className="text-slate-300">{summary}</div>
+          <div className="text-slate-400">
+            {item.SetId ? `Bộ: ${item.SetId}` : "Chỉ số động (Sinh trên máy chủ)"}
+          </div>
         </div>
       );
     }

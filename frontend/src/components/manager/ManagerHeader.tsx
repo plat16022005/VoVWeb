@@ -26,8 +26,8 @@ const TAB_TITLES: Record<ManagerTab, { title: string; subtitle: string }> = {
     subtitle: "Thiết lập thông số chiến binh Valkyria, Banner Gacha theo mùa, kỹ năng và thế giới Veyra.",
   },
   events: {
-    title: "Trung Tâm Quản Lý Sự Kiện & Minigame (Event Hub)",
-    subtitle: "Hợp nhất bản build Unity WebGL (.zip) và giao diện (.html), cấu hình nhiệm vụ nhận lượt và phần thưởng.",
+    title: "Trung Tâm Quản Lý Sự Kiện & Giftcode (Event Hub)",
+    subtitle: "Vận hành sự kiện Minigame Unity WebGL, phát hành Mã Quà Tặng (Giftcode) và quản lý phần thưởng.",
   },
 };
 

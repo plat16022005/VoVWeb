@@ -29,6 +29,7 @@ export enum GameEquipSlot {
   Armor = 3,
   Boots = 4,
   Accessory = 5,
+  Gloves = 6,
 }
 
 export enum GameConsumableEffectType {
@@ -54,14 +55,9 @@ export interface ItemConfigDocument {
   ConsumableType: GameConsumableEffectType;
   EffectValue: number;
 
-  // Trang bị (Type === 2)
+  // Trang bị (Type === 2 - mẫu Slot & SetId, chỉ số sinh động trên Server)
   Slot: GameEquipSlot;
-  BonusHp: number;
-  BonusAtk: number;
-  BonusDef: number;
-  BonusSpeed: number;
-  BonusCritRate: number;
-  BonusCritDamage: number;
+  SetId: string;
 
   // Mảnh ghép (Type === 3)
   TargetHeroId: string;
@@ -130,7 +126,7 @@ export const ITEM_TYPE_OPTIONS: Array<{
     label: "Trang Bị Chiến Binh",
     shortLabel: "Trang Bị",
     code: "EQUIPMENT",
-    description: "Vũ khí, Mũ, Áo Giáp, Giày, Phụ kiện gắn lên Tướng",
+    description: "Vũ khí, Mũ, Áo Giáp, Giày, Phụ kiện, Găng tay (chỉ số sinh động)",
   },
   {
     value: GameItemType.Shard,
@@ -204,14 +200,19 @@ export const EQUIP_SLOT_OPTIONS: Array<{
   hint: string;
 }> = [
   { value: GameEquipSlot.None, label: "Chung / Không cố định", hint: "Mặc định" },
-  { value: GameEquipSlot.Weapon, label: "Vũ Khí (Weapon)", hint: "Tăng ATK, Crit Rate" },
-  { value: GameEquipSlot.Helmet, label: "Mũ / Nón (Helmet)", hint: "Tăng HP, DEF" },
-  { value: GameEquipSlot.Armor, label: "Áo Giáp (Armor)", hint: "Tăng HP, DEF" },
-  { value: GameEquipSlot.Boots, label: "Giày (Boots)", hint: "Tăng SPD, Né tránh" },
+  { value: GameEquipSlot.Weapon, label: "Vũ Khí (Weapon)", hint: "ATK, Crit Rate" },
+  { value: GameEquipSlot.Helmet, label: "Mũ / Nón (Helmet)", hint: "HP, DEF" },
+  { value: GameEquipSlot.Armor, label: "Áo Giáp (Armor)", hint: "DEF, HP" },
+  { value: GameEquipSlot.Boots, label: "Giày (Boots)", hint: "Speed, HP, Dodge" },
   {
     value: GameEquipSlot.Accessory,
     label: "Phụ Kiện (Accessory)",
-    hint: "Tăng ATK, Crit Dmg",
+    hint: "Crit Rate, Crit Dmg, ATK",
+  },
+  {
+    value: GameEquipSlot.Gloves,
+    label: "Găng Tay (Gloves)",
+    hint: "ATK, Crit Dmg, Parry",
   },
 ];
 
@@ -278,21 +279,6 @@ export function getConsumableEffectMeta(effectType: number) {
     CONSUMABLE_EFFECT_OPTIONS.find((opt) => opt.value === effectType) ||
     CONSUMABLE_EFFECT_OPTIONS[0]
   );
-}
-
-/**
- * Tương đương hàm FormatStatsSummary() trong ItemConfigSO.cs (Unity)
- */
-export function formatEquipmentStatsSummary(item: ItemConfigDocument): string {
-  if (item.Type !== GameItemType.Equipment) return "";
-  const parts: string[] = [];
-  if (item.BonusHp > 0) parts.push(`HP +${item.BonusHp.toLocaleString("vi-VN")}`);
-  if (item.BonusAtk > 0) parts.push(`ATK +${item.BonusAtk.toLocaleString("vi-VN")}`);
-  if (item.BonusDef > 0) parts.push(`DEF +${item.BonusDef.toLocaleString("vi-VN")}`);
-  if (item.BonusSpeed > 0) parts.push(`SPD +${item.BonusSpeed.toLocaleString("vi-VN")}`);
-  if (item.BonusCritRate > 0) parts.push(`Crit +${item.BonusCritRate}%`);
-  if (item.BonusCritDamage > 0) parts.push(`Crit Dmg +${item.BonusCritDamage}%`);
-  return parts.length > 0 ? parts.join(" · ") : "Chưa thiết lập chỉ số";
 }
 
 class ItemConfigService {

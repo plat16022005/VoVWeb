@@ -57,12 +57,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.AddExpToHero,
     EffectValue: 500,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -78,12 +73,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.AddExpToHero,
     EffectValue: 2500,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -99,12 +89,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.AddEnergyToPlayer,
     EffectValue: 60,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -120,12 +105,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.None,
     EffectValue: 0,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -141,12 +121,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.None,
     EffectValue: 0,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -162,12 +137,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.None,
     EffectValue: 0,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -183,12 +153,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.None,
     EffectValue: 0,
     Slot: GameEquipSlot.None,
-    BonusHp: 0,
-    BonusAtk: 0,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: 'hero_hitomi',
     RequiredShardsToSummon: 50,
   },
@@ -204,12 +169,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.None,
     EffectValue: 0,
     Slot: GameEquipSlot.Weapon,
-    BonusHp: 0,
-    BonusAtk: 250,
-    BonusDef: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 5,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -225,12 +185,7 @@ export const UNITY_SAMPLE_ITEMS: ItemConfigDocument[] = [
     ConsumableType: GameConsumableEffectType.None,
     EffectValue: 0,
     Slot: GameEquipSlot.Armor,
-    BonusHp: 2000,
-    BonusDef: 120,
-    BonusAtk: 0,
-    BonusSpeed: 0,
-    BonusCritRate: 0,
-    BonusCritDamage: 0,
+    SetId: '',
     TargetHeroId: '',
     RequiredShardsToSummon: 50,
   },
@@ -244,13 +199,6 @@ function clampInt(val: unknown, min: number, max: number, fallback: number): num
   const num = Number(val);
   if (!Number.isFinite(num)) return fallback;
   return Math.max(min, Math.min(max, Math.trunc(num)));
-}
-
-function clampFloat(val: unknown, min: number, max: number, fallback = 0): number {
-  const num = Number(val);
-  if (!Number.isFinite(num)) return fallback;
-  const clamped = Math.max(min, Math.min(max, num));
-  return Math.round(clamped * 100) / 100;
 }
 
 function parseRarity(raw: unknown): GameItemRarity {
@@ -326,15 +274,10 @@ export class ItemsService {
     const slot = clampInt(
       raw.Slot,
       0,
-      5,
+      6,
       GameEquipSlot.None,
     ) as GameEquipSlot;
-    const bonusHp = clampFloat(raw.BonusHp, 0, 10000000, 0);
-    const bonusAtk = clampFloat(raw.BonusAtk, 0, 10000000, 0);
-    const bonusDef = clampFloat(raw.BonusDef, 0, 10000000, 0);
-    const bonusSpeed = clampFloat(raw.BonusSpeed, 0, 100000, 0);
-    const bonusCritRate = clampFloat(raw.BonusCritRate, 0, 1000, 0);
-    const bonusCritDamage = clampFloat(raw.BonusCritDamage, 0, 10000, 0);
+    const setId = typeof raw.SetId === 'string' ? raw.SetId.trim() : '';
 
     const targetHeroId =
       typeof raw.TargetHeroId === 'string' ? raw.TargetHeroId.trim() : '';
@@ -365,12 +308,7 @@ export class ItemsService {
       ConsumableType: consumableType,
       EffectValue: effectValue,
       Slot: slot,
-      BonusHp: bonusHp,
-      BonusAtk: bonusAtk,
-      BonusDef: bonusDef,
-      BonusSpeed: bonusSpeed,
-      BonusCritRate: bonusCritRate,
-      BonusCritDamage: bonusCritDamage,
+      SetId: setId,
       TargetHeroId: targetHeroId,
       RequiredShardsToSummon: requiredShardsToSummon,
       ...(lastUpdated ? { LastUpdated: lastUpdated } : {}),
@@ -432,18 +370,13 @@ export class ItemsService {
       : 0;
 
     const slot = isEquipment
-      ? (clampInt(rawBody.Slot, 0, 5, GameEquipSlot.Weapon) as GameEquipSlot)
+      ? (clampInt(rawBody.Slot, 0, 6, GameEquipSlot.Weapon) as GameEquipSlot)
       : GameEquipSlot.None;
-    const bonusHp = isEquipment ? clampFloat(rawBody.BonusHp, 0, 10000000, 0) : 0;
-    const bonusAtk = isEquipment ? clampFloat(rawBody.BonusAtk, 0, 10000000, 0) : 0;
-    const bonusDef = isEquipment ? clampFloat(rawBody.BonusDef, 0, 10000000, 0) : 0;
-    const bonusSpeed = isEquipment ? clampFloat(rawBody.BonusSpeed, 0, 100000, 0) : 0;
-    const bonusCritRate = isEquipment
-      ? clampFloat(rawBody.BonusCritRate, 0, 1000, 0)
-      : 0;
-    const bonusCritDamage = isEquipment
-      ? clampFloat(rawBody.BonusCritDamage, 0, 10000, 0)
-      : 0;
+    const setId = isEquipment
+      ? typeof rawBody.SetId === 'string'
+        ? rawBody.SetId.trim().slice(0, 80)
+        : ''
+      : '';
 
     const targetHeroId = isShard
       ? typeof rawBody.TargetHeroId === 'string'
@@ -472,12 +405,7 @@ export class ItemsService {
       ConsumableType: consumableType,
       EffectValue: effectValue,
       Slot: slot,
-      BonusHp: bonusHp,
-      BonusAtk: bonusAtk,
-      BonusDef: bonusDef,
-      BonusSpeed: bonusSpeed,
-      BonusCritRate: bonusCritRate,
-      BonusCritDamage: bonusCritDamage,
+      SetId: setId,
       TargetHeroId: targetHeroId,
       RequiredShardsToSummon: requiredShardsToSummon,
       LastUpdated: nowIso,

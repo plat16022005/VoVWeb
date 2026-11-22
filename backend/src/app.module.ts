@@ -7,6 +7,7 @@ import { ServersModule } from './modules/servers/servers.module.js';
 import { GachaModule } from './modules/gacha/gacha.module.js';
 import { EventsModule } from './modules/events/events.module.js';
 import { ItemsModule } from './modules/items/items.module.js';
+import { GiftcodesModule } from './modules/giftcodes/giftcodes.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ItemsModule } from './modules/items/items.module.js';
     GachaModule,
     EventsModule,
     ItemsModule,
+    GiftcodesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

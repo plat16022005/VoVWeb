@@ -2,7 +2,7 @@ export interface SubPermission {
   id: string;
   title: string;
   description: string;
-  category: "blog" | "facebook" | "character" | "gacha" | "item" | "event" | "general";
+  category: "blog" | "facebook" | "character" | "gacha" | "item" | "event" | "giftcode" | "general";
   categoryTitle: string;
 }
 
@@ -169,9 +169,10 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     id: "event_management",
     title: "Quản Lý Sự Kiện",
     code: "EVENT_OPS",
-    description: "Quản lý sự kiện Minigame Web, tích hợp bản build Unity WebGL (.zip) và giao diện (.html), cấu hình nhiệm vụ nhận lượt và phần thưởng.",
+    description: "Quản lý sự kiện Minigame Web (Unity WebGL) và phát hành Mã Quà Tặng (Giftcode) kèm phần thưởng trong game.",
     icon: "◆",
     subPermissions: [
+      // Nhánh 1: Sự Kiện & Minigame Web (Unity WebGL)
       {
         id: "event.minigame.view",
         title: "Xem Danh Sách & Cấu Hình Sự Kiện Minigame",
@@ -199,6 +200,35 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         description: "Xóa sự kiện đang đóng/nháp và tự động gỡ bỏ các tệp .wasm, .data, .html trên lưu trữ đám mây.",
         category: "event",
         categoryTitle: "Sự Kiện & Minigame Web (Unity WebGL)",
+      },
+      // Nhánh 2: Quản Lý Mã Quà Tặng (Giftcode)
+      {
+        id: "event.giftcode.view",
+        title: "Xem Danh Sách & Thống Kê Mã Quà Tặng",
+        description: "Theo dõi toàn bộ mã Giftcode dùng chung, lô mã đơn lẻ, phần thưởng, hạn dùng và tiến độ lượt nhập.",
+        category: "giftcode",
+        categoryTitle: "Quản Lý Mã Quà Tặng (Giftcode)",
+      },
+      {
+        id: "event.giftcode.edit",
+        title: "Tạo Mới, Sinh Hàng Loạt & Chỉnh Sửa Giftcode",
+        description: "Khởi tạo mã quà tặng mới, sinh lô mã dùng 1 lần, cấu hình Vàng/Ngọc/Thể Lực/Vật phẩm, phạm vi máy chủ và thời hạn.",
+        category: "giftcode",
+        categoryTitle: "Quản Lý Mã Quà Tặng (Giftcode)",
+      },
+      {
+        id: "event.giftcode.toggle",
+        title: "Bật/Tắt Kích Hoạt & Khóa Khẩn Cấp Mã",
+        description: "Mở kích hoạt hoặc tạm khóa khẩn cấp mã quà tặng khi phát sinh sự cố vận hành.",
+        category: "giftcode",
+        categoryTitle: "Quản Lý Mã Quà Tặng (Giftcode)",
+      },
+      {
+        id: "event.giftcode.delete",
+        title: "Xóa Mã Quà Tặng Khỏi Hệ Thống",
+        description: "Xóa vĩnh viễn mã quà tặng không còn sử dụng khỏi hệ thống quản trị sự kiện.",
+        category: "giftcode",
+        categoryTitle: "Quản Lý Mã Quà Tặng (Giftcode)",
       },
     ],
   },
