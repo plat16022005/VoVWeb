@@ -79,49 +79,49 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
       case "BAN":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-rose-500/15 border border-rose-500/40 text-rose-400">
-            <span>🔒</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
             <span>Khóa Tài Khoản</span>
           </span>
         );
       case "UNBAN":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-400">
-            <span>🔓</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Mở Khóa</span>
           </span>
         );
       case "CREATE":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-500/15 border border-cyan-500/40 text-cyan-300">
-            <span>➕</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
             <span>Tạo Mới</span>
           </span>
         );
       case "UPDATE":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/15 border border-purple-500/40 text-purple-300">
-            <span>✏️</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
             <span>Cập Nhật</span>
           </span>
         );
       case "DELETE":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-red-600/20 border border-red-500/50 text-red-300">
-            <span>🗑️</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
             <span>Xóa Vĩnh Viễn</span>
           </span>
         );
       case "RESET_PASSWORD":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300">
-            <span>🔑</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             <span>Đặt Lại MK</span>
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-500/15 border border-slate-500/40 text-slate-300">
-            <span>📝</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             <span>{title || action}</span>
           </span>
         );
@@ -137,33 +137,23 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
           <span className="text-xl font-bold font-mono text-white mt-1">{stats.total}</span>
         </div>
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-rose-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-rose-300 flex items-center gap-1">
-            <span>🔒</span> Khóa
-          </span>
+          <span className="text-[11px] font-mono text-rose-300">Khóa</span>
           <span className="text-xl font-bold font-mono text-rose-400 mt-1">{stats.banCount}</span>
         </div>
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-emerald-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-emerald-300 flex items-center gap-1">
-            <span>🔓</span> Mở Khóa
-          </span>
+          <span className="text-[11px] font-mono text-emerald-300">Mở Khóa</span>
           <span className="text-xl font-bold font-mono text-emerald-400 mt-1">{stats.unbanCount}</span>
         </div>
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-cyan-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-cyan-300 flex items-center gap-1">
-            <span>➕</span> Tạo Mới
-          </span>
+          <span className="text-[11px] font-mono text-cyan-300">Tạo Mới</span>
           <span className="text-xl font-bold font-mono text-cyan-400 mt-1">{stats.createCount}</span>
         </div>
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-purple-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-purple-300 flex items-center gap-1">
-            <span>✏️</span> Cập Nhật
-          </span>
+          <span className="text-[11px] font-mono text-purple-300">Cập Nhật</span>
           <span className="text-xl font-bold font-mono text-purple-400 mt-1">{stats.updateCount}</span>
         </div>
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-amber-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-amber-300 flex items-center gap-1">
-            <span>🔑</span> Đặt Lại MK
-          </span>
+          <span className="text-[11px] font-mono text-amber-300">Đặt Lại MK</span>
           <span className="text-xl font-bold font-mono text-amber-400 mt-1">{stats.resetCount}</span>
         </div>
       </div>
@@ -172,8 +162,7 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
       <div className="p-5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">📜</span>
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 Nhật Ký Quản Trị Tài Khoản
               </h3>
@@ -197,7 +186,6 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
             disabled={loading}
             className="self-start sm:self-auto px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
           >
-            <span className={loading ? "animate-spin" : ""}>↺</span>
             <span>{loading ? "Đang đồng bộ..." : "Làm Mới"}</span>
           </button>
         </div>
@@ -206,21 +194,21 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Ô tìm kiếm */}
           <div className="relative flex-1 max-w-lg">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên người dùng, email, người thực hiện hoặc nội dung..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0e122b] border border-white/10 text-xs text-slate-200 placeholder:text-slate-500 font-mono focus:outline-none focus:border-[#3fe9d6] transition-colors"
+              className="w-full pl-3.5 pr-8 py-2 rounded-xl bg-[#0e122b] border border-white/10 text-xs text-slate-200 placeholder:text-slate-500 font-mono focus:outline-none focus:border-[#3fe9d6] transition-colors"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                aria-label="Xóa từ khóa"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm leading-none cursor-pointer"
               >
-                ✕
+                ×
               </button>
             )}
           </div>
@@ -228,13 +216,13 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
           {/* Tabs Filter theo Action */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             {[
-              { id: "ALL", label: "Tất Cả", icon: "🌐" },
-              { id: "BAN", label: "Khóa", icon: "🔒" },
-              { id: "UNBAN", label: "Mở Khóa", icon: "🔓" },
-              { id: "CREATE", label: "Tạo Mới", icon: "➕" },
-              { id: "UPDATE", label: "Cập Nhật", icon: "✏️" },
-              { id: "DELETE", label: "Xóa", icon: "🗑️" },
-              { id: "RESET_PASSWORD", label: "Đặt Lại MK", icon: "🔑" },
+              { id: "ALL", label: "Tất Cả" },
+              { id: "BAN", label: "Khóa" },
+              { id: "UNBAN", label: "Mở Khóa" },
+              { id: "CREATE", label: "Tạo Mới" },
+              { id: "UPDATE", label: "Cập Nhật" },
+              { id: "DELETE", label: "Xóa" },
+              { id: "RESET_PASSWORD", label: "Đặt Lại MK" },
             ].map((btn) => {
               const active = selectedAction === btn.id;
               return (
@@ -250,7 +238,6 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
                       : "bg-[#0e122b] text-slate-400 hover:text-slate-200 hover:bg-[#151a3b] border border-white/5"
                     }`}
                 >
-                  <span className="text-xs">{btn.icon}</span>
                   <span>{btn.label}</span>
                 </button>
               );
@@ -264,11 +251,10 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
         {loading ? (
           <div className="py-16 flex flex-col items-center justify-center space-y-3">
             <div className="w-9 h-9 border-2 border-[#3fe9d6] border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-mono text-slate-400">Đang nạp dữ liệu nhật ký từ Firestore...</span>
+            <span className="text-xs font-mono text-slate-400">Đang nạp dữ liệu nhật ký tài khoản...</span>
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="py-16 text-center space-y-3 border border-dashed border-white/10 rounded-2xl p-8">
-            <div className="text-4xl">📜</div>
+          <div className="py-16 text-center space-y-2 border border-dashed border-white/10 rounded-2xl p-8">
             <div className="text-sm font-mono text-slate-300 font-bold">
               {searchQuery || selectedAction !== "ALL"
                 ? "Không tìm thấy nhật ký phù hợp với bộ lọc."
@@ -305,10 +291,7 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
                     >
                       {/* Thời gian */}
                       <td className="py-3.5 px-3 whitespace-nowrap text-slate-300">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-slate-500">🕒</span>
-                          <span>{item.createdAt}</span>
-                        </div>
+                        <span>{item.createdAt}</span>
                       </td>
 
                       {/* Hành động */}
@@ -325,16 +308,16 @@ export default function AccountLogsTable({ onRefresh }: AccountLogsTableProps) {
                           {item.targetEmail && (
                             <div className="text-[11px] text-slate-400">{item.targetEmail}</div>
                           )}
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                            <span>UID:</span>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                            <span>Mã:</span>
                             <span className="truncate max-w-[100px]">{item.targetUserId}</span>
                             <button
                               type="button"
                               onClick={() => handleCopy(item.id, item.targetUserId)}
-                              className="text-slate-400 hover:text-white"
-                              title="Sao chép UID"
+                              className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-[10px] font-mono cursor-pointer transition-colors"
+                              title="Sao chép mã tài khoản"
                             >
-                              {copiedId === item.id ? "✓" : "📋"}
+                              {copiedId === item.id ? "Đã chép" : "Chép"}
                             </button>
                           </div>
                         </div>

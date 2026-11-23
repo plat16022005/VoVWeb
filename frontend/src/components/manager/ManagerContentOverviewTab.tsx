@@ -82,10 +82,9 @@ export default function ManagerContentOverviewTab({
                 soundEngine.playClick();
                 onNavigateSubTab("blog");
               }}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f5c767] to-[#e6b143] text-[#060814] font-bold text-xs shadow-[0_0_15px_rgba(245,199,103,0.4)] hover:brightness-110 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f5c767] to-[#e6b143] text-[#060814] font-bold text-xs shadow-[0_0_15px_rgba(245,199,103,0.4)] hover:brightness-110 transition-all cursor-pointer"
             >
-              <span>📝</span>
-              <span>Viết Blog Mới</span>
+              + Viết Blog Mới
             </button>
 
             <button
@@ -93,10 +92,9 @@ export default function ManagerContentOverviewTab({
                 soundEngine.playClick();
                 onNavigateSubTab("facebook");
               }}
-              className="px-4 py-2.5 rounded-xl bg-[#1877F2]/20 hover:bg-[#1877F2]/30 text-white border border-[#1877F2]/40 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-[#1877F2]/20 hover:bg-[#1877F2]/30 text-white border border-[#1877F2]/40 text-xs font-bold transition-all cursor-pointer"
             >
-              <span>📘</span>
-              <span>Đăng Bài Facebook</span>
+              Đăng Bài Facebook
             </button>
           </div>
         </div>
@@ -106,17 +104,16 @@ export default function ManagerContentOverviewTab({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Tổng Bài Viết Blog */}
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-[#f5c767]/40 transition-all duration-300 relative overflow-hidden group shadow-lg">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2">
             <span className="text-xs uppercase font-mono tracking-wider text-slate-400 font-bold">
               Bài Viết Blog
             </span>
-            <span className="text-lg">📝</span>
           </div>
           <div className="text-3xl font-black text-white font-[family-name:var(--font-rajdhani)] tracking-wide my-1">
             {loading ? "..." : formatNumber(totalPosts)}
           </div>
           <div className="text-xs text-slate-400 flex items-center gap-2 font-mono">
-            <span className="text-emerald-400">✓ {publishedPosts} đã xuất bản</span>
+            <span className="text-emerald-400">{publishedPosts} đã xuất bản</span>
             <span>•</span>
             <span className="text-amber-400">{draftPosts} bản nháp</span>
           </div>
@@ -142,11 +139,10 @@ export default function ManagerContentOverviewTab({
 
         {/* Card 3: Auto-Reply Bot */}
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-emerald-500/40 transition-all duration-300 relative overflow-hidden group shadow-lg">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2">
             <span className="text-xs uppercase font-mono tracking-wider text-slate-400 font-bold">
               Auto-Reply Bot
             </span>
-            <span className="text-lg">🤖</span>
           </div>
           <div className="text-3xl font-black text-emerald-400 font-[family-name:var(--font-rajdhani)] tracking-wide my-1">
             {loading ? "..." : `${autoReplyPosts} Bài`}
@@ -159,11 +155,10 @@ export default function ManagerContentOverviewTab({
 
         {/* Card 4: Kênh Fanpage Kết Nối */}
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-[#3fe9d6]/40 transition-all duration-300 relative overflow-hidden group shadow-lg">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2">
             <span className="text-xs uppercase font-mono tracking-wider text-slate-400 font-bold">
               Kênh Mạng Xã Hội
             </span>
-            <span className="text-lg">📡</span>
           </div>
           <div className="text-2xl font-black text-[#3fe9d6] font-[family-name:var(--font-rajdhani)] tracking-wide my-1">
             Fanpage Facebook
@@ -179,12 +174,9 @@ export default function ManagerContentOverviewTab({
         {/* Left Column (2 Cols): Danh Sách Bài Viết Mới Nhất */}
         <div className="lg:col-span-2 rounded-2xl bg-[#090d24]/90 border border-white/10 p-5 space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📰</span>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
-                Bài Viết Mới Cập Nhật Gần Đây
-              </h3>
-            </div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
+              Bài Viết Mới Cập Nhật Gần Đây
+            </h3>
             <button
               onClick={() => {
                 soundEngine.playClick();
@@ -224,8 +216,8 @@ export default function ManagerContentOverviewTab({
                         />
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-lg shrink-0">
-                        📝
+                      <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-mono font-bold text-slate-400 shrink-0">
+                        BLOG
                       </div>
                     )}
                     <div className="min-w-0">
@@ -237,11 +229,18 @@ export default function ManagerContentOverviewTab({
                           {p.category || "Tin Tức"}
                         </span>
                         <span>•</span>
-                        <span>{p.status === "Published" ? "🟢 Đã xuất bản" : "🟡 Bản nháp"}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              p.status === "Published" ? "bg-emerald-400" : "bg-amber-400"
+                            }`}
+                          />
+                          {p.status === "Published" ? "Đã xuất bản" : "Bản nháp"}
+                        </span>
                         {p.facebookPostId && (
                           <>
                             <span>•</span>
-                            <span className="text-[#1877F2]">✓ Đã lên Facebook</span>
+                            <span className="text-[#1877F2]">Đã lên Facebook</span>
                           </>
                         )}
                       </div>
@@ -267,8 +266,7 @@ export default function ManagerContentOverviewTab({
         <div className="space-y-6">
           {/* Chuyên mục */}
           <div className="rounded-2xl bg-[#090d24]/90 border border-white/10 p-5 space-y-4 shadow-xl">
-            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-              <span className="text-lg">📊</span>
+            <div className="border-b border-white/10 pb-3">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
                 Phân Bổ Theo Chuyên Mục
               </h3>
@@ -299,12 +297,9 @@ export default function ManagerContentOverviewTab({
 
           {/* Quick Shortcuts */}
           <div className="rounded-2xl bg-gradient-to-br from-[#0c1438] to-[#070a1e] border border-[#1877F2]/30 p-5 space-y-3 shadow-xl">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🚀</span>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Thao Tác Nhanh
-              </h4>
-            </div>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+              Thao Tác Nhanh
+            </h4>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
               Xuất bản bài viết Blog chất lượng cao và đồng bộ ngay lên Facebook Fanpage để mở rộng tương tác cộng đồng game thủ.
             </p>
@@ -336,4 +331,3 @@ export default function ManagerContentOverviewTab({
     </div>
   );
 }
-

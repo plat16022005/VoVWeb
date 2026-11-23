@@ -87,9 +87,8 @@ export default function ValkyriaListTab({
       {/* 1. OVERVIEW STATS CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 shadow-lg">
-          <div className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Tổng Valkyria</span>
-            <span className="text-base">⚔️</span>
+          <div className="text-xs font-mono text-slate-400 uppercase tracking-wider">
+            Tổng Valkyria
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-white font-[family-name:var(--font-rajdhani)]">
@@ -100,9 +99,8 @@ export default function ValkyriaListTab({
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-[#ef4444]/30 shadow-lg">
-          <div className="text-xs font-mono text-[#ef4444] uppercase tracking-wider flex items-center justify-between">
-            <span>Độ Hiếm SSR (Đỏ)</span>
-            <span className="text-base">🔥</span>
+          <div className="text-xs font-mono text-[#ef4444] uppercase tracking-wider">
+            Độ Hiếm SSR (Đỏ)
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[#ef4444] font-[family-name:var(--font-rajdhani)]">
@@ -113,9 +111,8 @@ export default function ValkyriaListTab({
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-[#f5c767]/30 shadow-lg">
-          <div className="text-xs font-mono text-[#f5c767] uppercase tracking-wider flex items-center justify-between">
-            <span>Độ Hiếm SR & R</span>
-            <span className="text-base">⚡</span>
+          <div className="text-xs font-mono text-[#f5c767] uppercase tracking-wider">
+            Độ Hiếm SR & R
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[#f5c767] font-[family-name:var(--font-rajdhani)]">
@@ -126,9 +123,8 @@ export default function ValkyriaListTab({
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-[#3fe9d6]/30 shadow-lg">
-          <div className="text-xs font-mono text-[#3fe9d6] uppercase tracking-wider flex items-center justify-between">
-            <span>Vai Trò Chiến Đấu</span>
-            <span className="text-base">🎯</span>
+          <div className="text-xs font-mono text-[#3fe9d6] uppercase tracking-wider">
+            Vai Trò Chiến Đấu
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[#3fe9d6] font-[family-name:var(--font-rajdhani)]">
@@ -144,43 +140,40 @@ export default function ValkyriaListTab({
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-              🔍
-            </span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm kiếm theo tên Valkyria, danh hiệu hoặc ID..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans placeholder:text-slate-500 focus:outline-none focus:border-[#3fe9d6] transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans placeholder:text-slate-500 focus:outline-none focus:border-[#3fe9d6] transition-colors"
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             {/* View Mode Toggle */}
             <div className="p-1 rounded-xl bg-[#060814] border border-white/10 flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${viewMode === "grid"
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer ${viewMode === "grid"
                     ? "bg-white/10 text-[#3fe9d6]"
                     : "text-slate-400 hover:text-white"
                   }`}
                 title="Dạng Lưới Thẻ Bài"
               >
-                ⊞
+                Lưới
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-lg text-xs transition-colors cursor-pointer ${viewMode === "table"
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer ${viewMode === "table"
                     ? "bg-white/10 text-[#3fe9d6]"
                     : "text-slate-400 hover:text-white"
                   }`}
                 title="Dạng Bảng Danh Sách"
               >
-                ☰
+                Bảng
               </button>
             </div>
 
@@ -192,11 +185,10 @@ export default function ValkyriaListTab({
                   soundEngine.playClick();
                   onResetDefaults();
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-mono font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-mono font-semibold transition-all cursor-pointer"
                 title="Khôi phục 4 nhân vật mẫu gốc"
               >
-                <span>🔄</span>
-                <span className="hidden sm:inline">Khôi Phục Mẫu</span>
+                Khôi Phục Mẫu
               </button>
             )}
 
@@ -209,11 +201,10 @@ export default function ValkyriaListTab({
                   onSyncToFirestore();
                 }}
                 disabled={isSyncing}
-                className="px-3.5 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-mono font-semibold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-mono font-semibold transition-all cursor-pointer disabled:opacity-50"
                 title="Đồng bộ trực tiếp danh sách nhân vật lên hệ thống máy chủ"
               >
-                <span>{isSyncing ? "⏳" : "☁️"}</span>
-                <span className="hidden sm:inline">{isSyncing ? "Đang Đồng Bộ..." : "Đồng Bộ Hệ Thống Live"}</span>
+                {isSyncing ? "Đang Đồng Bộ..." : "Đồng Bộ Hệ Thống Live"}
               </button>
             )}
 
@@ -225,10 +216,9 @@ export default function ValkyriaListTab({
                   soundEngine.playClick();
                   onAddNew();
                 }}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3fe9d6] to-[#f5c767] hover:brightness-110 text-black text-xs font-mono font-bold shadow-[0_0_20px_rgba(63,233,214,0.4)] transition-all flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#3fe9d6] to-[#f5c767] hover:brightness-110 text-black text-xs font-mono font-bold shadow-[0_0_20px_rgba(63,233,214,0.4)] transition-all cursor-pointer"
               >
-                <span>✨</span>
-                <span>Thêm Valkyria</span>
+                + Thêm Valkyria
               </button>
             )}
           </div>
@@ -264,7 +254,7 @@ export default function ValkyriaListTab({
               <option value="ALL">Tất cả vai trò</option>
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>
-                  {r.icon} {r.label}
+                  {r.label}
                 </option>
               ))}
             </select>
@@ -281,8 +271,7 @@ export default function ValkyriaListTab({
           </div>
         </div>
       ) : filteredList.length === 0 ? (
-        <div className="py-20 text-center rounded-2xl bg-[#090d24]/50 border border-dashed border-white/10 space-y-3">
-          <div className="text-4xl">🔍</div>
+        <div className="py-20 text-center rounded-2xl bg-[#090d24]/50 border border-dashed border-white/10 space-y-2">
           <h4 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)]">
             Không tìm thấy chiến binh Valkyria nào phù hợp
           </h4>
@@ -393,18 +382,18 @@ export default function ValkyriaListTab({
                     </td>
 
                     {/* Action Buttons */}
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-1.5">
                         <button
                           type="button"
                           onClick={() => {
                             soundEngine.playClick();
                             onViewDetail(char);
                           }}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200 hover:text-white text-xs font-mono transition-colors cursor-pointer"
                           title="Xem chi tiết hồ sơ"
                         >
-                          👁️
+                          Xem
                         </button>
                         {canEdit && (
                           <button
@@ -413,10 +402,10 @@ export default function ValkyriaListTab({
                               soundEngine.playClick();
                               onEdit(char);
                             }}
-                            className="p-1.5 rounded-lg bg-[#3fe9d6]/10 hover:bg-[#3fe9d6]/20 text-[#3fe9d6] transition-colors cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-[#3fe9d6]/10 hover:bg-[#3fe9d6]/20 border border-[#3fe9d6]/30 text-[#3fe9d6] text-xs font-mono font-semibold transition-colors cursor-pointer"
                             title="Chỉnh sửa nhân vật"
                           >
-                            ✏️
+                            Sửa
                           </button>
                         )}
                         {canDelete && (
@@ -426,10 +415,10 @@ export default function ValkyriaListTab({
                               soundEngine.playClick();
                               onDelete(char);
                             }}
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 text-xs font-mono font-semibold transition-colors cursor-pointer"
                             title="Xóa nhân vật"
                           >
-                            🗑️
+                            Xóa
                           </button>
                         )}
                       </div>
@@ -444,4 +433,3 @@ export default function ValkyriaListTab({
     </div>
   );
 }
-

@@ -14,20 +14,17 @@ function getRoleBadgeConfig(role?: string) {
       return {
         label: "Admin · Quản Trị Viên",
         badgeClass: "bg-red-500/20 text-red-300 border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.3)]",
-        icon: "👑",
       };
     case "manager":
       return {
         label: "Manager · Quản Lý",
         badgeClass: "bg-[#f5c767]/20 text-[#f5c767] border-[#f5c767]/50 shadow-[0_0_12px_rgba(245,199,103,0.3)]",
-        icon: "🛡️",
       };
     case "player":
     default:
       return {
         label: "Player · Chỉ Huy",
         badgeClass: "bg-[#3fe9d6]/15 text-[#3fe9d6] border-[#3fe9d6]/40 shadow-[0_0_12px_rgba(63,233,214,0.25)]",
-        icon: "★",
       };
   }
 }
@@ -130,8 +127,8 @@ export default function ProfileView() {
     return (
       <div className="w-full max-w-lg mx-auto py-20 px-4 text-center">
         <div className="hsr-card p-8 sm:p-10 rounded-2xl backdrop-blur-2xl bg-[#090b1c]/90 border border-[#f5c767]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative">
-          <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 mx-auto flex items-center justify-center text-3xl mb-4 text-slate-400">
-            🔒
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#f5c767]/10 border border-[#f5c767]/30 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#f5c767] mb-4">
+            Yêu Cầu Đăng Nhập
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white uppercase font-[family-name:var(--font-rajdhani)] tracking-wider">
             YÊU CẦU XÁC THỰC CHỈ HUY
@@ -277,7 +274,7 @@ export default function ProfileView() {
           <div className="relative group shrink-0">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-tr from-[#f5c767] via-[#9b51e0] to-[#3fe9d6] p-[2px] shadow-[0_0_25px_rgba(245,199,103,0.4)]">
               <div className="w-full h-full bg-[#070919] rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-extrabold text-[#f5c767] font-mono select-none">
-                {currentUser.username ? currentUser.username[0].toUpperCase() : "★"}
+                {currentUser.username ? currentUser.username[0].toUpperCase() : "V"}
               </div>
             </div>
             <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-[#050714] border border-[#f5c767]/60 text-[10px] font-mono font-bold text-[#f5c767] shadow-[0_0_8px_rgba(245,199,103,0.5)]">
@@ -294,7 +291,7 @@ export default function ProfileView() {
               <span
                 className={`inline-flex items-center gap-1.5 self-center md:self-auto px-3 py-1 text-[11px] font-mono uppercase tracking-wider rounded-full border transition-all ${roleBadge.badgeClass}`}
               >
-                <span>{roleBadge.icon}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 <span>{roleBadge.label}</span>
               </span>
             </div>
@@ -324,7 +321,7 @@ export default function ProfileView() {
                 onClick={handleCopyUid}
                 className="text-[11px] font-mono uppercase px-2 py-1 rounded border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
-                {copiedUid ? "✓ Đã Chép" : "Sao Chép"}
+                {copiedUid ? "Đã Chép" : "Sao Chép"}
               </button>
             </div>
           </div>
@@ -337,7 +334,7 @@ export default function ProfileView() {
                 onClick={() => soundEngine.playClick()}
                 className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded border border-[#3fe9d6]/50 text-[#3fe9d6] bg-[#3fe9d6]/10 hover:bg-[#3fe9d6]/20 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(63,233,214,0.25)]"
               >
-                <span>⚡ Vào Trang Quản Trị</span>
+                <span>Vào Trang Quản Trị</span>
               </Link>
             )}
             <button

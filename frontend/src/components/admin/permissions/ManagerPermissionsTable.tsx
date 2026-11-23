@@ -84,9 +84,10 @@ export default function ManagerPermissionsTable({
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+              aria-label="Xóa từ khóa"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-base leading-none"
             >
-              ✕
+              ×
             </button>
           )}
         </div>
@@ -108,12 +109,12 @@ export default function ManagerPermissionsTable({
             },
             {
               id: "CONTENT_OPS",
-              label: "📰 Quản Lý Nội Dung",
+              label: "Quản Lý Nội Dung",
               count: managers.filter((m) => m.permissionGroups && m.permissionGroups.includes("content_management")).length,
             },
             {
               id: "GAME_DATA_OPS",
-              label: "⚔️ Dữ Liệu Game",
+              label: "Dữ Liệu Game",
               count: managers.filter((m) => m.permissionGroups && m.permissionGroups.includes("game_data")).length,
             },
             {
@@ -164,10 +165,7 @@ export default function ManagerPermissionsTable({
               {filteredManagers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400 font-mono">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <span className="text-3xl">🔍</span>
-                      <span>Không tìm thấy tài khoản Quản Lý nào phù hợp điều kiện lọc.</span>
-                    </div>
+                    <span>Không tìm thấy tài khoản Quản Lý nào phù hợp điều kiện lọc.</span>
                   </td>
                 </tr>
               ) : (
@@ -256,7 +254,15 @@ export default function ManagerPermissionsTable({
                                         : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
                                     }`}
                                   >
-                                    <span>{group.icon}</span>
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        group.id === "game_data"
+                                          ? "bg-cyan-400"
+                                          : group.id === "event_management"
+                                          ? "bg-amber-400"
+                                          : "bg-emerald-400"
+                                      }`}
+                                    />
                                     <span>{group.title}</span>
                                   </div>
                                   <div className="text-[10px] font-mono text-slate-400 pl-1">
@@ -280,7 +286,8 @@ export default function ManagerPermissionsTable({
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-xs">
-                            <span>⚠️ Chưa Phân Quyền</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            <span>Chưa Phân Quyền</span>
                           </div>
                         )}
                       </td>

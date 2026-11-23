@@ -138,9 +138,9 @@ export default function AdminSettingsView() {
   };
 
   const tabs = [
-    { id: "terms", title: "Điều Khoản Dịch Vụ", icon: "📜", badge: "Terms" },
-    { id: "policy", title: "Chính Sách & Bảo Mật", icon: "🛡️", badge: "Policy" },
-    { id: "gameInfo", title: "Thông Tin Game & Link Tải", icon: "⚔️", badge: "Game Info" },
+    { id: "terms", title: "Điều Khoản Dịch Vụ", badge: "Terms" },
+    { id: "policy", title: "Chính Sách & Bảo Mật", badge: "Policy" },
+    { id: "gameInfo", title: "Thông Tin Game & Link Tải", badge: "Game Info" },
   ] as const;
 
   return (
@@ -195,7 +195,7 @@ export default function AdminSettingsView() {
                 loadAllSettings();
               }}
               className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Tải lại toàn bộ cấu hình từ Firestore"
+              title="Tải lại toàn bộ cấu hình hệ thống"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -221,7 +221,6 @@ export default function AdminSettingsView() {
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                   }`}
               >
-                <span>{tab.icon}</span>
                 <span>{tab.title}</span>
                 {tab.badge && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-white/10 text-slate-300">
@@ -237,7 +236,7 @@ export default function AdminSettingsView() {
             <div className="p-16 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center space-y-3">
               <div className="w-10 h-10 border-2 border-[#3fe9d6] border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-mono text-slate-400">
-                Đang nạp cấu hình hệ thống từ Firebase Firestore...
+                Đang nạp cấu hình hệ thống...
               </span>
             </div>
           ) : (
@@ -306,18 +305,25 @@ export default function AdminSettingsView() {
                 : "bg-[#0b1324]/95 border-sky-500/50 text-sky-200 shadow-[0_0_20px_rgba(14,165,233,0.3)]"
               }`}
           >
-            <div className="text-lg">
-              {toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "ℹ"}
-            </div>
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                toast.type === "success"
+                  ? "bg-emerald-400"
+                  : toast.type === "error"
+                  ? "bg-rose-400"
+                  : "bg-sky-400"
+              }`}
+            />
             <div>
               {toast.title && <div className="font-bold font-mono text-xs mb-0.5">{toast.title}</div>}
               <div>{toast.message}</div>
             </div>
             <button
               onClick={() => setToast(null)}
-              className="ml-auto text-slate-400 hover:text-white p-1 text-xs cursor-pointer"
+              aria-label="Đóng thông báo"
+              className="ml-auto text-slate-400 hover:text-white p-1 text-base leading-none cursor-pointer"
             >
-              ✕
+              ×
             </button>
           </div>
         </div>

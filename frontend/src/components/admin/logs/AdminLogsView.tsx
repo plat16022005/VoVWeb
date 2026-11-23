@@ -12,6 +12,7 @@ import GachaLogsTable from "./GachaLogsTable";
 import EventLogsTable from "./EventLogsTable";
 import ItemLogsTable from "./ItemLogsTable";
 import GiftcodeLogsTable from "./GiftcodeLogsTable";
+import MailLogsTable from "./MailLogsTable";
 import { soundEngine } from "@/services/audio.service";
 
 type ActiveLogTab =
@@ -24,14 +25,14 @@ type ActiveLogTab =
   | "gacha"
   | "items"
   | "events"
-  | "giftcodes";
+  | "giftcodes"
+  | "mail";
 
 interface LogCategoryGroup {
   groupName: string;
   tabs: {
     id: ActiveLogTab;
     label: string;
-    icon: string;
     badge: string;
     description: string;
   }[];
@@ -49,7 +50,6 @@ export default function AdminLogsView() {
         {
           id: "accounts",
           label: "Quản Lý Tài Khoản",
-          icon: "👥",
           badge: "User Audit",
           description: "Khóa vi phạm, mở khóa, reset pass, đổi vai trò người chơi",
         },
@@ -61,21 +61,18 @@ export default function AdminLogsView() {
         {
           id: "terms",
           label: "Điều Khoản Dịch Vụ",
-          icon: "📜",
           badge: "Terms Audit",
           description: "Xuất bản phiên bản điều khoản, số lượng mục quy định",
         },
         {
           id: "policy",
           label: "Chính Sách Bảo Mật",
-          icon: "🛡️",
           badge: "Policy Audit",
           description: "Sửa đổi chính sách dữ liệu, bảo mật và quyền riêng tư",
         },
         {
           id: "blogs",
           label: "Quản Lý Blog & Tin Tức",
-          icon: "📰",
           badge: "Blog Audit",
           description: "Thao tác tạo, sửa, xuất bản, gỡ và xóa bài viết tin tức",
         },
@@ -87,49 +84,49 @@ export default function AdminLogsView() {
         {
           id: "gamedata",
           label: "Dữ Liệu Game",
-          icon: "⚔️",
           badge: "Game Data Audit",
           description: "Thao tác khởi tạo, sửa chỉ số, cập nhật hồ sơ & xóa nhân vật",
         },
         {
           id: "gacha",
           label: "Banner Gacha",
-          icon: "🌠",
           badge: "Gacha Audit",
           description: "Tạo mùa, kích hoạt mùa, cấu hình tỷ lệ quay, Pity & pool Banner Gacha",
         },
         {
           id: "items",
           label: "Kho Vật Phẩm & Trang Bị",
-          icon: "🛡️",
           badge: "Item Audit",
           description: "Khởi tạo, điều chỉnh chỉ số trang bị, đồng bộ mẫu & gỡ bỏ vật phẩm game",
         },
         {
           id: "events",
           label: "Sự Kiện & Minigame",
-          icon: "◆",
           badge: "Event Audit",
           description: "Tạo sự kiện, tải bản build Unity (.zip), cập nhật layout (.html) & phần thưởng",
         },
         {
           id: "giftcodes",
           label: "Mã Quà Tặng (Giftcode)",
-          icon: "✦",
           badge: "Giftcode Audit",
           description: "Tạo mã quà tặng, sinh lô hàng loạt, cấu hình gói thưởng, khóa & xóa mã",
         },
       ],
     },
     {
-      groupName: "Hạ Tầng & Vận Hành",
+      groupName: "Hạ Tầng & Hỗ Trợ Người Chơi",
       tabs: [
         {
           id: "servers",
           label: "Hạ Tầng & Máy Chủ",
-          icon: "🖥️",
           badge: "Server Audit",
           description: "Bảo trì toàn cục hệ thống, cấu hình bảo trì từng cụm server",
+        },
+        {
+          id: "mail",
+          label: "Hòm Thư & Hỗ Trợ Người Chơi",
+          badge: "Mailbox Audit",
+          description: "Gửi thư toàn server, đền bù báo lỗi cá nhân, đính kèm quà & thu hồi thư",
         },
       ],
     },
@@ -199,19 +196,17 @@ export default function AdminLogsView() {
           {/* Header Description Banner & Quick Selector */}
           <div className={`p-5 sm:p-6 rounded-2xl bg-[#090c21]/95 backdrop-blur-md border border-white/10 shadow-xl space-y-4 relative transition-all ${isDropdownOpen ? "z-50" : "z-10"}`}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3">
-                <span className="text-2xl sm:text-3xl p-2.5 rounded-xl bg-white/5 border border-white/10">📜</span>
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold font-mono text-white tracking-wide uppercase flex items-center gap-2 flex-wrap">
-                    Trung Tâm Nhật Ký & Kiểm Toán Hoạt Động
-                    <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30">
-                      Audit Trail Hub
-                    </span>
-                  </h2>
-                  <p className="text-xs text-slate-400 font-mono mt-1">
-                    Mỗi phân hệ sở hữu cấu trúc nhật ký, trường thông tin và bộ lọc chuyên biệt, giúp quản trị viên theo dõi chuẩn xác từng nghiệp vụ và dễ dàng mở rộng khi hệ sinh thái lớn mạnh.
-                  </p>
-                </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold font-mono text-white tracking-wide uppercase flex items-center gap-2 flex-wrap">
+                  <span className="w-2 h-2 rounded-full bg-[#3fe9d6]" />
+                  <span>Trung Tâm Nhật Ký & Kiểm Toán Hoạt Động</span>
+                  <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30">
+                    Audit Trail Hub
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-1">
+                  Mỗi phân hệ sở hữu cấu trúc nhật ký, trường thông tin và bộ lọc chuyên biệt, giúp quản trị viên theo dõi chuẩn xác từng nghiệp vụ và dễ dàng mở rộng khi hệ sinh thái lớn mạnh.
+                </p>
               </div>
 
               {/* Bộ Chọn Phân Hệ Nhanh (Smart Module Dropdown - Giúp xử lý gọn khi có 5, 10 hay 20 phân hệ) */}
@@ -222,15 +217,20 @@ export default function AdminLogsView() {
                   className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-[#0e1333] hover:bg-[#141b47] border border-[#3fe9d6]/40 hover:border-[#3fe9d6] text-white flex items-center justify-between gap-3 text-xs font-mono transition-all shadow-[0_0_15px_rgba(63,233,214,0.15)] cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-base">{currentTabInfo.icon}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
                     <span className="font-bold text-white">{currentTabInfo.label}</span>
                     <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-[#3fe9d6]/20 text-[#3fe9d6] font-semibold">
                       {currentTabInfo.badge}
                     </span>
                   </div>
-                  <span className={`transition-transform duration-200 text-slate-400 ${isDropdownOpen ? "rotate-180" : ""}`}>
-                    ▼
-                  </span>
+                  <svg
+                    className={`w-3.5 h-3.5 transition-transform duration-200 text-slate-400 ${isDropdownOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
 
                 {/* Dropdown Menu Phân Loại Danh Mục (Scale-ready cho tương lai) */}
@@ -270,11 +270,15 @@ export default function AdminLogsView() {
                                   }`}
                                 >
                                   <div className="flex items-center gap-2 truncate">
-                                    <span className="text-base">{tab.icon}</span>
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                        active ? "bg-black/60" : "bg-[#3fe9d6]/60"
+                                      }`}
+                                    />
                                     <span className="truncate">{tab.label}</span>
                                   </div>
                                   <span
-                                    className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-extrabold ${
+                                    className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-extrabold shrink-0 ${
                                       active ? "bg-black/20 text-black" : "bg-white/10 text-[#3fe9d6]"
                                     }`}
                                   >
@@ -311,8 +315,12 @@ export default function AdminLogsView() {
                       : "bg-[#090c21]/90 text-slate-300 border-white/10 hover:border-[#3fe9d6]/40 hover:bg-[#0d1230] hover:scale-[1.01]"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1 w-full">
-                    <span className="text-xl sm:text-2xl drop-shadow">{tab.icon}</span>
+                  <div className="flex items-center justify-between gap-2 w-full">
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        active ? "bg-black/60" : "bg-[#3fe9d6]"
+                      }`}
+                    />
                     <span
                       className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider ${
                         active
@@ -358,6 +366,7 @@ export default function AdminLogsView() {
             {activeTab === "items" && <ItemLogsTable />}
             {activeTab === "events" && <EventLogsTable />}
             {activeTab === "giftcodes" && <GiftcodeLogsTable />}
+            {activeTab === "mail" && <MailLogsTable />}
           </div>
         </main>
 

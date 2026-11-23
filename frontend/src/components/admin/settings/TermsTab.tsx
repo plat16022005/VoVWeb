@@ -42,10 +42,8 @@ export default function TermsTab({
   const [searchQuery, setSearchQuery] = useState("");
 
   const tabTitle = title || (type === "policy" ? "Quản Lý Chính Sách & Quyền Riêng Tư" : "Quản Lý Điều Khoản & Dịch vụ");
-  const docPath = documentPath || (type === "policy" ? "GameConfig/Policy" : "GameConfig/Terms");
   const nameLabel = itemName || (type === "policy" ? "Chính Sách" : "Điều Khoản");
   const prefix = idPrefix || (type === "policy" ? "policy" : "term");
-  const tabIcon = type === "policy" ? "🛡️" : "📜";
 
   // History state
   const [historyList, setHistoryList] = useState<TermHistoryLog[]>([]);
@@ -134,7 +132,7 @@ export default function TermsTab({
     if (!isAdmin) return;
     soundEngine.playClick();
     const target = items[index];
-    const confirmName = target.Title ? `"${target.Title}" (${target.id})` : target.id;
+    const confirmName = target.Title ? `"${target.Title}"` : `mục #${index + 1}`;
     if (confirm(`Bạn có chắc chắn muốn xóa ${nameLabel.toLowerCase()} ${confirmName}?`)) {
       setItems((prev) => {
         const filtered = prev.filter((_, i) => i !== index);
@@ -214,7 +212,7 @@ export default function TermsTab({
       {/* Banner lưu ý quyền hạn */}
       {!isAdmin && (
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-3">
-          <span className="text-base">🔒</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
           <span>
             Chỉ tài khoản cấp <strong>Quản Trị Viên (Admin)</strong> mới có quyền thêm, sửa và xóa {nameLabel}. Bạn hiện đang ở chế độ <strong>Chỉ Xem</strong>.
           </span>
@@ -225,8 +223,8 @@ export default function TermsTab({
       <div className="p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{tabIcon}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 {tabTitle}
               </h3>
@@ -254,7 +252,7 @@ export default function TermsTab({
                   : "text-slate-400 hover:text-white"
                   }`}
               >
-                ✍️ Chỉnh Sửa ({items.length})
+                Chỉnh Sửa ({items.length})
               </button>
 
               <button
@@ -268,7 +266,7 @@ export default function TermsTab({
                   : "text-slate-400 hover:text-white"
                   }`}
               >
-                👁️ Xem Trước
+                Xem Trước
               </button>
 
               <button
@@ -278,12 +276,12 @@ export default function TermsTab({
                   setActiveView("history");
                   loadHistory();
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer flex items-center gap-1 ${activeView === "history"
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer flex items-center gap-1.5 ${activeView === "history"
                   ? "bg-[#f5c767]/20 text-[#f5c767] font-semibold border border-[#f5c767]/40"
                   : "text-slate-400 hover:text-white"
                   }`}
               >
-                <span>🕒 Lịch Sử</span>
+                <span>Lịch Sử</span>
                 {historyList.length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 text-slate-300">
                     {historyList.length}
@@ -330,7 +328,6 @@ export default function TermsTab({
         <div className="space-y-4">
           {filteredItems.length === 0 ? (
             <div className="p-12 rounded-2xl bg-[#090c21]/90 border border-white/10 text-center space-y-4">
-              <div className="text-3xl">📭</div>
               <div className="text-slate-300 font-mono text-sm">
                 {searchQuery ? "Không tìm thấy nội dung nào khớp với từ khóa tìm kiếm." : `Chưa có ${nameLabel.toLowerCase()} nào.`}
               </div>
@@ -375,28 +372,27 @@ export default function TermsTab({
                           type="button"
                           disabled={realIndex === 0}
                           onClick={() => handleMove(realIndex, "up")}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                          title="Di chuyển lên trên (Tự động đánh số lại mã)"
+                          className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[11px] font-mono disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                          title="Di chuyển lên trên"
                         >
-                          ▲
+                          Lên
                         </button>
                         <button
                           type="button"
                           disabled={realIndex === items.length - 1}
                           onClick={() => handleMove(realIndex, "down")}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                          title="Di chuyển xuống dưới (Tự động đánh số lại mã)"
+                          className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[11px] font-mono disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                          title="Di chuyển xuống dưới"
                         >
-                          ▼
+                          Xuống
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteTerm(realIndex)}
-                          className="p-1.5 px-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-mono transition-colors cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-[11px] font-mono transition-colors cursor-pointer"
                           title={`Xóa ${nameLabel.toLowerCase()} này`}
                         >
-                          <span>🗑️</span>
-                          <span className="hidden sm:inline">Xóa</span>
+                          Xóa
                         </button>
                       </div>
                     )}
@@ -458,8 +454,8 @@ export default function TermsTab({
       {/* CHẾ ĐỘ 2: Xem Trước Chuẩn 1. Title */}
       {activeView === "preview" && (
         <div className="p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-6">
-          <div className="p-4 rounded-xl bg-[#3fe9d6]/10 border border-[#3fe9d6]/30 text-[#3fe9d6] text-xs font-mono flex items-center justify-between">
-            <span>👁️ Giao diện hiển thị thực tế khi người chơi bấm xem {nameLabel}</span>
+          <div className="p-4 rounded-xl bg-[#3fe9d6]/10 border border-[#3fe9d6]/30 text-[#3fe9d6] text-xs font-mono flex items-center justify-between gap-2">
+            <span>Giao diện hiển thị thực tế khi người chơi bấm xem {nameLabel}</span>
             <span>Tổng cộng: {items.length} {nameLabel.toLowerCase()}</span>
           </div>
 
@@ -488,8 +484,8 @@ export default function TermsTab({
         <div className="p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-6">
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">🕒</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#f5c767]" />
                 <h4 className="text-sm font-bold font-mono text-[#f5c767] uppercase tracking-wider">
                   Nhật Ký Cập Nhật {nameLabel}
                 </h4>
@@ -507,10 +503,9 @@ export default function TermsTab({
                 soundEngine.playClick();
                 loadHistory();
               }}
-              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer"
             >
-              <span>↺</span>
-              <span>Làm Mới</span>
+              Làm Mới
             </button>
           </div>
 
@@ -520,11 +515,10 @@ export default function TermsTab({
               <span className="text-xs font-mono text-slate-400">Đang nạp nhật ký lịch sử...</span>
             </div>
           ) : historyList.length === 0 ? (
-            <div className="py-12 text-center space-y-3 border border-dashed border-white/10 rounded-2xl p-8">
-              <div className="text-3xl">📜</div>
-              <div className="text-sm font-mono text-slate-300">Chưa có nhật ký lưu phiên bản nào.</div>
+            <div className="py-12 text-center space-y-2 border border-dashed border-white/10 rounded-2xl p-8">
+              <div className="text-sm font-mono text-slate-300 font-bold">Chưa có nhật ký lưu phiên bản nào.</div>
               <p className="text-xs text-slate-500 font-mono max-w-md mx-auto">
-                Mỗi khi bạn bấm <strong>"Lưu Tất Cả {nameLabel}"</strong> và nhập số hiệu phiên bản kèm ghi chú, hệ thống sẽ tự động lưu lại vào collection Logs.
+                Mỗi khi bạn bấm <strong>&quot;Lưu Tất Cả {nameLabel}&quot;</strong> và nhập số hiệu phiên bản kèm ghi chú, hệ thống sẽ tự động ghi nhận vào nhật ký phiên bản.
               </p>
             </div>
           ) : (
@@ -543,8 +537,9 @@ export default function TermsTab({
                         {log.version}
                       </span>
                       {idx === 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                          ● Bản Hiện Hành
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span>Bản Hiện Hành</span>
                         </span>
                       )}
                       <span className="text-xs font-mono text-slate-400">
@@ -560,7 +555,7 @@ export default function TermsTab({
                   </div>
 
                   <div className="p-3 rounded-lg bg-[#060814]/80 border border-white/5 text-xs sm:text-sm text-slate-200 font-sans leading-relaxed">
-                    💬 <strong className="text-slate-300">Ghi chú:</strong> {log.note || "(Không có ghi chú chi tiết)"}
+                    <strong className="text-slate-300">Ghi chú:</strong> {log.note || "(Không có ghi chú chi tiết)"}
                   </div>
                 </div>
               ))}
@@ -577,7 +572,7 @@ export default function TermsTab({
             onClick={handleResetDefault}
             className="px-4 py-2.5 rounded-xl border border-white/15 text-slate-400 hover:text-white hover:bg-white/5 text-xs font-mono transition-colors cursor-pointer"
           >
-            ↺ Khôi Phục Mẫu Chuẩn
+            Khôi Phục Mẫu Chuẩn
           </button>
         )}
 
@@ -593,13 +588,10 @@ export default function TermsTab({
             {saving ? (
               <>
                 <div className="w-4 h-4 border-2 border-[#060814] border-t-transparent rounded-full animate-spin" />
-                <span>Đang Lưu Lên {docPath}...</span>
+                <span>Đang Lưu...</span>
               </>
             ) : (
-              <>
-                <span>💾</span>
-                <span>Lưu Tất Cả {nameLabel} ({docPath})</span>
-              </>
+              <span>Lưu Tất Cả {nameLabel}</span>
             )}
           </button>
         </div>
@@ -611,22 +603,23 @@ export default function TermsTab({
           <div className="relative w-full max-w-lg rounded-2xl bg-[#090c21] border border-[#3fe9d6]/40 shadow-[0_0_50px_rgba(63,233,214,0.3)] p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xl">🚀</span>
+                <span className="w-2 h-2 rounded-full bg-[#3fe9d6]" />
                 <h3 className="text-base font-bold font-mono text-white uppercase tracking-wider">
                   Xuất Bản {nameLabel}
                 </h3>
               </div>
               <button
                 type="button"
+                aria-label="Đóng"
                 onClick={() => setIsPublishModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 text-sm cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 text-base leading-none cursor-pointer"
               >
-                ✕
+                ×
               </button>
             </div>
 
             <p className="text-xs text-slate-300 font-sans leading-relaxed">
-              Bạn đang chuẩn bị xuất bản <strong className="text-[#3fe9d6]">{items.length} {nameLabel.toLowerCase()}</strong> lên máy chủ Veyra (<code className="text-white">{docPath}</code>). Vui lòng nhập thông tin phiên bản để lưu vào <code className="text-[#f5c767]">Logs/Term&Policy/{type === "policy" ? "Policy" : "Term"}</code>:
+              Bạn đang chuẩn bị xuất bản <strong className="text-[#3fe9d6]">{items.length} {nameLabel.toLowerCase()}</strong> lên hệ thống. Vui lòng nhập thông tin phiên bản để lưu vào lịch sử kiểm toán:
             </p>
 
             <div className="space-y-4">
@@ -683,10 +676,7 @@ export default function TermsTab({
                     <span>Đang Lưu...</span>
                   </>
                 ) : (
-                  <>
-                    <span>✓</span>
-                    <span>Xác Nhận & Xuất Bản</span>
-                  </>
+                  <span>Xác Nhận & Xuất Bản</span>
                 )}
               </button>
             </div>

@@ -10,6 +10,7 @@ export default function ManagerOverviewTab() {
   const hasContentGroup = hasPermissionGroup(currentUser, "content_management");
   const hasGameDataGroup = hasPermissionGroup(currentUser, "game_data");
   const hasEventGroup = hasPermissionGroup(currentUser, "event_management");
+  const hasSupportGroup = hasPermissionGroup(currentUser, "player_support");
   const hasGachaAccess =
     hasPermission(currentUser, "gamedata.gacha.view") ||
     hasPermission(currentUser, "gamedata.gacha.edit") ||
@@ -42,8 +43,9 @@ export default function ManagerOverviewTab() {
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase font-[family-name:var(--font-rajdhani)]">
                   Xin chào, {currentUser?.username || "Chỉ Huy Vận Hành"}!
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono">
-                  🟢 HOẠT ĐỘNG
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  HOẠT ĐỘNG
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold font-mono">
                   {currentUser?.role === "Admin" ? "QUẢN TRỊ VIÊN" : "QUẢN LÝ (MANAGER)"}
@@ -73,7 +75,6 @@ export default function ManagerOverviewTab() {
                 onClick={() => soundEngine.playClick()}
                 className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#f5c767] via-[#e6b143] to-[#d49d28] hover:brightness-110 text-[#060814] font-bold text-xs font-mono tracking-wider shadow-[0_0_20px_rgba(245,199,103,0.35)] transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>📰</span>
                 <span>Vào Quản Lý Nội Dung</span>
                 <span>→</span>
               </Link>
@@ -84,7 +85,6 @@ export default function ManagerOverviewTab() {
                 onClick={() => soundEngine.playClick()}
                 className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#3fe9d6] to-[#0ea5e9] hover:brightness-110 text-[#060814] font-bold text-xs font-mono tracking-wider shadow-[0_0_20px_rgba(63,233,214,0.35)] transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>⚔️</span>
                 <span>Vào Dữ Liệu Game</span>
                 <span>→</span>
               </Link>
@@ -95,7 +95,6 @@ export default function ManagerOverviewTab() {
                 onClick={() => soundEngine.playClick()}
                 className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#f5c767] to-[#e6b143] hover:brightness-110 text-[#060814] font-bold text-xs font-mono tracking-wider shadow-[0_0_20px_rgba(245,199,103,0.3)] transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>🌠</span>
                 <span>Vào Banner Gacha</span>
                 <span>→</span>
               </Link>
@@ -110,6 +109,16 @@ export default function ManagerOverviewTab() {
                 <span>→</span>
               </Link>
             )}
+            {hasSupportGroup && (
+              <Link
+                href="/manager/support"
+                onClick={() => soundEngine.playClick()}
+                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-[#3fe9d6] hover:brightness-110 text-[#060814] font-bold text-xs font-mono tracking-wider shadow-[0_0_20px_rgba(52,211,153,0.3)] transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>Vào Hỗ Trợ Người Chơi</span>
+                <span>→</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -120,7 +129,6 @@ export default function ManagerOverviewTab() {
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-[#f5c767]/40 transition-all shadow-lg flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>Cấp Độ Tài Khoản</span>
-            <span className="text-base">🛡️</span>
           </div>
           <div className="my-2">
             <div className="text-2xl font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -140,22 +148,21 @@ export default function ManagerOverviewTab() {
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-purple-500/40 transition-all shadow-lg flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>Phân Quyền Đang Có</span>
-            <span className="text-base">🔑</span>
           </div>
           <div className="my-2">
             <div className="text-2xl font-bold text-purple-300 font-[family-name:var(--font-rajdhani)] tracking-wide">
               {currentUser?.role === "Admin"
                 ? "Toàn Quyền Hệ Thống"
                 : activeGroupCount > 0
-                ? `${activeGroupCount} Nhóm Lớn (${subPermsCount} Quyền)`
-                : "Chưa Phân Nhóm"}
+                  ? `${activeGroupCount} Nhóm Lớn (${subPermsCount} Quyền)`
+                  : "Chưa Phân Nhóm"}
             </div>
             <div className="text-xs text-slate-400 font-mono mt-0.5 line-clamp-1" title={activeGroupNames}>
               {currentUser?.role === "Admin"
                 ? "Quản Trị Viên Master"
                 : activeGroupCount > 0
-                ? activeGroupNames
-                : "Liên hệ Admin để được cấp"}
+                  ? activeGroupNames
+                  : "Liên hệ Admin để được cấp"}
             </div>
           </div>
           <div className="text-[11px] text-slate-400 font-mono">
@@ -167,7 +174,6 @@ export default function ManagerOverviewTab() {
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-emerald-500/40 transition-all shadow-lg flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>Cụm Máy Chủ Game</span>
-            <span className="text-base">🎮</span>
           </div>
           <div className="my-2">
             <div className="text-2xl font-bold text-emerald-400 font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -187,7 +193,6 @@ export default function ManagerOverviewTab() {
         <div className="p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 hover:border-[#3fe9d6]/40 transition-all shadow-lg flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>Hệ Thống Dữ Liệu</span>
-            <span className="text-base">⚡</span>
           </div>
           <div className="my-2">
             <div className="text-2xl font-bold text-[#3fe9d6] font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -207,7 +212,6 @@ export default function ManagerOverviewTab() {
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">❖</span>
             <h2 className="text-base font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
               Danh Mục Phân Hệ Nghiệp Vụ Vận Hành
             </h2>
@@ -217,21 +221,21 @@ export default function ManagerOverviewTab() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Module 1: Quản Lý Nội Dung (Đang hoạt động) */}
           <div className="p-6 rounded-2xl bg-[#090d24]/90 border border-[#f5c767]/30 hover:border-[#f5c767]/60 transition-all flex flex-col justify-between space-y-4 relative overflow-hidden group shadow-xl">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#f5c767]/20 to-[#3fe9d6]/20 border border-[#f5c767]/30 flex items-center justify-center text-2xl">
-                  📰
-                </div>
+                <span className="text-xs font-mono uppercase tracking-wider text-[#f5c767]">
+                  Truyền Thông & Nội Dung
+                </span>
                 {hasContentGroup ? (
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    ✓ ĐÃ CẤP QUYỀN
+                    ĐÃ CẤP QUYỀN
                   </span>
                 ) : (
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                    🔒 CHƯA CẤP QUYỀN
+                    CHƯA CẤP QUYỀN
                   </span>
                 )}
               </div>
@@ -276,22 +280,23 @@ export default function ManagerOverviewTab() {
           {/* Module 2: Quản Lý Dữ Liệu Game & Valkyria */}
           <div
             className={`p-6 rounded-2xl bg-[#090d24]/90 border transition-all flex flex-col justify-between space-y-4 shadow-xl ${hasGameDataGroup
-                ? "border-white/10 hover:border-[#3fe9d6]/40 hover:shadow-[0_0_25px_rgba(63,233,214,0.15)] group"
-                : "border-white/5 opacity-60"
+              ? "border-white/10 hover:border-[#3fe9d6]/40 hover:shadow-[0_0_25px_rgba(63,233,214,0.15)] group"
+              : "border-white/5 opacity-60"
               }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#3fe9d6]/20 to-[#9b51e0]/20 border border-[#3fe9d6]/30 flex items-center justify-center text-2xl shadow-inner">
-                  ⚔️
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#3fe9d6]/20 to-[#9b51e0]/20 border border-[#3fe9d6]/30 flex items-center justify-center text-xs font-mono font-bold text-[#3fe9d6] shadow-inner">
+                  DL
                 </div>
                 {hasGameDataGroup ? (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/30">
-                    🟢 ĐƯỢC PHÉP TRUY CẬP
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-[#3fe9d6]/15 text-[#3fe9d6] border border-[#3fe9d6]/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
+                    ĐƯỢC PHÉP TRUY CẬP
                   </span>
                 ) : (
                   <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                    🔒 CHƯA CẤP QUYỀN
+                    CHƯA CẤP QUYỀN
                   </span>
                 )}
               </div>
@@ -335,11 +340,10 @@ export default function ManagerOverviewTab() {
 
           {/* Module 3: Quản Lý Sự Kiện & Minigame Web */}
           <div
-            className={`p-6 rounded-2xl bg-[#090d24]/90 border transition-all flex flex-col justify-between space-y-4 shadow-xl ${
-              hasEventGroup
-                ? "border-white/10 hover:border-[#f5c767]/50 hover:shadow-[0_0_25px_rgba(245,199,103,0.15)] group"
-                : "border-white/5 opacity-60"
-            }`}
+            className={`p-6 rounded-2xl bg-[#090d24]/90 border transition-all flex flex-col justify-between space-y-4 shadow-xl ${hasEventGroup
+              ? "border-white/10 hover:border-[#f5c767]/50 hover:shadow-[0_0_25px_rgba(245,199,103,0.15)] group"
+              : "border-white/5 opacity-60"
+              }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -393,13 +397,72 @@ export default function ManagerOverviewTab() {
               </div>
             )}
           </div>
+
+          {/* Module 4: Hỗ Trợ Người Chơi & Hòm Thư Hệ Thống */}
+          <div
+            className={`p-6 rounded-2xl bg-[#090d24]/90 border transition-all flex flex-col justify-between space-y-4 shadow-xl ${hasSupportGroup
+              ? "border-white/10 hover:border-emerald-400/50 hover:shadow-[0_0_25px_rgba(52,211,153,0.15)] group"
+              : "border-white/5 opacity-60"
+              }`}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-400/20 to-[#3fe9d6]/20 border border-emerald-400/35 flex items-center justify-center text-xs font-mono font-bold text-emerald-300">
+                  CS
+                </div>
+                {hasSupportGroup ? (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    ĐÃ CẤP QUYỀN
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    CHƯA CẤP QUYỀN
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <h3 className="font-[family-name:var(--font-rajdhani)] text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  Hỗ Trợ Người Chơi &amp; Hòm Thư Hệ Thống
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed font-sans">
+                  Gửi thư toàn server hoặc cá nhân, đính kèm quà tặng, xử lý đền bù báo lỗi và phát thông báo vận hành trong game.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-white/5 space-y-1.5 text-xs font-mono text-slate-400">
+                <div className="flex items-center justify-between">
+                  <span>Phạm vi gửi:</span>
+                  <span className="text-slate-200">Toàn Server &amp; Cá Nhân</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Phân loại thư:</span>
+                  <span className="text-emerald-400">Thông Báo · Đền Bù · Quà Tặng</span>
+                </div>
+              </div>
+            </div>
+
+            {hasSupportGroup ? (
+              <Link
+                href="/manager/support"
+                onClick={() => soundEngine.playClick()}
+                className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-emerald-400 hover:text-[#060814] text-white text-xs font-mono font-bold border border-white/10 hover:border-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                <span>Mở Hỗ Trợ Người Chơi</span>
+                <span>→</span>
+              </Link>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-white/5 text-center text-xs font-mono text-slate-500">
+                Liên hệ Quản Trị Viên để được gán quyền
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* 4. OPERATIONAL CODE OF CONDUCT (NGUYÊN TẮC VẬN HÀNH DÀNH CHO MANAGER) */}
       <div className="p-6 rounded-2xl bg-[#090d24]/90 border border-white/10 space-y-4 shadow-xl">
-        <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-          <span className="text-lg">📜</span>
+        <div className="border-b border-white/10 pb-3">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
             Sổ Tay & Nguyên Tắc Vận Hành Chuẩn Mực
           </h3>
@@ -407,9 +470,8 @@ export default function ManagerOverviewTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-[#050716] border border-white/5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#f5c767] font-mono uppercase">
-              <span>🛡️</span>
-              <span>1. Bảo Mật Thông Tin</span>
+            <div className="text-xs font-bold text-[#f5c767] font-mono uppercase">
+              1. Bảo Mật Thông Tin
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
               Tuyệt đối bảo vệ tài khoản quản trị, không tiết lộ mật khẩu, mã xác thực hay thông tin nội bộ cho bất kỳ cá nhân nào ngoài tổ chức.
@@ -417,9 +479,8 @@ export default function ManagerOverviewTab() {
           </div>
 
           <div className="p-4 rounded-xl bg-[#050716] border border-white/5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#3fe9d6] font-mono uppercase">
-              <span>⚖️</span>
-              <span>2. Kiểm Duyệt Nội Dung</span>
+            <div className="text-xs font-bold text-[#3fe9d6] font-mono uppercase">
+              2. Kiểm Duyệt Nội Dung
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
               Kiểm tra kỹ lưỡng tính chính xác, chính tả và hình ảnh bài viết trước khi xuất bản lên Blog hoặc đăng bài Fanpage mạng xã hội.
@@ -427,9 +488,8 @@ export default function ManagerOverviewTab() {
           </div>
 
           <div className="p-4 rounded-xl bg-[#050716] border border-white/5 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-purple-300 font-mono uppercase">
-              <span>💬</span>
-              <span>3. Văn Hóa Ứng Xử</span>
+            <div className="text-xs font-bold text-purple-300 font-mono uppercase">
+              3. Văn Hóa Ứng Xử
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
               Luôn giữ thái độ hòa nhã, đúng mực và chuyên nghiệp khi thiết lập nội dung bot tự động cũng như khi tương tác với cộng đồng game thủ Veyra.

@@ -15,8 +15,6 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
   const [searchQuery, setSearchQuery] = useState("");
 
   const label = type === "terms" ? "Điều Khoản Dịch Vụ" : "Chính Sách Bảo Mật";
-  const icon = type === "terms" ? "📜" : "🛡️";
-  const path = type === "terms" ? "Logs/Term&Policy/Term" : "Logs/Term&Policy/Policy";
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -85,8 +83,8 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
       <div className="p-5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{icon}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 Nhật Ký Xuất Bản {label}
               </h3>
@@ -109,10 +107,9 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
                 if (onRefresh) onRefresh();
               }}
               disabled={loading}
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-mono transition-all cursor-pointer disabled:opacity-50"
             >
-              <span className={loading ? "animate-spin" : ""}>↺</span>
-              <span>{loading ? "Đang đồng bộ..." : "Làm Mới"}</span>
+              {loading ? "Đang đồng bộ..." : "Làm Mới"}
             </button>
 
             {/* Nút Xuất CSV */}
@@ -122,31 +119,30 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
                 soundEngine.playClick();
                 handleExportCsv();
               }}
-              className="px-4 py-2 rounded-xl bg-[#0e122b] hover:bg-[#151a3b] border border-[#3fe9d6]/30 text-[#3fe9d6] hover:text-white text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#0e122b] hover:bg-[#151a3b] border border-[#3fe9d6]/30 text-[#3fe9d6] hover:text-white text-xs font-mono font-bold transition-all cursor-pointer"
             >
-              <span>📥</span>
-              <span className="hidden sm:inline">Xuất CSV</span>
+              Xuất CSV
             </button>
           </div>
         </div>
 
         {/* Thanh tìm kiếm */}
         <div className="relative max-w-md">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Tìm theo phiên bản, ghi chú hoặc người xuất bản...`}
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0e122b] border border-white/10 text-xs text-slate-200 placeholder:text-slate-500 font-mono focus:outline-none focus:border-[#3fe9d6] transition-colors"
+            className="w-full pl-3.5 pr-8 py-2 rounded-xl bg-[#0e122b] border border-white/10 text-xs text-slate-200 placeholder:text-slate-500 font-mono focus:outline-none focus:border-[#3fe9d6] transition-colors"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+              aria-label="Xóa từ khóa"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm leading-none cursor-pointer"
             >
-              ✕
+              ×
             </button>
           )}
         </div>
@@ -160,8 +156,7 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
             <span className="text-xs font-mono text-slate-400">Đang nạp dữ liệu nhật ký phiên bản...</span>
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="py-16 text-center space-y-3 border border-dashed border-white/10 rounded-2xl p-8">
-            <div className="text-4xl">{icon}</div>
+          <div className="py-16 text-center space-y-2 border border-dashed border-white/10 rounded-2xl p-8">
             <div className="text-sm font-mono text-slate-300 font-bold">
               {searchQuery
                 ? "Không tìm thấy nhật ký phù hợp với từ khóa."
@@ -199,10 +194,7 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
                     >
                       {/* Thời gian */}
                       <td className="py-3.5 px-3 whitespace-nowrap text-slate-300">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-slate-500">🕒</span>
-                          <span>{item.updatedAt}</span>
-                        </div>
+                        <span>{item.updatedAt}</span>
                       </td>
 
                       {/* Phiên bản */}
@@ -212,8 +204,9 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
                             {item.version}
                           </span>
                           {idx === 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-                              ● Hiện Hành
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              Hiện Hành
                             </span>
                           )}
                         </div>
@@ -262,8 +255,9 @@ export default function TermsLogsTable({ type, onRefresh }: TermsLogsTableProps)
                         {item.version}
                       </span>
                       {idx === 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                          ● Hiện Hành
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          Hiện Hành
                         </span>
                       )}
                     </div>

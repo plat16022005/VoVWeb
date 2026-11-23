@@ -201,7 +201,7 @@ export default function BannerPoolSection({
               }`}
             >
               Tổng: {totalRate.toFixed(4)} ({(totalRate * 100).toFixed(2)}%)
-              {isRateSumValid ? " ✓" : " ≠ 1.0"}
+              {isRateSumValid ? " · Hợp lệ" : " ≠ 1.0"}
             </span>
           </div>
         </div>
@@ -257,7 +257,7 @@ export default function BannerPoolSection({
                       missingPool ? "text-rose-400 font-bold" : "text-slate-200"
                     }
                   >
-                    {poolLen} tướng {missingPool ? "⚠️" : ""}
+                    {poolLen} tướng{missingPool ? " (Thiếu)" : ""}
                   </span>
                 </div>
               </div>
@@ -290,7 +290,7 @@ export default function BannerPoolSection({
         {banner.RateUpHeroIds.some((id) => !highTierPoolIds.includes(id)) && (
           <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs flex items-center justify-between gap-2">
             <span>
-              ⚠️ Có tướng tiêu điểm không nằm trong Pool SSR hoặc Pool UR. Vui lòng thêm vào Pool hoặc gỡ khỏi tiêu điểm.
+              Có tướng tiêu điểm không nằm trong Pool SSR hoặc Pool UR. Vui lòng thêm vào Pool hoặc gỡ khỏi tiêu điểm.
             </span>
           </div>
         )}
@@ -338,11 +338,13 @@ export default function BannerPoolSection({
                     </div>
                   </div>
                   <span
-                    className={`ml-1 text-xs font-bold ${
-                      isSelected ? "text-[#f5c767]" : "text-slate-500"
+                    className={`ml-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
+                      isSelected
+                        ? "bg-[#f5c767]/20 text-[#f5c767] border-[#f5c767]/50"
+                        : "bg-white/5 text-slate-400 border-white/10"
                     }`}
                   >
-                    {isSelected ? "★" : "☆"}
+                    {isSelected ? "Tiêu điểm" : "Chọn"}
                   </span>
                 </button>
               );
@@ -460,7 +462,7 @@ export default function BannerPoolSection({
                             </span>
                             {isRateUp && (
                               <span className="px-1.5 py-0.2 rounded bg-[#f5c767]/20 text-[#f5c767] border border-[#f5c767]/40 text-[9px] font-mono font-bold">
-                                ★ RATE-UP
+                                RATE-UP
                               </span>
                             )}
                           </div>
@@ -498,10 +500,10 @@ export default function BannerPoolSection({
                             onClick={() =>
                               handleRemoveFromPool(activeTier, entry.HeroId)
                             }
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 text-xs transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 text-[11px] font-mono font-semibold transition-colors cursor-pointer"
                             title="Gỡ khỏi Pool"
                           >
-                            ✕
+                            Gỡ
                           </button>
                         )}
                       </div>
@@ -604,4 +606,3 @@ export default function BannerPoolSection({
     </div>
   );
 }
-

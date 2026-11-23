@@ -14,6 +14,7 @@ import { GachaModule } from './modules/gacha/gacha.module.js';
 import { EventsModule } from './modules/events/events.module.js';
 import { ItemsModule } from './modules/items/items.module.js';
 import { GiftcodesModule } from './modules/giftcodes/giftcodes.module.js';
+import { MailModule } from './modules/mail/mail.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -26,6 +27,7 @@ AppModule = __decorate([
             EventsModule,
             ItemsModule,
             GiftcodesModule,
+            MailModule,
         ],
         controllers: [AppController],
         providers: [AppService],

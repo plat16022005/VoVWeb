@@ -166,7 +166,7 @@ export default function AccountFormModal({
                     : "bg-[#0e122b] border-white/10 text-slate-400 hover:text-white"
                 }`}
               >
-                <span>✉️ Email</span>
+                <span>Email</span>
               </button>
               <button
                 type="button"
@@ -177,7 +177,7 @@ export default function AccountFormModal({
                     : "bg-[#0e122b] border-white/10 text-slate-400 hover:text-white"
                 }`}
               >
-                <span>🔴 Google</span>
+                <span>Google</span>
               </button>
               <button
                 type="button"
@@ -188,7 +188,7 @@ export default function AccountFormModal({
                     : "bg-[#0e122b] border-white/10 text-slate-400 hover:text-white"
                 }`}
               >
-                <span>👤 Khách</span>
+                <span>Khách</span>
               </button>
             </div>
           </div>
@@ -283,8 +283,8 @@ export default function AccountFormModal({
 
             {/* Manager Notice */}
             {role === "Manager" && (
-              <div className="p-2.5 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/20 text-[11px] font-mono text-[#3fe9d6] flex items-center gap-2">
-                <span>🛡️</span>
+              <div className="p-2.5 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/20 text-[11px] font-mono text-[#3fe9d6] flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6] shrink-0 mt-1" />
                 <span>Tài khoản <strong>Manager</strong> có thể được cấp các Nhóm chức năng lớn (Quản Lý Nội Dung...) và cấu hình quyền chi tiết sau khi lưu.</span>
               </div>
             )}
@@ -308,7 +308,7 @@ export default function AccountFormModal({
 
           {/* Security Notice */}
           <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] font-mono text-amber-300/90 flex items-start gap-2">
-            <span className="text-sm leading-none">🔒</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1" />
             <span>
               Để đảm bảo bảo mật hệ thống, tài khoản cấp <strong>Quản Trị Viên (Admin)</strong> không thể tạo trực tiếp từ trang này.
             </span>

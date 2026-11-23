@@ -131,7 +131,7 @@ export default function SeasonBannerWorkspace({
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-700/50 text-slate-300 border border-white/15 text-xs font-mono font-bold">
-                  <span>📝</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                   BẢN NHÁP (DRAFT)
                 </span>
               )}
@@ -175,7 +175,7 @@ export default function SeasonBannerWorkspace({
                 }}
                 className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-200 cursor-pointer"
               >
-                ✏️ Sửa Thông Tin Mùa
+                Sửa Thông Tin Mùa
               </button>
             )}
 
@@ -189,7 +189,7 @@ export default function SeasonBannerWorkspace({
                   }}
                   className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold cursor-pointer"
                 >
-                  ⏸️ Tạm Ngưng Mùa
+                  Tạm Ngưng Mùa
                 </button>
               ) : (
                 <button
@@ -200,7 +200,7 @@ export default function SeasonBannerWorkspace({
                   }}
                   className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                 >
-                  ⚡ Kích Hoạt Phát Hành
+                  Kích Hoạt Phát Hành
                 </button>
               ))}
 
@@ -213,7 +213,7 @@ export default function SeasonBannerWorkspace({
                 }}
                 className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#f5c767] to-[#e6b143] hover:brightness-110 text-[#060814] text-xs font-mono font-bold shadow-[0_0_20px_rgba(245,199,103,0.35)] cursor-pointer"
               >
-                ✨ + Thêm Banner Mới
+                + Thêm Banner Mới
               </button>
             )}
           </div>
@@ -223,7 +223,6 @@ export default function SeasonBannerWorkspace({
       {/* 2. BANNERS LIST IN THIS SEASON */}
       {sortedBanners.length === 0 ? (
         <div className="py-16 text-center rounded-3xl bg-[#090d24]/70 border border-dashed border-white/15 space-y-3">
-          <div className="text-4xl">🌠</div>
           <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase">
             Mùa Này Chưa Có Banner Triệu Hồi Nào
           </h3>
@@ -239,7 +238,7 @@ export default function SeasonBannerWorkspace({
               }}
               className="mt-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#3fe9d6] to-[#0ea5e9] text-[#060814] text-xs font-mono font-bold cursor-pointer"
             >
-              ✨ Tạo Banner Đầu Tiên
+              + Tạo Banner Đầu Tiên
             </button>
           )}
         </div>
@@ -299,12 +298,17 @@ export default function SeasonBannerWorkspace({
                       </div>
 
                       <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold backdrop-blur-md border ${banner.IsActive
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold backdrop-blur-md border ${banner.IsActive
                             ? "bg-emerald-500/25 text-emerald-200 border-emerald-400/50"
                             : "bg-slate-900/80 text-slate-300 border-white/20"
                           }`}
                       >
-                        {banner.IsActive ? "🟢 Đang Mở" : "⏸️ Đang Tắt"}
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            banner.IsActive ? "bg-emerald-400" : "bg-slate-400"
+                          }`}
+                        />
+                        {banner.IsActive ? "Đang Mở" : "Đang Tắt"}
                       </span>
                     </div>
 
@@ -349,7 +353,7 @@ export default function SeasonBannerWorkspace({
                               key={hid}
                               className="px-2 py-0.5 rounded-lg bg-[#f5c767]/15 border border-[#f5c767]/40 text-[#f5c767] text-[11px] font-mono font-bold"
                             >
-                              ★ {ch?.name || hid}
+                              {ch?.name || hid}
                             </span>
                           );
                         })
@@ -439,8 +443,8 @@ export default function SeasonBannerWorkspace({
                       {togglingId === banner.BannerId
                         ? "Đang cập nhật..."
                         : banner.IsActive
-                          ? "⏸️ Tạm Tắt Banner"
-                          : "▶️ Bật Mở Banner"}
+                          ? "Tạm Tắt Banner"
+                          : "Bật Mở Banner"}
                     </button>
                   ) : (
                     <span className="text-[11px] font-mono text-slate-500">
@@ -457,7 +461,7 @@ export default function SeasonBannerWorkspace({
                       }}
                       className="px-3.5 py-1.5 rounded-xl bg-[#3fe9d6]/15 hover:bg-[#3fe9d6]/25 text-[#3fe9d6] border border-[#3fe9d6]/40 text-xs font-mono font-bold transition-all cursor-pointer"
                     >
-                      {canEdit ? "✏️ Cấu Hình Chi Tiết" : "👁️ Xem Chi Tiết"}
+                      {canEdit ? "Cấu Hình Chi Tiết" : "Xem Chi Tiết"}
                     </button>
 
                     {canDelete && (
@@ -467,10 +471,10 @@ export default function SeasonBannerWorkspace({
                           soundEngine.playClick();
                           onDeleteBanner(season.SeasonId, banner);
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-mono transition-all cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-mono font-semibold transition-all cursor-pointer"
                         title="Xóa banner khỏi mùa"
                       >
-                        🗑️
+                        Xóa
                       </button>
                     )}
                   </div>
@@ -483,4 +487,3 @@ export default function SeasonBannerWorkspace({
     </div>
   );
 }
-

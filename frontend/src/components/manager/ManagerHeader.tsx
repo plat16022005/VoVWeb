@@ -2,37 +2,111 @@
 
 import { useEffect, useState } from "react";
 import { soundEngine } from "@/services/audio.service";
-import { authService } from "@/services/auth.service";
 import { ManagerTab } from "./ManagerSidebar";
+
+export type ManagerSectionKey =
+  | "overview"
+  | "content:overview"
+  | "content:blog"
+  | "content:facebook"
+  | "gamedata:characters"
+  | "gamedata:gacha"
+  | "gamedata:items"
+  | "gamedata:worlds"
+  | "events:minigames"
+  | "events:giftcodes"
+  | "support:mail";
 
 interface ManagerHeaderProps {
   currentTab: ManagerTab;
+  sectionKey?: ManagerSectionKey;
   onOpenMobileMenu: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
 }
 
-const TAB_TITLES: Record<ManagerTab, { title: string; subtitle: string }> = {
+const SECTION_META: Record<
+  ManagerSectionKey,
+  { group?: string; title: string; subtitle: string }
+> = {
   overview: {
     title: "Cổng Điều Hành Vận Hành (Manager Portal)",
-    subtitle: "Tổng quan các phân hệ nghiệp vụ, trạng thái phiên làm việc và sổ tay quy chuẩn vận hành.",
+    subtitle:
+      "Tổng quan các phân hệ nghiệp vụ, trạng thái phiên làm việc và sổ tay quy chuẩn vận hành.",
   },
-  content: {
-    title: "Trung Tâm Quản Lý Nội Dung (Content Hub)",
-    subtitle: "Điều phối bài viết Blog, tin tức game và Fanpage mạng xã hội chính thức.",
+  "content:overview": {
+    group: "Quản Lý Nội Dung",
+    title: "Tổng Quan Nội Dung & Truyền Thông",
+    subtitle:
+      "Thống kê tổng hợp bài viết Blog, tin tức trang chủ và tương tác kênh Fanpage chính thức.",
   },
-  gamedata: {
-    title: "Quản Lý Dữ Liệu Game (Game Master Data)",
-    subtitle: "Thiết lập thông số chiến binh Valkyria, Banner Gacha theo mùa, kỹ năng và thế giới Veyra.",
+  "content:blog": {
+    group: "Quản Lý Nội Dung",
+    title: "Blog & Tin Tức Trang Chủ",
+    subtitle:
+      "Soạn thảo, kiểm duyệt, xuất bản và quản lý bài viết tin tức chính thức của Valkyria of Veyra.",
   },
-  events: {
-    title: "Trung Tâm Quản Lý Sự Kiện & Giftcode (Event Hub)",
-    subtitle: "Vận hành sự kiện Minigame Unity WebGL, phát hành Mã Quà Tặng (Giftcode) và quản lý phần thưởng.",
+  "content:facebook": {
+    group: "Quản Lý Nội Dung",
+    title: "Fanpage Facebook & Tương Tác",
+    subtitle:
+      "Đăng bài trực tiếp lên Fanpage, theo dõi chỉ số tương tác và cấu hình trả lời bình luận tự động.",
   },
+  "gamedata:characters": {
+    group: "Dữ Liệu Game",
+    title: "Chiến Binh Valkyria",
+    subtitle:
+      "Thiết lập hồ sơ nhân vật, thông tin cá nhân, chỉ số chiến đấu và bộ kỹ năng cho game và trang chủ.",
+  },
+  "gamedata:gacha": {
+    group: "Dữ Liệu Game",
+    title: "Banner Gacha Theo Mùa",
+    subtitle:
+      "Quản lý mùa phát hành, tỷ lệ triệu hồi, cơ chế Pity, pool tướng và hình ảnh Banner Gacha.",
+  },
+  "gamedata:items": {
+    group: "Dữ Liệu Game",
+    title: "Vật Phẩm & Trang Bị",
+    subtitle:
+      "Cấu hình danh mục vật phẩm, trang bị chỉ số động, nguyên liệu và phần thưởng trong game.",
+  },
+  "gamedata:worlds": {
+    group: "Dữ Liệu Game",
+    title: "Bản Đồ Thế Giới Veyra",
+    subtitle:
+      "Quản lý thông tin các vùng đất đại lục Veyra và cấu hình phó bản chiến dịch.",
+  },
+  "events:minigames": {
+    group: "Quản Lý Sự Kiện",
+    title: "Minigame & Sự Kiện Web",
+    subtitle:
+      "Vận hành sự kiện Minigame Unity WebGL (.zip + .html), nhiệm vụ nhận lượt và phần thưởng.",
+  },
+  "events:giftcodes": {
+    group: "Quản Lý Sự Kiện",
+    title: "Mã Quà Tặng (Giftcode)",
+    subtitle:
+      "Phát hành mã quà tặng theo chiến dịch, quản lý lượt nhập, phạm vi máy chủ và quà đính kèm.",
+  },
+  "support:mail": {
+    group: "Hỗ Trợ Người Chơi",
+    title: "Hòm Thư Hệ Thống (Mailbox)",
+    subtitle:
+      "Soạn và gửi thư toàn server, thư cá nhân đính kèm quà và đền bù xử lý báo lỗi theo từng cụm máy chủ.",
+  },
+};
+
+const FALLBACK_BY_TAB: Record<ManagerTab, ManagerSectionKey> = {
+  overview: "overview",
+  content: "content:overview",
+  gamedata: "gamedata:characters",
+  events: "events:minigames",
+  support: "support:mail",
 };
 
 export default function ManagerHeader({
   currentTab,
+  sectionKey,
   onOpenMobileMenu,
   onRefresh,
   isRefreshing,
@@ -55,7 +129,8 @@ export default function ManagerHeader({
     return () => clearInterval(interval);
   }, []);
 
-  const tabInfo = TAB_TITLES[currentTab];
+  const resolvedKey = sectionKey || FALLBACK_BY_TAB[currentTab];
+  const tabInfo = SECTION_META[resolvedKey];
 
   return (
     <header className="h-20 bg-[#070919]/80 backdrop-blur-md border-b border-[#f5c767]/20 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
@@ -75,6 +150,14 @@ export default function ManagerHeader({
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
+            {tabInfo.group && (
+              <>
+                <span className="hidden sm:inline-block text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                  {tabInfo.group}
+                </span>
+                <span className="hidden sm:inline-block text-slate-600 text-xs">/</span>
+              </>
+            )}
             <h1 className="text-base sm:text-lg font-bold text-white truncate font-[family-name:var(--font-rajdhani)] tracking-wide">
               {tabInfo.title}
             </h1>
@@ -88,14 +171,14 @@ export default function ManagerHeader({
 
       {/* Right: Server Clock & Refresh */}
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        {/* Server Time Ticker */}
         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0c1026] border border-[#f5c767]/20 text-xs font-mono text-slate-300">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-slate-400">Giờ Server:</span>
-          <span className="text-[#f5c767] font-semibold">{serverTime || "Đang đồng bộ..."}</span>
+          <span className="text-[#f5c767] font-semibold">
+            {serverTime || "Đang đồng bộ..."}
+          </span>
         </div>
 
-        {/* Refresh Button */}
         <button
           onClick={() => {
             soundEngine.playClick();
@@ -118,4 +201,3 @@ export default function ManagerHeader({
     </header>
   );
 }
-

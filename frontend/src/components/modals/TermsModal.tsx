@@ -75,7 +75,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="🔍 Tra cứu nội dung điều khoản..."
+              placeholder="Tra cứu nội dung điều khoản..."
               className="w-full px-3.5 py-1.5 rounded-xl bg-[#0e122b] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#3fe9d6] placeholder:text-slate-500"
             />
           </div>

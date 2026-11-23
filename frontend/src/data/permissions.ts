@@ -2,7 +2,16 @@ export interface SubPermission {
   id: string;
   title: string;
   description: string;
-  category: "blog" | "facebook" | "character" | "gacha" | "item" | "event" | "giftcode" | "general";
+  category:
+    | "blog"
+    | "facebook"
+    | "character"
+    | "gacha"
+    | "item"
+    | "event"
+    | "giftcode"
+    | "mail"
+    | "general";
   categoryTitle: string;
 }
 
@@ -21,7 +30,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     title: "Quản Lý Nội Dung",
     code: "CONTENT_OPS",
     description: "Điều phối bài viết blog, tin tức trang chủ và hệ thống Fanpage mạng xã hội Facebook.",
-    icon: "📰",
+    icon: "",
     subPermissions: [
       // Nhánh 1: Blog & Tin Tức
       {
@@ -82,7 +91,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     title: "Dữ Liệu Game & Nhân Vật",
     code: "GAME_DATA_OPS",
     description: "Quản lý thông số nhân vật Valkyria, bộ kỹ năng, hệ thống Banner Gacha theo mùa và thế giới Veyra.",
-    icon: "⚔️",
+    icon: "",
     subPermissions: [
       {
         id: "gamedata.character.view",
@@ -170,7 +179,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     title: "Quản Lý Sự Kiện",
     code: "EVENT_OPS",
     description: "Quản lý sự kiện Minigame Web (Unity WebGL) và phát hành Mã Quà Tặng (Giftcode) kèm phần thưởng trong game.",
-    icon: "◆",
+    icon: "",
     subPermissions: [
       // Nhánh 1: Sự Kiện & Minigame Web (Unity WebGL)
       {
@@ -229,6 +238,50 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         description: "Xóa vĩnh viễn mã quà tặng không còn sử dụng khỏi hệ thống quản trị sự kiện.",
         category: "giftcode",
         categoryTitle: "Quản Lý Mã Quà Tặng (Giftcode)",
+      },
+    ],
+  },
+  {
+    id: "player_support",
+    title: "Hỗ Trợ Người Chơi",
+    code: "SUPPORT_OPS",
+    description: "Quản lý hòm thư hệ thống trong game: gửi thông báo toàn server, phát quà cá nhân, đền bù xử lý báo lỗi và hỗ trợ tài khoản người chơi.",
+    icon: "",
+    subPermissions: [
+      {
+        id: "support.mail.view",
+        title: "Xem Danh Sách & Lịch Sử Thư Hệ Thống",
+        description: "Theo dõi toàn bộ thư toàn server và thư cá nhân đã gửi, chi tiết nội dung, phần thưởng đính kèm và trạng thái hiệu lực.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      {
+        id: "support.mail.send_notice",
+        title: "Gửi Thư Thông Báo Thuần (Không Kèm Quà)",
+        description: "Soạn và gửi thư thông báo bảo trì, tin tức vận hành hoặc phản hồi hỗ trợ không đính kèm tài nguyên trong game.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      {
+        id: "support.mail.send_personal",
+        title: "Gửi Thư Cá Nhân Kèm Quà / Đền Bù Lỗi",
+        description: "Tra cứu tài khoản người chơi cụ thể và gửi thư cá nhân kèm Vàng, Ngọc, Thể Lực hoặc vật phẩm để đền bù xử lý lỗi / trao thưởng riêng.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      {
+        id: "support.mail.send_global_reward",
+        title: "Gửi Thư Toàn Server Kèm Quà Tặng",
+        description: "Quyền đặc biệt cho phép phát thư kèm Vàng, Ngọc, Thể Lực hoặc vật phẩm tới toàn bộ người chơi trên một hoặc nhiều cụm máy chủ.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      {
+        id: "support.mail.delete",
+        title: "Thu Hồi & Xóa Thư Hệ Thống",
+        description: "Thu hồi khẩn cấp thư đã phát hoặc xóa vĩnh viễn bản ghi thư khỏi trung tâm quản lý.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
       },
     ],
   },

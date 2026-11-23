@@ -551,8 +551,7 @@ export default function CharacterShowcase({
                     : "bg-white/10 text-[#f5c767] hover:bg-white/20"
                     }`}
                 >
-                  <span>🔊</span>
-                  <span>{activeVoiceChime ? "Đang phát..." : "Nghe Giọng Thoại"}</span>
+                  <span>{activeVoiceChime ? "Đang phát..." : "Nghe thoại"}</span>
                 </button>
               </div>
               <blockquote className="text-xs sm:text-sm text-slate-300 italic border-l-2 border-[#f5c767] pl-3">

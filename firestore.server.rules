@@ -19,9 +19,14 @@ service cloud.firestore {
 
     // Quản trị viên (Admin) hoặc Quản lý (Manager)
     function isAdminOrManager() {
-      return isAuthenticated() && (
-        request.auth.token.role in ['admin', 'manager', 'Admin', 'Manager']
-      );
+      return isAuthenticated()
+        && 'role' in request.auth.token
+        && request.auth.token.role in ['admin', 'manager', 'Admin', 'Manager'];
+    }
+
+    // Đảm bảo các trường bất biến không bị thay đổi khi cập nhật document
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
 
     // =========================================================================
@@ -56,6 +61,9 @@ service cloud.firestore {
       allow write: if false; // Chỉ Cloud Function được phép ghi lịch sử
     }
 
+    // (Lưu ý: Subcollection Users/{userId}/Mailbox/{mailId} cho thư cá nhân được định nghĩa
+    //  tập trung cùng kiến trúc Hòm Thư Lai — Hybrid Mailbox Architecture ở Mục 3 bên dưới.)
+
     // =========================================================================
     // 2. TÍNH NĂNG CỘNG ĐỒNG SERVER (Bảng xếp hạng, Bang hội, Hòm thư)
     // =========================================================================
@@ -84,16 +92,211 @@ service cloud.firestore {
       }
     }
 
-    // Hòm thư Server (Mailbox)
-    // Thư toàn server hoặc thư riêng gửi đến userId của người chơi
+    // =========================================================================
+    // 3. KIẾN TRÚC HÒM THƯ LAI — HYBRID MAILBOX ARCHITECTURE (Theo từng shard server-x)
+    // =========================================================================
+    // Assumed Data Model:
+    //
+    // A. Root Global Mailbox: Mailbox/{mailId}
+    //    - CHỈ chứa thư toàn máy chủ (Type == 'global')
+    //    - Document ID: {mailId} (string matching ^[A-Za-z0-9_-]{6,64}$)
+    //    - Fields (exact 21 required keys):
+    //      - MailId: string (required, immutable, == mailId, matches ^[A-Za-z0-9_-]{6,64}$)
+    //      - ServerId: string (required, immutable, == database, 1..64 chars)
+    //      - Type: string (required, immutable, strictly == 'global')
+    //      - Category: string (required, enum ['NOTICE', 'COMPENSATION', 'REWARD', 'SUPPORT', 'EVENT'])
+    //      - Title: string (required, 1..150 chars)
+    //      - Content: string (required, 1..4000 chars)
+    //      - SenderName: string (required, 1..80 chars)
+    //      - TargetServers: list of string (required, immutable, size == 1, TargetServers[0] == database)
+    //      - ReceiverId: string (required, immutable, strictly == '')
+    //      - UserId: string (required, immutable, strictly == '')
+    //      - ReceiverName: string (required, 0..120 chars)
+    //      - ReceiverPlayerCode: string (required, 0..32 chars)
+    //      - HasRewards: bool (required, must equal whether Rewards contains any currency or item)
+    //      - Rewards: map (required, exact keys: Gold int 0..1000000000, Gems int 0..10000000,
+    //                      Energy int 0..100000, Items list size 0..30)
+    //      - ReferenceTicketId: string (required, 0..64 chars)
+    //      - Status: string (required, enum ['SENT', 'REVOKED']; must be 'SENT' on create)
+    //      - ExpiresAt: string (required, 0..64 chars)
+    //      - CreatedAt: string (required, immutable, 1..64 chars)
+    //      - UpdatedAt: string (required, 1..64 chars)
+    //      - CreatedBy: string (required, immutable, 1..200 chars)
+    //      - UpdatedBy: string (required, 1..200 chars)
+    //
+    // B. Per-Player Personal Mailbox: Users/{userId}/Mailbox/{mailId}
+    //    - CHỈ chứa thư cá nhân / đền bù lỗi cho riêng {userId} (Type == 'personal')
+    //    - Document ID: {mailId} (string matching ^[A-Za-z0-9_-]{6,64}$)
+    //    - Fields (exact 24 required keys: 21 trường ở trên + IsRead, IsClaimed, ClaimedAt):
+    //      - Type: string (required, immutable, strictly == 'personal')
+    //      - ReceiverId: string (required, immutable, strictly == userId, 1..128 chars)
+    //      - UserId: string (required, immutable, strictly == userId)
+    //      - IsRead: bool (required, strictly == false on create, immutable on client/manager update; chỉ Cloud Function cập nhật)
+    //      - IsClaimed: bool (required, strictly == false on create, immutable on client/manager update; chỉ Cloud Function cập nhật)
+    //      - ClaimedAt: string (required, 0..64 chars, strictly == '' on create, immutable on client/manager update; chỉ Cloud Function cập nhật)
+    //
+    // C. Collection Group Query: /{path=**}/Mailbox/{mailId}
+    //    - CHỈ cho phép Admin/Manager đọc phục vụ truy vấn tổng hợp trên NestJS Backend;
+    //      TUYỆT ĐỐI không cấp quyền đọc cho người chơi thường.
+    // =========================================================================
+
+    // Kiểm tra cấu trúc một vật phẩm đính kèm trong Mailbox.Rewards.Items
+    function isValidSystemMailRewardItem(item) {
+      return item is map
+        && item.keys().hasAll(['ItemId', 'Quantity'])
+        && item.keys().hasOnly(['ItemId', 'ItemName', 'Quantity', 'Rarity'])
+        && item.ItemId is string && item.ItemId.size() >= 1 && item.ItemId.size() <= 80
+        && item.Quantity is int && item.Quantity >= 1 && item.Quantity <= 999999
+        && (!('ItemName' in item) || (item.ItemName is string && item.ItemName.size() <= 120))
+        && (!('Rarity' in item) || (item.Rarity is int && item.Rarity >= 0 && item.Rarity <= 4));
+    }
+
+    // Kiểm tra cấu trúc bản đồ phần thưởng (Rewards) của thư hệ thống
+    function isValidSystemMailRewards(rewards) {
+      return rewards is map
+        && rewards.keys().hasAll(['Gold', 'Gems', 'Energy', 'Items'])
+        && rewards.keys().hasOnly(['Gold', 'Gems', 'Energy', 'Items'])
+        && rewards.Gold is int && rewards.Gold >= 0 && rewards.Gold <= 1000000000
+        && rewards.Gems is int && rewards.Gems >= 0 && rewards.Gems <= 10000000
+        && rewards.Energy is int && rewards.Energy >= 0 && rewards.Energy <= 100000
+        && rewards.Items is list && rewards.Items.size() <= 30
+        && (rewards.Items.size() == 0
+            || (isValidSystemMailRewardItem(rewards.Items[0])
+                && isValidSystemMailRewardItem(rewards.Items[rewards.Items.size() - 1])));
+    }
+
+    // Kiểm tra các trường lõi dùng chung giữa thư toàn máy chủ (Global) và thư cá nhân (Personal)
+    function hasValidSystemMailCommonFields(data, mailId, dbId) {
+      return mailId.size() >= 6 && mailId.size() <= 64
+        && mailId.matches('^[A-Za-z0-9_-]{6,64}$')
+        && data.MailId is string && data.MailId == mailId
+        && data.ServerId is string && data.ServerId.size() >= 1 && data.ServerId.size() <= 64 && data.ServerId == dbId
+        && data.Category is string && data.Category in ['NOTICE', 'COMPENSATION', 'REWARD', 'SUPPORT', 'EVENT']
+        && data.Title is string && data.Title.size() >= 1 && data.Title.size() <= 150
+        && data.Content is string && data.Content.size() >= 1 && data.Content.size() <= 4000
+        && data.SenderName is string && data.SenderName.size() >= 1 && data.SenderName.size() <= 80
+        && data.TargetServers is list && data.TargetServers.size() == 1
+        && data.TargetServers[0] is string && data.TargetServers[0] == dbId
+        && data.ReceiverName is string && data.ReceiverName.size() <= 120
+        && data.ReceiverPlayerCode is string && data.ReceiverPlayerCode.size() <= 32
+        && data.HasRewards is bool
+        && isValidSystemMailRewards(data.Rewards)
+        && data.HasRewards == (data.Rewards.Gold > 0 || data.Rewards.Gems > 0 || data.Rewards.Energy > 0 || data.Rewards.Items.size() > 0)
+        && data.ReferenceTicketId is string && data.ReferenceTicketId.size() <= 64
+        && data.Status is string && data.Status in ['SENT', 'REVOKED']
+        && data.ExpiresAt is string && data.ExpiresAt.size() <= 64
+        && data.CreatedAt is string && data.CreatedAt.size() >= 1 && data.CreatedAt.size() <= 64
+        && data.UpdatedAt is string && data.UpdatedAt.size() >= 1 && data.UpdatedAt.size() <= 64
+        && data.CreatedBy is string && data.CreatedBy.size() >= 1 && data.CreatedBy.size() <= 200
+        && data.UpdatedBy is string && data.UpdatedBy.size() >= 1 && data.UpdatedBy.size() <= 200;
+    }
+
+    // Kiểm tra dữ liệu thư toàn máy chủ (Mailbox/{mailId}) — đúng 21 trường, Type == 'global' (dùng chung cho create và update)
+    function isValidGlobalMail(data, mailId, dbId) {
+      return data.keys().hasAll([
+          'MailId', 'ServerId', 'Type', 'Category', 'Title', 'Content', 'SenderName',
+          'TargetServers', 'ReceiverId', 'UserId', 'ReceiverName', 'ReceiverPlayerCode',
+          'HasRewards', 'Rewards', 'ReferenceTicketId', 'Status', 'ExpiresAt',
+          'CreatedAt', 'UpdatedAt', 'CreatedBy', 'UpdatedBy'
+        ])
+        && data.keys().hasOnly([
+          'MailId', 'ServerId', 'Type', 'Category', 'Title', 'Content', 'SenderName',
+          'TargetServers', 'ReceiverId', 'UserId', 'ReceiverName', 'ReceiverPlayerCode',
+          'HasRewards', 'Rewards', 'ReferenceTicketId', 'Status', 'ExpiresAt',
+          'CreatedAt', 'UpdatedAt', 'CreatedBy', 'UpdatedBy'
+        ])
+        && hasValidSystemMailCommonFields(data, mailId, dbId)
+        && data.Type is string && data.Type == 'global'
+        && data.ReceiverId is string && data.ReceiverId == ''
+        && data.UserId is string && data.UserId == '';
+    }
+
+    // Kiểm tra dữ liệu thư cá nhân (Users/{userId}/Mailbox/{mailId}) — đúng 24 trường, Type == 'personal' (dùng chung cho create và update)
+    function isValidPersonalMail(data, mailId, userId, dbId) {
+      return data.keys().hasAll([
+          'MailId', 'ServerId', 'Type', 'Category', 'Title', 'Content', 'SenderName',
+          'TargetServers', 'ReceiverId', 'UserId', 'ReceiverName', 'ReceiverPlayerCode',
+          'HasRewards', 'Rewards', 'ReferenceTicketId', 'Status',
+          'IsRead', 'IsClaimed', 'ClaimedAt', 'ExpiresAt',
+          'CreatedAt', 'UpdatedAt', 'CreatedBy', 'UpdatedBy'
+        ])
+        && data.keys().hasOnly([
+          'MailId', 'ServerId', 'Type', 'Category', 'Title', 'Content', 'SenderName',
+          'TargetServers', 'ReceiverId', 'UserId', 'ReceiverName', 'ReceiverPlayerCode',
+          'HasRewards', 'Rewards', 'ReferenceTicketId', 'Status',
+          'IsRead', 'IsClaimed', 'ClaimedAt', 'ExpiresAt',
+          'CreatedAt', 'UpdatedAt', 'CreatedBy', 'UpdatedBy'
+        ])
+        && hasValidSystemMailCommonFields(data, mailId, dbId)
+        && data.Type is string && data.Type == 'personal'
+        && data.ReceiverId is string && data.ReceiverId.size() >= 1 && data.ReceiverId.size() <= 128 && data.ReceiverId == userId
+        && data.UserId is string && data.UserId == userId
+        && data.IsRead is bool
+        && data.IsClaimed is bool
+        && data.ClaimedAt is string && data.ClaimedAt.size() <= 64;
+    }
+
+    // 3.1. Collection Group Read (CHỈ dành cho Admin/Manager):
+    // Phục vụ truy vấn collection-group (allDescendants: true) trên 'Mailbox' để liệt kê
+    // đồng thời thư toàn server và thư cá nhân trong một truy vấn duy nhất theo từng shard.
+    // Người chơi thường TUYỆT ĐỐI không được cấp quyền từ rule đệ quy này.
+    match /{path=**}/Mailbox/{mailId} {
+      allow read: if isAdminOrManager();
+    }
+
+    // 3.2. Hòm thư Toàn Máy Chủ (Mailbox/{mailId} — CHỈ chứa Type == 'global'):
+    // - ĐỌC: Admin/Manager đọc toàn bộ; người chơi đã đăng nhập CHỈ đọc được thư toàn server đang ở trạng thái 'SENT'
+    // - TẠO: Chỉ Admin/Manager, chuẩn hóa schema 21 trường gắn chặt với shard database hiện tại, Type == 'global', Status == 'SENT'
+    // - CẬP NHẬT: Chỉ Admin/Manager, chuẩn hóa schema 21 trường, khóa cứng MailId, ServerId, Type, TargetServers, ReceiverId, UserId, CreatedAt, CreatedBy
+    // - XÓA: Chỉ Admin/Manager
+    // - Người chơi: TUYỆT ĐỐI chỉ đọc (trạng thái đọc/nhận quà thư global lưu ở Users/{userId}/UserData/MailState qua Cloud Function)
     match /Mailbox/{mailId} {
-      allow read: if isAuthenticated() && (
-        resource.data.Type == 'global' ||
-        resource.data.ReceiverId == request.auth.uid ||
-        resource.data.UserId == request.auth.uid ||
-        isAdminOrManager()
-      );
-      allow write: if false; // Nhận thư, xóa thư, gửi thư qua Cloud Function
+      allow read: if isAdminOrManager()
+        || (
+          isAuthenticated()
+          && resource.data.Status == 'SENT'
+          && resource.data.Type == 'global'
+        );
+      allow create: if isAdminOrManager()
+        && isValidGlobalMail(request.resource.data, mailId, database)
+        && request.resource.data.Status == 'SENT';
+      allow update: if isAdminOrManager()
+        && isValidGlobalMail(request.resource.data, mailId, database)
+        && areImmutableFieldsUnchanged([
+          'MailId', 'ServerId', 'Type', 'TargetServers',
+          'ReceiverId', 'UserId', 'CreatedAt', 'CreatedBy'
+        ]);
+      allow delete: if isAdminOrManager();
+    }
+
+    // 3.3. Hòm thư Cá Nhân Người Chơi (Users/{userId}/Mailbox/{mailId} — CHỈ chứa Type == 'personal'):
+    // - ĐỌC: Admin/Manager đọc toàn bộ; chính chủ (isOwner(userId)) CHỈ đọc được thư đang ở trạng thái 'SENT'
+    // - TẠO: Chỉ Admin/Manager, chuẩn hóa schema 24 trường gắn chặt với {userId} và shard database,
+    //        Status == 'SENT', IsRead == false, IsClaimed == false, ClaimedAt == ''
+    // - CẬP NHẬT: Chỉ Admin/Manager, chuẩn hóa schema 24 trường, khóa cứng các trường bất biến và
+    //             trạng thái nhận quà của người chơi (IsRead, IsClaimed, ClaimedAt chỉ Cloud Function cập nhật)
+    // - XÓA: Chỉ Admin/Manager
+    // - Người chơi: TUYỆT ĐỐI chỉ đọc (đánh dấu đã đọc / nhận quà xử lý qua Cloud Function)
+    match /Users/{userId}/Mailbox/{mailId} {
+      allow read: if isAdminOrManager()
+        || (
+          isOwner(userId)
+          && resource.data.Status == 'SENT'
+        );
+      allow create: if isAdminOrManager()
+        && isValidPersonalMail(request.resource.data, mailId, userId, database)
+        && request.resource.data.Status == 'SENT'
+        && request.resource.data.IsRead == false
+        && request.resource.data.IsClaimed == false
+        && request.resource.data.ClaimedAt == '';
+      allow update: if isAdminOrManager()
+        && isValidPersonalMail(request.resource.data, mailId, userId, database)
+        && areImmutableFieldsUnchanged([
+          'MailId', 'ServerId', 'Type', 'TargetServers',
+          'ReceiverId', 'UserId', 'IsRead', 'IsClaimed', 'ClaimedAt',
+          'CreatedAt', 'CreatedBy'
+        ]);
+      allow delete: if isAdminOrManager();
     }
 
     // =========================================================================

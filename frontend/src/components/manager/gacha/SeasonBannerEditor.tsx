@@ -206,13 +206,13 @@ export default function SeasonBannerEditor({
     }
   };
 
-  const tabs: { id: EditorTab; label: string; icon: string }[] = [
-    { id: "identity", label: "1. Định Danh & Lịch", icon: "🏷️" },
-    { id: "media", label: "2. Hình Ảnh CDN", icon: "🖼️" },
-    { id: "cost_pity", label: "3. Chi Phí & Pity", icon: "🎫" },
-    { id: "rates_pool", label: "4. Tỷ Lệ & Pool", icon: "✨" },
-    { id: "duplicate", label: "5. Quà Trùng", icon: "♻️" },
-    { id: "json", label: "Xem JSON", icon: "{ }" },
+  const tabs: { id: EditorTab; label: string }[] = [
+    { id: "identity", label: "1. Định Danh & Lịch" },
+    { id: "media", label: "2. Hình Ảnh CDN" },
+    { id: "cost_pity", label: "3. Chi Phí & Pity" },
+    { id: "rates_pool", label: "4. Tỷ Lệ & Pool" },
+    { id: "duplicate", label: "5. Quà Trùng" },
+    { id: "json", label: "Xem JSON" },
   ];
 
   return (
@@ -257,7 +257,7 @@ export default function SeasonBannerEditor({
             }`}
           >
             {validationErrors.length > 0
-              ? `⚠️ ${validationErrors.length} lỗi cấu hình`
+              ? `${validationErrors.length} lỗi cấu hình`
               : `Tổng tỷ lệ: ${HERO_RARITY_KEYS.reduce(
                   (sum, k) => sum + (Number(draft.RarityRates[k]) || 0) * 100,
                   0
@@ -276,10 +276,7 @@ export default function SeasonBannerEditor({
                   <span>Đang Lưu...</span>
                 </>
               ) : (
-                <>
-                  <span>💾</span>
-                  <span>Lưu Banner</span>
-                </>
+                <span>Lưu Banner</span>
               )}
             </button>
           )}
@@ -289,9 +286,8 @@ export default function SeasonBannerEditor({
       {/* Validation Errors Alert */}
       {validationErrors.length > 0 && (
         <div className="p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 space-y-2">
-          <div className="text-xs font-mono font-bold text-rose-300 flex items-center gap-2">
-            <span>⚠️</span>
-            <span>Không thể lưu vì cấu hình chưa đạt quy chuẩn kiểm tra:</span>
+          <div className="text-xs font-mono font-bold text-rose-300">
+            Không thể lưu vì cấu hình chưa đạt quy chuẩn kiểm tra:
           </div>
           <ul className="list-disc list-inside space-y-1 text-xs text-rose-200 font-sans">
             {validationErrors.map((err, i) => (
@@ -313,14 +309,13 @@ export default function SeasonBannerEditor({
                 soundEngine.playClick();
                 setActiveTab(tab.id);
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all cursor-pointer ${
                 active
                   ? "bg-[#3fe9d6] text-[#060814] shadow-[0_0_15px_rgba(63,233,214,0.3)]"
                   : "bg-[#090d24] text-slate-300 border border-white/10 hover:text-white hover:border-white/25"
               }`}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+              {tab.label}
             </button>
           );
         })}
@@ -483,7 +478,14 @@ export default function SeasonBannerEditor({
                       : "bg-slate-800/70 border-white/10 text-slate-400"
                   }`}
                 >
-                  <span>{draft.IsActive ? "🟢 Đang Mở" : "⏸️ Tạm Tắt"}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        draft.IsActive ? "bg-emerald-400" : "bg-slate-400"
+                      }`}
+                    />
+                    {draft.IsActive ? "Đang Mở" : "Tạm Tắt"}
+                  </span>
                   <span>{draft.IsActive ? "ON" : "OFF"}</span>
                 </button>
               </div>
@@ -1173,7 +1175,7 @@ export default function SeasonBannerEditor({
                 }}
                 className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-200 cursor-pointer"
               >
-                📋 Sao chép JSON
+                Sao chép JSON
               </button>
             </div>
             <pre className="p-4 rounded-xl bg-[#04050d] border border-white/10 text-[11px] font-mono text-[#3fe9d6] overflow-x-auto max-h-[500px] leading-relaxed">
@@ -1185,4 +1187,3 @@ export default function SeasonBannerEditor({
     </form>
   );
 }
-

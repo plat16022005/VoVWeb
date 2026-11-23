@@ -72,9 +72,9 @@ export default function ValkyriaDetailModal({
                 soundEngine.playClick();
                 onClose();
               }}
-              className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer"
             >
-              ✕
+              Đóng
             </button>
           </div>
         </div>
@@ -195,9 +195,8 @@ export default function ValkyriaDetailModal({
 
           {/* Combat Stats Grid */}
           <div className="space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <span>📊</span>
-              <span>Chỉ Số Chiến Đấu Cơ Bản (Base Combat Stats)</span>
+            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+              Chỉ Số Chiến Đấu Cơ Bản (Base Combat Stats)
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3">
@@ -242,9 +241,8 @@ export default function ValkyriaDetailModal({
 
           {/* Growth Per Level */}
           <div className="space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f5c767] flex items-center gap-2">
-              <span>📈</span>
-              <span>Hệ Số Tăng Trưởng Mỗi Cấp Độ (Growth Per Level)</span>
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#f5c767]">
+              Hệ Số Tăng Trưởng Mỗi Cấp Độ (Growth Per Level)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -265,9 +263,8 @@ export default function ValkyriaDetailModal({
 
           {/* 4 Combat Skills */}
           <div className="space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <span>⚡</span>
-              <span>Bộ Kỹ Năng Chiến Đấu ({character.skills?.length || 0})</span>
+            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+              Bộ Kỹ Năng Chiến Đấu ({character.skills?.length || 0})
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -297,9 +294,8 @@ export default function ValkyriaDetailModal({
 
           {/* Lore & Story Background */}
           <div className="space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <span>📜</span>
-              <span>Tiểu Sử & Cốt Truyện Đại Lục Veyra</span>
+            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+              Tiểu Sử & Cốt Truyện Đại Lục Veyra
             </h3>
 
             <div className="p-4 rounded-xl bg-[#060814]/80 border border-white/10 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
@@ -328,4 +324,3 @@ export default function ValkyriaDetailModal({
     </div>
   );
 }
-

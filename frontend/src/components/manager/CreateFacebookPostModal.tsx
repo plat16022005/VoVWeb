@@ -67,7 +67,7 @@ export default function CreateFacebookPostModal({
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Tin Tức");
   const [caption, setCaption] = useState(
-    `⚔️ VALKYRIA OF VEYRA - BẢN TIN CHÍNH THỨC\n\nKính chào các Chỉ Huy!\n\nChúng tôi xin trân trọng thông báo...\n\n👉 Theo dõi ngay Fanpage để không bỏ lỡ đợt Closed Beta!\n\n${STANDARD_HASHTAGS}`
+    `VALKYRIA OF VEYRA - BẢN TIN CHÍNH THỨC\n\nKính chào các Chỉ Huy!\n\nChúng tôi xin trân trọng thông báo...\n\nTheo dõi ngay Fanpage để không bỏ lỡ đợt Closed Beta!\n\n${STANDARD_HASHTAGS}`
   );
   const [coverUrl, setCoverUrl] = useState(PRESET_GAME_IMAGES[0].url);
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
@@ -206,11 +206,6 @@ export default function CreateFacebookPostModal({
   const appendToCaption = (text: string) => {
     soundEngine.playClick();
     setCaption((prev) => (prev ? `${prev}\n\n${text}` : text));
-  };
-
-  const insertEmoji = (emoji: string) => {
-    soundEngine.playClick();
-    setCaption((prev) => `${prev} ${emoji} `);
   };
 
   // Tất cả media gửi tới Facebook API
@@ -362,10 +357,10 @@ export default function CreateFacebookPostModal({
               soundEngine.playClick();
               onClose();
             }}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer text-sm font-mono"
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-mono"
             aria-label="Đóng modal"
           >
-            ✕
+            Đóng
           </button>
         </div>
 
@@ -381,14 +376,13 @@ export default function CreateFacebookPostModal({
                   soundEngine.playClick();
                   setCreationMode("direct");
                 }}
-                className={`flex-1 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2 rounded-xl font-bold transition-all cursor-pointer text-center ${
                   creationMode === "direct"
                     ? "bg-[#1877F2] text-white shadow-md"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <span>✍️</span>
-                <span>Soạn Bài Mới Trực Tiếp</span>
+                Soạn Bài Mới Trực Tiếp
               </button>
 
               <button
@@ -397,14 +391,13 @@ export default function CreateFacebookPostModal({
                   soundEngine.playClick();
                   setCreationMode("from_blog");
                 }}
-                className={`flex-1 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2 rounded-xl font-bold transition-all cursor-pointer text-center ${
                   creationMode === "from_blog"
                     ? "bg-[#1877F2] text-white shadow-md"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <span>📰</span>
-                <span>Chọn Từ Bài Viết Blog ({availableBlogPosts.length})</span>
+                Chọn Từ Bài Viết Blog ({availableBlogPosts.length})
               </button>
             </div>
 
@@ -446,9 +439,8 @@ export default function CreateFacebookPostModal({
             {/* 3. KHU VỰC HÌNH ẢNH ĐÍNH KÈM (MEDIA) */}
             <div className="p-4 rounded-2xl bg-[#050716] border border-white/10 space-y-3.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
-                  <span>🖼️</span>
-                  <span>Hình Ảnh Đính Kèm ({allMediaItems.length} ảnh)</span>
+                <label className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                  Hình Ảnh Đính Kèm ({allMediaItems.length} ảnh)
                 </label>
                 <span className="text-[10px] text-[#3fe9d6] font-mono">
                   {allMediaItems.length > 1 ? "Đăng dạng Album ảnh" : "Đăng ảnh đơn"}
@@ -481,15 +473,15 @@ export default function CreateFacebookPostModal({
                         className="object-cover"
                       />
                       <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 text-[10px] text-emerald-300 font-mono border border-emerald-500/30">
-                        ✓ Ảnh Bìa Chính
+                        Ảnh Bìa Chính
                       </div>
                       <button
                         type="button"
                         onClick={() => setCoverUrl("")}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-xs transition-colors cursor-pointer"
+                        className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-xs font-mono transition-colors cursor-pointer"
                         title="Xóa ảnh này"
                       >
-                        ✕
+                        ×
                       </button>
                     </div>
 
@@ -499,16 +491,15 @@ export default function CreateFacebookPostModal({
                         type="button"
                         disabled={isUploadingCover}
                         onClick={() => coverFileInputRef.current?.click()}
-                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#2563eb] text-white text-xs font-mono font-bold hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer shadow"
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#2563eb] text-white text-xs font-mono font-bold hover:opacity-95 transition-all cursor-pointer shadow"
                       >
-                        <span>📁</span>
-                        <span>{isUploadingCover ? `Đang tải ${coverProgress}%...` : "Thay Ảnh Từ Máy Tính"}</span>
+                        {isUploadingCover ? `Đang tải ${coverProgress}%...` : "Thay Ảnh Từ Máy Tính"}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setShowUrlInput(!showUrlInput)}
-                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-mono transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-mono transition-colors cursor-pointer"
                       >
                         {showUrlInput ? "Ẩn Nhập Link" : "Dán Link Ảnh Khác"}
                       </button>
@@ -517,18 +508,14 @@ export default function CreateFacebookPostModal({
                 ) : (
                   /* Khung mời tải ảnh nếu chưa có */
                   <div className="py-6 space-y-3">
-                    <div className="w-12 h-12 mx-auto rounded-2xl bg-[#1877F2]/10 border border-[#1877F2]/30 flex items-center justify-center text-2xl text-[#1877F2]">
-                      ☁️
-                    </div>
                     <div>
                       <button
                         type="button"
                         disabled={isUploadingCover}
                         onClick={() => coverFileInputRef.current?.click()}
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#2563eb] hover:from-[#1d4ed8] hover:to-[#1877F2] text-white font-bold text-xs font-mono shadow-[0_0_20px_rgba(24,119,242,0.4)] transition-all inline-flex items-center gap-2 cursor-pointer"
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#2563eb] hover:from-[#1d4ed8] hover:to-[#1877F2] text-white font-bold text-xs font-mono shadow-[0_0_20px_rgba(24,119,242,0.4)] transition-all cursor-pointer"
                       >
-                        <span>📁</span>
-                        <span>{isUploadingCover ? `Đang tải lên ${coverProgress}%...` : "Tải Ảnh Từ Máy Tính"}</span>
+                        {isUploadingCover ? `Đang tải lên ${coverProgress}%...` : "Tải Ảnh Từ Máy Tính"}
                       </button>
                       <p className="text-[11px] text-slate-400 font-mono mt-2">
                         hoặc kéo thả file ảnh vào đây (Hỗ trợ JPG, PNG, WebP)
@@ -656,10 +643,10 @@ export default function CreateFacebookPostModal({
                         <button
                           type="button"
                           onClick={() => handleRemoveAdditionalImage(idx)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-950/90 text-rose-300 border border-rose-500/50 flex items-center justify-center text-[10px] hover:bg-rose-900 transition-colors"
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-950/90 text-rose-300 border border-rose-500/50 flex items-center justify-center text-xs hover:bg-rose-900 transition-colors cursor-pointer"
                           title="Xóa ảnh này"
                         >
-                          ✕
+                          ×
                         </button>
                       </div>
                     ))}
@@ -679,43 +666,30 @@ export default function CreateFacebookPostModal({
                 </span>
               </div>
 
-              {/* Quick Snippets & Emoji Toolbar */}
+              {/* Quick Snippets Toolbar */}
               <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-[#050716] border border-white/10 text-xs font-mono">
                 <span className="text-slate-400 text-[10px] mr-1">Chèn nhanh:</span>
                 <button
                   type="button"
-                  onClick={() => appendToCaption("⚔️ VALKYRIA OF VEYRA - BẢN TIN CHÍNH THỨC")}
-                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 text-[11px]"
+                  onClick={() => appendToCaption("VALKYRIA OF VEYRA - BẢN TIN CHÍNH THỨC")}
+                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 text-[11px] cursor-pointer"
                 >
                   + Tiêu Đề Chuẩn
                 </button>
                 <button
                   type="button"
-                  onClick={() => appendToCaption("👉 Theo dõi Fanpage & tham gia cộng đồng Chỉ Huy ngay hôm nay!")}
-                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 text-[11px]"
+                  onClick={() => appendToCaption("Theo dõi Fanpage & tham gia cộng đồng Chỉ Huy ngay hôm nay!")}
+                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 text-[11px] cursor-pointer"
                 >
                   + CTA Kêu Gọi
                 </button>
                 <button
                   type="button"
                   onClick={() => appendToCaption(STANDARD_HASHTAGS)}
-                  className="px-2 py-0.5 rounded bg-[#1877F2]/20 hover:bg-[#1877F2]/30 text-[#1877F2] text-[11px] font-bold"
+                  className="px-2 py-0.5 rounded bg-[#1877F2]/20 hover:bg-[#1877F2]/30 text-[#1877F2] text-[11px] font-bold cursor-pointer"
                 >
                   + Bộ Hashtag
                 </button>
-
-                <div className="h-4 w-[1px] bg-white/15 mx-1" />
-
-                {["✨", "⚔️", "🛡️", "💎", "🎁", "🚀", "🔥", "👑", "📢"].map((em) => (
-                  <button
-                    key={em}
-                    type="button"
-                    onClick={() => insertEmoji(em)}
-                    className="p-1 hover:bg-white/10 rounded text-xs transition-colors"
-                  >
-                    {em}
-                  </button>
-                ))}
               </div>
 
               <textarea
@@ -730,12 +704,9 @@ export default function CreateFacebookPostModal({
             {/* 5. Cấu hình Bot Auto-Reply */}
             <div className="p-3.5 rounded-2xl bg-[#050716] border border-white/10 space-y-2.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🤖</span>
-                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">
-                    Bot Tự Động Trả Lời Bình Luận
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">
+                  Bot Tự Động Trả Lời Bình Luận
+                </span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -759,7 +730,7 @@ export default function CreateFacebookPostModal({
                     className="w-full px-3 py-2 rounded-xl bg-[#080d26] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
                   />
                   <p className="text-[10px] text-slate-500 font-mono">
-                    💡 Hỗ trợ cú pháp <code className="text-emerald-400">{"{name}"}</code> để tự động gọi tên tài khoản bình luận.
+                    Hỗ trợ cú pháp <code className="text-emerald-400">{"{name}"}</code> để tự động gọi tên tài khoản bình luận.
                   </p>
                 </div>
               )}
@@ -788,7 +759,7 @@ export default function CreateFacebookPostModal({
                 <div>
                   <div className="font-bold text-white flex items-center gap-1.5">
                     <span>Valkyria of Veyra</span>
-                    <span className="text-[#1877F2] text-xs">●</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1877F2]" />
                     <span className="px-1 py-0.2 rounded bg-[#1877F2]/20 text-[#1877F2] text-[9px] font-bold">
                       Trang chính thức
                     </span>
@@ -796,7 +767,7 @@ export default function CreateFacebookPostModal({
                   <div className="text-[10px] text-slate-400 flex items-center gap-1">
                     <span>Vừa xong</span>
                     <span>·</span>
-                    <span>🌐 Công khai</span>
+                    <span>Công khai</span>
                   </div>
                 </div>
               </div>
@@ -827,15 +798,9 @@ export default function CreateFacebookPostModal({
               {/* Interactive buttons bar mock */}
               <div className="p-3 border-t border-white/10 bg-[#060818] flex items-center justify-between text-slate-400 text-xs font-mono">
                 <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1 hover:text-[#1877F2]">
-                    👍 Thích
-                  </span>
-                  <span className="flex items-center gap-1 hover:text-[#1877F2]">
-                    💬 Bình luận
-                  </span>
-                  <span className="flex items-center gap-1 hover:text-[#1877F2]">
-                    ↗️ Chia sẻ
-                  </span>
+                  <span className="hover:text-[#1877F2]">Thích</span>
+                  <span className="hover:text-[#1877F2]">Bình luận</span>
+                  <span className="hover:text-[#1877F2]">Chia sẻ</span>
                 </div>
               </div>
 
@@ -848,9 +813,8 @@ export default function CreateFacebookPostModal({
 
             {/* Error Message if any */}
             {errorMessage && (
-              <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs font-mono flex items-start gap-2">
-                <span className="text-base shrink-0">⚠️</span>
-                <span>{errorMessage}</span>
+              <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs font-mono">
+                {errorMessage}
               </div>
             )}
           </div>
@@ -860,9 +824,9 @@ export default function CreateFacebookPostModal({
         <div className="p-4 sm:p-5 border-t border-white/10 bg-[#060818] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="text-xs font-mono text-slate-400">
             {canPublishFB ? (
-              <span className="text-emerald-400">✓ Đủ quyền xuất bản lên Facebook Fanpage</span>
+              <span className="text-emerald-400">Đủ quyền xuất bản lên Facebook Fanpage</span>
             ) : (
-              <span className="text-rose-400">⚠️ Bạn cần quyền content.facebook.publish để đăng bài</span>
+              <span className="text-rose-400">Bạn cần quyền content.facebook.publish để đăng bài</span>
             )}
           </div>
 
@@ -891,10 +855,7 @@ export default function CreateFacebookPostModal({
                   <span>Đang Xuất Bản Lên Facebook...</span>
                 </>
               ) : (
-                <>
-                  <span className="text-sm">📘</span>
-                  <span>Xuất Bản Lên Fanpage Facebook</span>
-                </>
+                <span>Xuất Bản Lên Fanpage Facebook</span>
               )}
             </button>
           </div>

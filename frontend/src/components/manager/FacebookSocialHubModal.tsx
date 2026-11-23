@@ -237,14 +237,14 @@ export default function FacebookSocialHubModal({
 
           soundEngine.playCelestialChime();
           setBatchReplyNotice(
-            `✓ Đã tự động trả lời ${newlyRepliedIds.length} bình luận thành công!`
+            `Đã tự động trả lời ${newlyRepliedIds.length} bình luận thành công!`
           );
         } else {
           setBatchReplyNotice("Không thể gửi phản hồi tự động. Vui lòng kiểm tra quyền truy cập Facebook.");
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Lỗi xử lý tự động trả lời";
-        setBatchReplyNotice(`✕ ${msg}`);
+        setBatchReplyNotice(msg);
       } finally {
         setIsBatchReplying(false);
         setTimeout(() => setBatchReplyNotice(null), 5000);
@@ -276,8 +276,8 @@ export default function FacebookSocialHubModal({
       soundEngine.playCelestialChime();
       setAutoReplySaveSuccess(
         enabledToSave
-          ? "✓ Đã kích hoạt & lưu cấu hình tự động trả lời!"
-          : "✓ Đã lưu cấu hình (tự động trả lời đang TẮT)."
+          ? "Đã kích hoạt & lưu cấu hình tự động trả lời!"
+          : "Đã lưu cấu hình (tự động trả lời đang TẮT)."
       );
       setTimeout(() => setAutoReplySaveSuccess(null), 4000);
     } catch (err: unknown) {
@@ -559,9 +559,9 @@ export default function FacebookSocialHubModal({
                 soundEngine.playClick();
                 onClose();
               }}
-              className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer"
             >
-              ✕
+              Đóng
             </button>
           </div>
         </div>
@@ -575,14 +575,13 @@ export default function FacebookSocialHubModal({
               loadCommunityData();
             }}
             disabled={!post.facebookPostId}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-30 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-30 ${
               activeTab === "community"
                 ? "bg-[#1877F2] text-white shadow-[0_0_15px_rgba(24,119,242,0.4)]"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
           >
-            <span>💬</span>
-            <span>Bình Luận & Tương Tác</span>
+            Bình Luận & Tương Tác
           </button>
 
           <button
@@ -590,14 +589,13 @@ export default function FacebookSocialHubModal({
               soundEngine.playClick();
               setActiveTab("publish");
             }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "publish"
                 ? "bg-[#1877F2] text-white shadow-[0_0_15px_rgba(24,119,242,0.4)]"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
           >
-            <span>📢</span>
-            <span>{post.facebookPostId ? "Đăng Lại / Sửa Caption" : "Đăng Lên Fanpage"}</span>
+            {post.facebookPostId ? "Đăng Lại / Sửa Caption" : "Đăng Lên Fanpage"}
           </button>
         </div>
 
@@ -610,25 +608,23 @@ export default function FacebookSocialHubModal({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {/* Lượt Thích / Cảm xúc */}
                 <div className="p-4 rounded-2xl bg-[#0b102b] border border-white/10 flex flex-col justify-between shadow-lg">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Cảm Xúc</span>
-                    <span className="text-base">👍❤️</span>
+                  <div className="text-xs text-slate-400">
+                    Cảm Xúc
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-white mt-2">
                     {metrics ? formatNumber(metrics.likes) : "—"}
                   </div>
                   <div className="text-[10px] text-cyan-400 mt-1 flex items-center gap-1.5">
-                    <span>👍 {metrics ? formatNumber(metrics.reactions.like) : "0"}</span>
+                    <span>Thích {metrics ? formatNumber(metrics.reactions.like) : "0"}</span>
                     <span>•</span>
-                    <span>❤️ {metrics ? formatNumber(metrics.reactions.love) : "0"}</span>
+                    <span>Yêu thích {metrics ? formatNumber(metrics.reactions.love) : "0"}</span>
                   </div>
                 </div>
 
                 {/* Bình Luận */}
                 <div className="p-4 rounded-2xl bg-[#0b102b] border border-white/10 flex flex-col justify-between shadow-lg">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Bình Luận</span>
-                    <span className="text-base">💬</span>
+                  <div className="text-xs text-slate-400">
+                    Bình Luận
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-[#f5c767] mt-2">
                     {metrics ? formatNumber(metrics.comments) : "—"}
@@ -640,9 +636,8 @@ export default function FacebookSocialHubModal({
 
                 {/* Lượt Chia Sẻ */}
                 <div className="p-4 rounded-2xl bg-[#0b102b] border border-white/10 flex flex-col justify-between shadow-lg">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Lượt Share</span>
-                    <span className="text-base">🔁</span>
+                  <div className="text-xs text-slate-400">
+                    Lượt Share
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-emerald-400 mt-2">
                     {metrics ? formatNumber(metrics.shares) : "—"}
@@ -654,9 +649,8 @@ export default function FacebookSocialHubModal({
 
                 {/* Tỉ Lệ Tương Tác */}
                 <div className="p-4 rounded-2xl bg-[#0b102b] border border-white/10 flex flex-col justify-between shadow-lg">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Tiếp Cận</span>
-                    <span className="text-base">📈</span>
+                  <div className="text-xs text-slate-400">
+                    Tiếp Cận
                   </div>
                   <div className="text-xl sm:text-2xl font-bold text-[#3fe9d6] mt-2">
                     {metrics ? formatNumber(metrics.likes * 14 + metrics.comments * 8) : "—"}
@@ -675,17 +669,17 @@ export default function FacebookSocialHubModal({
                     : "bg-[#080c24] border-white/10"
                 } space-y-4`}
               >
-                {/* Header Card: Icon, Title & Toggle Switch */}
+                {/* Header Card: Tag, Title & Toggle Switch */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl transition-all ${
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-mono font-bold transition-all ${
                         autoReplyEnabled
                           ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                           : "bg-white/5 text-slate-400 border border-white/10"
                       }`}
                     >
-                      🤖
+                      BOT
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -745,9 +739,8 @@ export default function FacebookSocialHubModal({
                 {/* Form Soạn Mẫu Tin Nhắn Trả Lời Tự Động */}
                 <div className="space-y-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                      <span>✍️</span>
-                      <span>Mẫu Tin Nhắn Tự Động:</span>
+                    <label className="text-xs font-bold text-slate-300">
+                      Mẫu Tin Nhắn Tự Động:
                     </label>
 
                     {/* Quick Insert Placeholders */}
@@ -775,7 +768,7 @@ export default function FacebookSocialHubModal({
                         className="px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
                         title="Khôi phục lại tin nhắn mẫu mặc định"
                       >
-                        ↺ Mặc định
+                        Mặc định
                       </button>
                     </div>
                   </div>
@@ -790,21 +783,21 @@ export default function FacebookSocialHubModal({
                   />
 
                   <p className="text-[10px] text-slate-400 leading-normal">
-                    💡 <strong className="text-slate-300">&#123;name&#125;</strong> sẽ được tự động thay thế bằng tên của Chỉ Huy để lại bình luận. Mỗi bình luận chỉ được trả lời một lần duy nhất.
+                    <strong className="text-slate-300">&#123;name&#125;</strong> sẽ được tự động thay thế bằng tên của Chỉ Huy để lại bình luận. Mỗi bình luận chỉ được trả lời một lần duy nhất.
                   </p>
                 </div>
 
                 {/* Feedback Alerts */}
                 {autoReplySaveSuccess && (
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
-                    <span>✓</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                     <span>{autoReplySaveSuccess}</span>
                   </div>
                 )}
 
                 {batchReplyNotice && (
                   <div className="p-3 rounded-xl bg-[#1877F2]/10 border border-[#1877F2]/30 text-cyan-300 text-xs flex items-center gap-2 animate-fade-in">
-                    <span className="animate-spin">⚙</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
                     <span>{batchReplyNotice}</span>
                   </div>
                 )}
@@ -813,16 +806,16 @@ export default function FacebookSocialHubModal({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/5">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300 font-mono">
-                      🛡️ Đã rep: <strong className="text-white">{repliedCommentIds.length}</strong>
+                      Đã phản hồi: <strong className="text-white">{repliedCommentIds.length}</strong>
                     </span>
 
                     {pendingCandidateComments.length > 0 ? (
                       <span className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[#f5c767] font-mono">
-                        ⏳ <strong>{pendingCandidateComments.length}</strong> bình luận mới đang chờ
+                        <strong>{pendingCandidateComments.length}</strong> bình luận mới đang chờ
                       </span>
                     ) : (
                       <span className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono">
-                        ✓ Đã phản hồi tất cả
+                        Đã phản hồi tất cả
                       </span>
                     )}
                   </div>
@@ -832,20 +825,18 @@ export default function FacebookSocialHubModal({
                       type="button"
                       onClick={() => handleSaveAutoReplyConfig()}
                       disabled={isSavingAutoReply}
-                      className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                     >
-                      <span>💾</span>
-                      <span>{isSavingAutoReply ? "Đang lưu..." : "Lưu Cấu Hình"}</span>
+                      {isSavingAutoReply ? "Đang lưu..." : "Lưu Cấu Hình"}
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleRunBatchAutoReply()}
                       disabled={isBatchReplying || pendingCandidateComments.length === 0}
-                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#0ea5e9] hover:from-[#166fe5] hover:to-[#0284c7] text-white text-xs font-bold shadow-[0_0_15px_rgba(24,119,242,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#0ea5e9] hover:from-[#166fe5] hover:to-[#0284c7] text-white text-xs font-bold shadow-[0_0_15px_rgba(24,119,242,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <span>⚡</span>
-                      <span>{isBatchReplying ? "Đang quét..." : "Quét & Trả Lời Ngay"}</span>
+                      {isBatchReplying ? "Đang quét..." : "Quét & Trả Lời Ngay"}
                     </button>
                   </div>
                 </div>
@@ -854,12 +845,9 @@ export default function FacebookSocialHubModal({
               {/* Comments Section */}
               <div className="p-5 rounded-2xl bg-[#090d26] border border-white/10 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🗣️</span>
-                    <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
-                      Dòng Bình Luận Từ Game Thủ ({comments.length})
-                    </h4>
-                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                    Dòng Bình Luận Từ Game Thủ ({comments.length})
+                  </h4>
 
                   <button
                     type="button"
@@ -927,8 +915,8 @@ export default function FacebookSocialHubModal({
                           </div>
 
                           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
-                            <span>👍</span>
-                            <span>{cmt.like_count}</span>
+                            <span className="text-[10px] text-slate-500">Thích</span>
+                            <span className="text-white">{cmt.like_count}</span>
                           </div>
                         </div>
 
@@ -943,7 +931,7 @@ export default function FacebookSocialHubModal({
                             {cmt.replies.map((rep) => (
                               <div key={rep.id} className="p-2.5 rounded-lg bg-[#0c1438]/80 text-xs space-y-1">
                                 <div className="flex items-center gap-1.5 font-bold text-[#3fe9d6]">
-                                  <span>🛡️ {rep.from.name}</span>
+                                  <span>{rep.from.name}</span>
                                   <span className="text-[10px] font-normal text-slate-400">
                                     {new Date(rep.created_time).toLocaleString("vi-VN")}
                                   </span>
@@ -957,20 +945,18 @@ export default function FacebookSocialHubModal({
                         {/* Reply Action Trigger */}
                         <div className="pl-10 pt-1 flex flex-wrap items-center gap-2.5">
                           {isAlreadyRepliedByPage(cmt) ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono flex items-center gap-1">
-                              <span>✓</span>
-                              <span>Đã có phản hồi</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
+                              Đã có phản hồi
                             </span>
                           ) : (
                             <button
                               type="button"
                               onClick={() => handleRunBatchAutoReply([cmt])}
                               disabled={isBatchReplying}
-                              className="text-[10px] px-2.5 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                              className="text-[10px] px-2.5 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold transition-all cursor-pointer disabled:opacity-50"
                               title="Gửi ngay mẫu tin nhắn tự động cho bình luận này"
                             >
-                              <span>🤖</span>
-                              <span>Gửi tin nhắn mẫu bot</span>
+                              Gửi tin nhắn mẫu bot
                             </button>
                           )}
 
@@ -980,10 +966,9 @@ export default function FacebookSocialHubModal({
                               soundEngine.playClick();
                               setActiveReplyBoxId(activeReplyBoxId === cmt.id ? null : cmt.id);
                             }}
-                            className="text-[11px] font-bold text-[#1877F2] hover:text-[#3fe9d6] transition-colors cursor-pointer flex items-center gap-1"
+                            className="text-[11px] font-bold text-[#1877F2] hover:text-[#3fe9d6] transition-colors cursor-pointer"
                           >
-                            <span>↩</span>
-                            <span>{activeReplyBoxId === cmt.id ? "Hủy Soạn" : "Trả lời thủ công"}</span>
+                            {activeReplyBoxId === cmt.id ? "Hủy Soạn" : "Trả lời thủ công"}
                           </button>
                         </div>
 
@@ -991,9 +976,8 @@ export default function FacebookSocialHubModal({
                         {activeReplyBoxId === cmt.id && (
                           <div className="ml-10 pt-2 space-y-2 animate-fade-in">
                             <div className="p-3 rounded-xl bg-[#090d24] border border-[#1877F2]/40 space-y-2">
-                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#3fe9d6]">
-                                <span>✍️</span>
-                                <span>Phản hồi với tư cách Fanpage: Valkyria of Veyra (Official)</span>
+                              <div className="text-[11px] font-bold text-[#3fe9d6]">
+                                Phản hồi với tư cách Fanpage: Valkyria of Veyra (Official)
                               </div>
                               <textarea
                                 value={replyInputs[cmt.id] || ""}
@@ -1034,35 +1018,30 @@ export default function FacebookSocialHubModal({
           {activeTab === "publish" && (
             <div className="space-y-5 animate-fade-in">
               {publishSuccessMessage && (
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                  <span>✓</span>
-                  <span>{publishSuccessMessage}</span>
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
+                  {publishSuccessMessage}
                 </div>
               )}
 
               {publishError && (
-                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                  <span>✕</span>
-                  <span>{publishError}</span>
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                  {publishError}
                 </div>
               )}
 
               {/* Thông báo Media phát hiện được từ bài viết */}
               <div className="p-4 rounded-2xl bg-[#090d26] border border-[#3fe9d6]/30 shadow-lg space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">📸</span>
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        Tự Động Quét Media Từ Bài Viết
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/30">
-                          {mediaList.length} Tệp Phương Tiện
-                        </span>
-                      </h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Tất cả ảnh bìa, ảnh trong nội dung và video được trích xuất theo đúng thứ tự xuất hiện để đăng Album lên Fanpage.
-                      </p>
-                    </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      Tự Động Quét Media Từ Bài Viết
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/30">
+                        {mediaList.length} Tệp Phương Tiện
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Tất cả ảnh bìa, ảnh trong nội dung và video được trích xuất theo đúng thứ tự xuất hiện để đăng Album lên Fanpage.
+                    </p>
                   </div>
 
                   <button
@@ -1072,11 +1051,10 @@ export default function FacebookSocialHubModal({
                       setCaption(initialRichCaption);
                       setMediaList(initialMediaList);
                     }}
-                    className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-[#3fe9d6] border border-white/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-[#3fe9d6] border border-white/10 transition-all cursor-pointer"
                     title="Nạp lại định dạng chuẩn tự động chuyển đổi từ HTML của bài blog"
                   >
-                    <span>↺</span>
-                    <span>Quét Lại Từ Blog</span>
+                    Quét Lại Từ Blog
                   </button>
                 </div>
 
@@ -1099,8 +1077,9 @@ export default function FacebookSocialHubModal({
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center text-rose-400 gap-1 p-2">
-                              <span className="text-xl">🎬</span>
-                              <span className="text-[9px] font-mono">Video</span>
+                              <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/35 text-[10px] font-mono font-bold uppercase">
+                                VIDEO
+                              </span>
                             </div>
                           )}
 
@@ -1193,11 +1172,11 @@ export default function FacebookSocialHubModal({
                         <GameLogo className="w-full h-full" sizes="36px" />
                       </div>
                       <div>
-                        <div className="font-bold text-white flex items-center gap-1">
+                        <div className="font-bold text-white flex items-center gap-1.5">
                           <span>Valkyria of Veyra</span>
-                          <span className="text-[#1877F2] text-xs">●</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#1877F2]" />
                         </div>
-                        <div className="text-[10px] text-slate-400">Vừa xong · 🌐 Công khai</div>
+                        <div className="text-[10px] text-slate-400">Vừa xong · Công khai</div>
                       </div>
                     </div>
 
@@ -1218,9 +1197,11 @@ export default function FacebookSocialHubModal({
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-rose-400">
-                            <span className="text-3xl">🎬</span>
-                            <span className="text-xs font-mono mt-1">Video Gameplay</span>
+                          <div className="w-full h-full flex flex-col items-center justify-center text-rose-400 gap-1.5">
+                            <span className="px-2.5 py-1 rounded-md bg-rose-500/15 border border-rose-500/35 text-xs font-mono font-bold uppercase">
+                              VIDEO
+                            </span>
+                            <span className="text-xs font-mono text-slate-300">Video Gameplay</span>
                           </div>
                         )}
 
@@ -1263,10 +1244,7 @@ export default function FacebookSocialHubModal({
                       <span>Đang Xuất Bản Lên Facebook...</span>
                     </>
                   ) : (
-                    <>
-                      <span>📘</span>
-                      <span>{post.facebookPostId ? "Đăng Lại Bài Mới Lên Fanpage" : "Đăng Lên Fanpage Ngay"}</span>
-                    </>
+                    <span>{post.facebookPostId ? "Đăng Lại Bài Mới Lên Fanpage" : "Đăng Lên Fanpage Ngay"}</span>
                   )}
                 </button>
               </div>

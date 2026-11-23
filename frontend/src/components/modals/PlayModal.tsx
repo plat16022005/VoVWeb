@@ -59,16 +59,19 @@ export default function PlayModal({ isOpen, onClose }: PlayModalProps) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Đóng"
             className="text-slate-400 hover:text-white text-2xl font-bold leading-none cursor-pointer"
           >
-            ✕
+            ×
           </button>
         </div>
 
         <div className="p-6">
           {regSuccess ? (
             <div className="text-center py-6">
-              <div className="text-5xl mb-4">🎉</div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-[11px] font-mono font-bold uppercase tracking-widest text-emerald-300 mb-4">
+                Ghi Danh Thành Công
+              </div>
               <h4 className="text-2xl font-bold text-white uppercase font-[family-name:var(--font-rajdhani)] mb-2">
                 CHÚC MỪNG CHỈ HUY!
               </h4>

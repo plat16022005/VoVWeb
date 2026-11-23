@@ -100,9 +100,10 @@ export default function FacebookLiveFeedView({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-2 text-xs text-slate-400 hover:text-white"
+              className="absolute right-3 top-2 text-xs text-slate-400 hover:text-white cursor-pointer"
+              aria-label="Xóa từ khóa"
             >
-              ✕
+              ×
             </button>
           )}
         </div>
@@ -135,14 +136,11 @@ export default function FacebookLiveFeedView({
 
       {/* Error state */}
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span>⚠️</span>
-            <span>{error}</span>
-          </div>
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between gap-3">
+          <span>{error}</span>
           <button
             onClick={onRefresh}
-            className="px-3 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-bold font-mono"
+            className="px-3 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-bold font-mono cursor-pointer shrink-0"
           >
             Thử Lại
           </button>
@@ -176,8 +174,7 @@ export default function FacebookLiveFeedView({
 
       {/* Empty State */}
       {!loading && filteredPosts.length === 0 && (
-        <div className="p-12 text-center rounded-2xl bg-[#090d26] border border-white/5 space-y-3">
-          <div className="text-4xl">📭</div>
+        <div className="p-12 text-center rounded-2xl bg-[#090d26] border border-white/5 space-y-2">
           <h3 className="text-base font-bold text-white">Chưa Có Bài Viết Nào Trên Bảng Tin Fanpage</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
             {searchQuery
@@ -214,14 +211,14 @@ export default function FacebookLiveFeedView({
                           <h4 className="text-sm font-bold text-white group-hover:text-[#3fe9d6] transition-colors">
                             Valkyria of Veyra
                           </h4>
-                          <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] text-white flex items-center justify-center text-[9px] font-bold" title="Trang chính thức">
-                            ✓
+                          <span className="px-1.5 py-0.5 rounded bg-[#1877F2]/20 text-[#1877F2] text-[9px] font-mono font-bold">
+                            Chính thức
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
                           <span>{formatDate(post.created_time)}</span>
                           <span>•</span>
-                          <span className="text-emerald-400">🌐 Công khai</span>
+                          <span className="text-emerald-400">Công khai</span>
                         </div>
                       </div>
                     </div>
@@ -273,17 +270,17 @@ export default function FacebookLiveFeedView({
                   {/* Reactions, Comments, Shares Counter */}
                   <div className="flex items-center gap-3 text-xs text-slate-300 font-mono">
                     <span className="flex items-center gap-1 hover:text-rose-400 transition-colors" title="Lượt Thích & Cảm xúc">
-                      <span>❤️👍</span>
+                      <span className="text-slate-400">Thích</span>
                       <strong className="text-white">{formatNumber(post.likes)}</strong>
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1 hover:text-[#3fe9d6] transition-colors" title="Bình Luận">
-                      <span>💬</span>
+                      <span className="text-slate-400">Bình luận</span>
                       <strong className="text-white">{formatNumber(post.comments)}</strong>
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1 hover:text-[#f5c767] transition-colors" title="Lượt Chia Sẻ">
-                      <span>🔄</span>
+                      <span className="text-slate-400">Chia sẻ</span>
                       <strong className="text-white">{formatNumber(post.shares)}</strong>
                     </span>
                   </div>
@@ -293,9 +290,9 @@ export default function FacebookLiveFeedView({
                     <button
                       type="button"
                       onClick={() => handleOpenHub(post)}
-                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600/30 to-blue-600/30 hover:from-purple-600/50 hover:to-blue-600/50 text-white border border-purple-500/40 text-xs font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600/30 to-blue-600/30 hover:from-purple-600/50 hover:to-blue-600/50 text-white border border-purple-500/40 text-xs font-bold font-mono transition-all cursor-pointer shadow-sm"
                     >
-                      <span>💬 Quản Lý Bình Luận</span>
+                      Quản Lý Bình Luận
                     </button>
                   </div>
                 </div>

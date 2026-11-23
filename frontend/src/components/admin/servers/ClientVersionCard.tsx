@@ -40,8 +40,9 @@ export default function ClientVersionCard({
         </div>
 
         {isSaved && (
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full animate-bounce">
-            ✓ Đã lưu cấu hình
+          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>Đã lưu cấu hình</span>
           </span>
         )}
       </div>

@@ -60,15 +60,25 @@ export default function AccountTable({
   const renderSortIndicator = (field: SortField) => {
     if (sortField !== field) {
       return (
-        <span className="text-slate-600 group-hover:text-slate-400 transition-colors ml-1 text-[11px] font-sans">
-          ⇅
-        </span>
+        <svg
+          className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors ml-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
       );
     }
     return (
-      <span className="text-[#3fe9d6] font-bold ml-1 text-xs drop-shadow-[0_0_8px_rgba(63,233,214,0.6)]">
-        {sortOrder === "asc" ? "▲" : "▼"}
-      </span>
+      <svg
+        className={`w-3 h-3 text-[#3fe9d6] ml-1 transition-transform ${sortOrder === "desc" ? "rotate-180" : ""}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+      </svg>
     );
   };
 
@@ -222,9 +232,10 @@ export default function AccountTable({
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer"
+              aria-label="Xóa từ khóa"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm leading-none cursor-pointer"
             >
-              ✕
+              ×
             </button>
           )}
         </div>
@@ -284,9 +295,9 @@ export default function AccountTable({
               <option value="createdAt_asc" className="bg-[#0b0e24] text-white">Ngày tạo: Cũ nhất</option>
               <option value="lastLogin_desc" className="bg-[#0b0e24] text-[#3fe9d6]">Đăng nhập: Gần đây nhất</option>
               <option value="lastLogin_asc" className="bg-[#0b0e24] text-white">Đăng nhập: Lâu nhất / Chưa vào</option>
-              <option value="role_desc" className="bg-[#0b0e24] text-white">Vai trò: Cao ➔ Thấp</option>
+              <option value="role_desc" className="bg-[#0b0e24] text-white">Vai trò: Cao → Thấp</option>
               <option value="status_desc" className="bg-[#0b0e24] text-white">Trạng thái: Hoạt động trước</option>
-              <option value="username_asc" className="bg-[#0b0e24] text-white">Tên: A ➔ Z</option>
+              <option value="username_asc" className="bg-[#0b0e24] text-white">Tên: A → Z</option>
             </select>
           </div>
 
@@ -408,10 +419,10 @@ export default function AccountTable({
                         </svg>
                       </div>
                       <span className="text-slate-300 font-medium text-sm">
-                        Không tìm thấy tài khoản nào phù hợp trên Firebase
+                        Không tìm thấy tài khoản nào phù hợp trên hệ thống
                       </span>
                       <p className="text-slate-500 text-xs font-mono">
-                        Nhấn nút &quot;+ Tạo Tài Khoản&quot; ở trên để thêm tài khoản vào Firebase Firestore.
+                        Nhấn nút &quot;+ Tạo Tài Khoản&quot; ở trên để thêm tài khoản mới.
                       </p>
                     </div>
                   </td>
@@ -526,7 +537,6 @@ export default function AccountTable({
                                   : account.banDetails.termTitle
                               }\nGhi chú: ${account.banDetails.note || "Không có"}\nThời gian: ${account.banDetails.bannedAt || ""}`}
                             >
-                              <span>⚖️</span>
                               {account.banDetails.terms && account.banDetails.terms.length > 1 && (
                                 <span className="px-1 py-0.2 rounded bg-rose-500/25 text-rose-300 text-[9px] font-bold shrink-0 border border-rose-500/40">
                                   {account.banDetails.terms.length}
@@ -628,7 +638,7 @@ export default function AccountTable({
                             title={
                               isSelf
                                 ? "Bạn không thể tự xóa tài khoản của chính bạn đang đăng nhập"
-                                : "Xóa tài khoản khỏi Firebase"
+                                : "Xóa tài khoản khỏi hệ thống"
                             }
                             className={`p-1.5 rounded-lg transition-colors ${
                               isSelf
@@ -653,7 +663,7 @@ export default function AccountTable({
         {/* Table Footer with Summary */}
         <div className="p-4 bg-[#0e1330]/70 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-400 gap-2">
           <div>
-            Tổng số: <span className="text-white font-bold">{filteredAccounts.length}</span> tài khoản trên Firebase
+            Tổng số: <span className="text-white font-bold">{filteredAccounts.length}</span> tài khoản trên hệ thống
             {selectedIds.size > 0 && (
               <span className="ml-2 text-[#3fe9d6]">({selectedIds.size} tài khoản đang được chọn)</span>
             )}

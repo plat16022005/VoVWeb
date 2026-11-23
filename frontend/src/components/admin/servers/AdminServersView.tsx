@@ -158,7 +158,7 @@ export default function AdminServersView() {
     setIsRefreshing(true);
     await loadServers(false);
     setIsRefreshing(false);
-    showToast("Đã đồng bộ hóa danh sách máy chủ mới nhất từ Firebase.");
+    showToast("Đã đồng bộ hóa danh sách máy chủ mới nhất.");
   };
 
   // Maintenance Toggle Handler (Persisted to ServerConfig/Config and GameConfig/ServerList)
@@ -217,11 +217,11 @@ export default function AdminServersView() {
 
       showToast(
         action === "enable"
-          ? `✓ Đã kích hoạt chế độ bảo trì cho cụm máy chủ [${serverId}] trên ServerConfig/Config.`
-          : `✓ Đã mở lại hoạt động máy chủ [${serverId}].`
+          ? `Đã kích hoạt chế độ bảo trì cho cụm máy chủ [${serverId}].`
+          : `Đã mở lại hoạt động máy chủ [${serverId}].`
       );
     } catch (err: any) {
-      showToast(`✕ Lỗi cập nhật bảo trì máy chủ: ${err?.message || "Không xác định"}`);
+      showToast(`Lỗi cập nhật bảo trì máy chủ: ${err?.message || "Không xác định"}`);
       throw err;
     }
   };
@@ -253,24 +253,24 @@ export default function AdminServersView() {
 
   // Apply Security Rules Handler
   const handleApplyRules = async (server: GameServer) => {
-    showToast(`Đang nạp lại rules cho [${server.name}] qua Cloud Function...`);
+    showToast(`Đang đồng bộ lại chính sách bảo mật cho [${server.name}]...`);
     try {
       const res = await callApplyRulesToServer(server.id);
-      showToast(`✓ ${res.message}`);
+      showToast(`${res.message}`);
     } catch (err: any) {
-      showToast(`✕ Lỗi nạp rules: ${err.message}`);
+      showToast(`Lỗi đồng bộ chính sách bảo mật: ${err.message}`);
     }
   };
 
   // Create Server Callback from Modal
   const handleServerCreated = async (result: CreateServerResult) => {
     showToast(
-      `✓ Đã khởi tạo thành công máy chủ [${result.serverName}] (${result.serverId})!`
+      `Đã khởi tạo thành công máy chủ [${result.serverName}] (${result.serverId})!`
     );
     await loadServers(false);
   };
 
-  // Save Global Maintenance to Firestore GameInfo/Information
+  // Save Global Maintenance to GameInfo/Information
   const handleSaveGlobalMaintenance = async (maintenance: boolean, message: string) => {
     try {
       await updateGlobalMaintenance(maintenance, message);
@@ -279,10 +279,10 @@ export default function AdminServersView() {
       showToast(
         maintenance
           ? "ĐÃ KÍCH HOẠT BẢO TRÌ TOÀN GAME! Mọi kết nối Client sẽ bị tạm dừng."
-          : "ĐÃ TẮT BẢO TRÌ TOÀN GAME! Hệ thống mở cửa đón Chỉ Huy trở lại."
+          : "ĐÃ TẮT BẢO TRÌ TOÀN GAME! Hệ thống mở cửa đón người chơi trở lại."
       );
     } catch (err: any) {
-      showToast(`✕ Lỗi lưu cấu hình bảo trì: ${err.message}`);
+      showToast(`Lỗi lưu cấu hình bảo trì: ${err.message}`);
       throw err;
     }
   };
@@ -385,13 +385,13 @@ export default function AdminServersView() {
               <span className="hidden sm:inline">Làm Mới</span>
             </button>
 
-            {/* 🛡️ NÚT BẢO TRÌ TOÀN GAME (Firestore GameInfo/Information) */}
+            {/* Nút bảo trì toàn game */}
             <button
               onClick={() => {
                 soundEngine.playClick();
                 setIsGlobalMaintenanceOpen(true);
               }}
-              title="Cấu hình chế độ bảo trì toàn bộ trò chơi trên GameInfo/Information"
+              title="Cấu hình chế độ bảo trì toàn bộ trò chơi"
               className={`px-3.5 py-2 rounded-xl font-bold text-xs font-mono tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
                 isGlobalMaintenanceActive
                   ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.5)] animate-pulse"
@@ -408,7 +408,7 @@ export default function AdminServersView() {
               <span>BẢO TRÌ TOÀN GAME</span>
             </button>
 
-            {/* 🚀 NÚT TẠO MÁY CHỦ MỚI (Trigger Create Server Modal) */}
+            {/* Nút tạo máy chủ mới */}
             <button
               onClick={() => {
                 soundEngine.playClick();
@@ -434,7 +434,7 @@ export default function AdminServersView() {
 
         {/* Main Content Body */}
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          {/* ⚠️ CẢNH BÁO BẢO TRÌ TOÀN GAME (Khi Maintenance === true) */}
+          {/* Cảnh báo bảo trì toàn game */}
           {isGlobalMaintenanceActive && (
             <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950/70 via-red-900/40 to-amber-950/40 border border-rose-500/50 shadow-[0_0_30px_rgba(244,63,94,0.25)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
               <div className="flex items-center gap-3.5">
@@ -487,7 +487,6 @@ export default function AdminServersView() {
                   : "bg-white/5 text-slate-400 hover:text-white border border-white/10"
               }`}
             >
-              <span>🖥️</span>
               <span>Cụm Máy Chủ Đang Chạy</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                 subTab === "clusters" ? "bg-black/20 text-black" : "bg-white/10 text-slate-300"
@@ -507,7 +506,6 @@ export default function AdminServersView() {
                   : "bg-white/5 text-slate-400 hover:text-white border border-white/10"
               }`}
             >
-              <span>📜</span>
               <span>Nhật Ký Hoạt Động Hạ Tầng</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                 subTab === "logs"

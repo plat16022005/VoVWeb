@@ -45,7 +45,7 @@ export default function MediaGallery() {
                   onClick={(e) => e.stopPropagation()}
                   className="absolute bottom-3 right-3 px-3 py-1 rounded bg-[#f5c767] text-black font-bold text-xs uppercase font-[family-name:var(--font-rajdhani)] flex items-center gap-1.5 shadow-lg"
                 >
-                  <span>⬇ Tải 4K</span>
+                  <span>Tải 4K</span>
                 </a>
               </div>
               <div className="p-4">

@@ -163,10 +163,9 @@ export default function ValkyriaCard({
               soundEngine.playClick();
               onViewDetail(character);
             }}
-            className="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white text-xs font-mono font-semibold transition-all border border-white/10 flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white text-xs font-mono font-semibold transition-all border border-white/10 cursor-pointer"
           >
-            <span>👁️</span>
-            <span>Chi Tiết</span>
+            Xem
           </button>
 
           {/* Edit Button */}
@@ -177,11 +176,10 @@ export default function ValkyriaCard({
                 soundEngine.playClick();
                 onEdit(character);
               }}
-              className="py-2 px-3 rounded-xl bg-[#3fe9d6]/10 hover:bg-[#3fe9d6]/20 text-[#3fe9d6] hover:text-white text-xs font-mono font-semibold transition-all border border-[#3fe9d6]/30 flex items-center justify-center gap-1 cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-[#3fe9d6]/10 hover:bg-[#3fe9d6]/20 text-[#3fe9d6] hover:text-white text-xs font-mono font-semibold transition-all border border-[#3fe9d6]/30 cursor-pointer"
               title="Chỉnh sửa thông số Valkyria"
             >
-              <span>✏️</span>
-              <span className="hidden sm:inline">Sửa</span>
+              Sửa
             </button>
           )}
 
@@ -193,10 +191,10 @@ export default function ValkyriaCard({
                 soundEngine.playClick();
                 onDelete(character);
               }}
-              className="py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-100 text-xs font-mono font-semibold transition-all border border-rose-500/30 flex items-center justify-center cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-100 text-xs font-mono font-semibold transition-all border border-rose-500/30 cursor-pointer"
               title="Xóa Valkyria khỏi hệ thống"
             >
-              <span>🗑️</span>
+              Xóa
             </button>
           )}
         </div>
@@ -204,4 +202,3 @@ export default function ValkyriaCard({
     </div>
   );
 }
-

@@ -94,7 +94,7 @@ export default function AdminAccountsView() {
         showToast("info", "Dữ liệu tài khoản đã được làm mới thành công.", "Đồng Bộ Hoàn Tất");
       }
     } catch (err: any) {
-      showToast("error", err?.message || "Không thể tải danh sách tài khoản từ Firebase Firestore.", "Lỗi Tải Dữ Liệu");
+      showToast("error", err?.message || "Không thể tải danh sách tài khoản từ hệ thống.", "Lỗi Tải Dữ Liệu");
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -153,7 +153,7 @@ export default function AdminAccountsView() {
         await adminService.createAccount(formData as any);
         showToast(
           "success",
-          `Tài khoản "${formData.username}" đã được khởi tạo thành công trên Firebase.`,
+          `Tài khoản "${formData.username}" đã được khởi tạo thành công.`,
           "Tạo Mới Thành Công"
         );
       }
@@ -354,7 +354,6 @@ export default function AdminAccountsView() {
                     : "bg-[#090c21] text-slate-400 hover:text-white border border-white/10 hover:border-white/20"
                 }`}
               >
-                <span>👥</span>
                 <span>Danh Sách Tài Khoản</span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[11px] ${
@@ -379,7 +378,6 @@ export default function AdminAccountsView() {
                     : "bg-[#090c21] text-slate-400 hover:text-white border border-white/10 hover:border-white/20"
                 }`}
               >
-                <span>📜</span>
                 <span>Nhật Ký Quản Trị</span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
@@ -501,9 +499,10 @@ export default function AdminAccountsView() {
             </div>
             <button
               onClick={() => setToast(null)}
-              className="ml-auto text-slate-400 hover:text-white p-1"
+              aria-label="Đóng thông báo"
+              className="ml-auto text-slate-400 hover:text-white p-1 text-base leading-none cursor-pointer"
             >
-              ✕
+              ×
             </button>
           </div>
         </div>

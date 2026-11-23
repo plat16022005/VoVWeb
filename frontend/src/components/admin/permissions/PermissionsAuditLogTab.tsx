@@ -112,10 +112,7 @@ export default function PermissionsAuditLogTab({ onRefresh }: PermissionsAuditLo
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-12 text-center text-slate-400 font-mono">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <span className="text-3xl">📜</span>
-                      <span>Chưa có bản ghi nhật ký phân quyền nào được ghi nhận.</span>
-                    </div>
+                    <span>Chưa có bản ghi nhật ký phân quyền nào được ghi nhận.</span>
                   </td>
                 </tr>
               ) : (

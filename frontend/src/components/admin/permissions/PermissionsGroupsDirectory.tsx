@@ -54,23 +54,19 @@ export default function PermissionsGroupsDirectory({
             >
               {/* Group Header */}
               <div className="p-5 border-b border-white/10 bg-[#060814]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#9b51e0]/30 to-[#3fe9d6]/30 border border-[#3fe9d6]/40 flex items-center justify-center text-2xl shadow-inner">
-                    {group.icon}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="w-2 h-2 rounded-full bg-[#3fe9d6]" />
+                    <h4 className="font-[family-name:var(--font-rajdhani)] text-xl font-bold text-white tracking-wide">
+                      {group.title}
+                    </h4>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30 font-bold">
+                      {group.code}
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-[family-name:var(--font-rajdhani)] text-xl font-bold text-white tracking-wide">
-                        {group.title}
-                      </h4>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30 font-bold">
-                        {group.code}
-                      </span>
-                    </div>
-                    <p className="text-xs font-mono text-slate-400 mt-0.5">
-                      {group.description}
-                    </p>
-                  </div>
+                  <p className="text-xs font-mono text-slate-400 mt-0.5">
+                    {group.description}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-3 text-xs font-mono">
@@ -94,7 +90,7 @@ export default function PermissionsGroupsDirectory({
                   return (
                     <div key={catTitle} className="space-y-3">
                       <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#f5c767] uppercase tracking-wider">
-                        <span>❖</span>
+                        <span className="w-1.5 h-3.5 rounded-full bg-[#f5c767]" />
                         <span>{catTitle}</span>
                         <span className="text-slate-400 font-normal">
                           ({subPermsInCat.length} tác vụ)
@@ -153,4 +149,3 @@ export default function PermissionsGroupsDirectory({
     </div>
   );
 }
-

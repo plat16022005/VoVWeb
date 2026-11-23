@@ -19,8 +19,19 @@ let GachaFirebaseService = GachaFirebaseService_1 = class GachaFirebaseService {
             process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
             'valkyria-of-verya');
     }
-    get documentsBaseUrl() {
-        return `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents`;
+    normalizeDatabaseId(databaseId = '(default)') {
+        const trimmed = (databaseId || '(default)').trim();
+        if (!trimmed || trimmed === '(default)') {
+            return '(default)';
+        }
+        if (!/^[a-z0-9-]+$/.test(trimmed)) {
+            throw new Error(`Mã cơ sở dữ liệu máy chủ không hợp lệ: "${trimmed}".`);
+        }
+        return trimmed;
+    }
+    getDocumentsBaseUrl(databaseId = '(default)') {
+        const db = this.normalizeDatabaseId(databaseId);
+        return `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/${db}/documents`;
     }
     getServiceAccountCreds() {
         const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
@@ -335,8 +346,9 @@ let GachaFirebaseService = GachaFirebaseService_1 = class GachaFirebaseService {
         const parts = docName.split('/');
         return parts[parts.length - 1] || '';
     }
-    fullDocumentName(docPath) {
-        return `projects/${this.projectId}/databases/(default)/documents/${docPath}`;
+    fullDocumentName(docPath, databaseId = '(default)') {
+        const db = this.normalizeDatabaseId(databaseId);
+        return `projects/${this.projectId}/databases/${db}/documents/${docPath}`;
     }
     async requestJson(url, token, init) {
         const headers = {
@@ -364,8 +376,8 @@ let GachaFirebaseService = GachaFirebaseService_1 = class GachaFirebaseService {
         }
         return (await res.json());
     }
-    async getDocument(docPath, token) {
-        const url = `${this.documentsBaseUrl}/${docPath}`;
+    async getDocument(docPath, token, databaseId = '(default)') {
+        const url = `${this.getDocumentsBaseUrl(databaseId)}/${docPath}`;
         const headers = {};
         if (token) {
             headers.Authorization = `Bearer ${token}`;
@@ -382,14 +394,15 @@ let GachaFirebaseService = GachaFirebaseService_1 = class GachaFirebaseService {
         }
         return (await res.json());
     }
-    async listDocuments(collectionPath, token, pageSize = 300) {
+    async listDocuments(collectionPath, token, pageSize = 300, databaseId = '(default)') {
         const docs = [];
         let pageToken;
+        const baseUrl = this.getDocumentsBaseUrl(databaseId);
         do {
             const params = new URLSearchParams({ pageSize: String(pageSize) });
             if (pageToken)
                 params.set('pageToken', pageToken);
-            const url = `${this.documentsBaseUrl}/${collectionPath}?${params.toString()}`;
+            const url = `${baseUrl}/${collectionPath}?${params.toString()}`;
             const res = await this.requestJson(url, token, { method: 'GET' });
             if (Array.isArray(res.documents)) {
                 docs.push(...res.documents);
@@ -398,11 +411,11 @@ let GachaFirebaseService = GachaFirebaseService_1 = class GachaFirebaseService {
         } while (pageToken);
         return docs;
     }
-    async createDocument(collectionPath, documentId, data, token) {
+    async createDocument(collectionPath, documentId, data, token, databaseId = '(default)') {
         const queryStr = documentId
             ? `?documentId=${encodeURIComponent(documentId)}`
             : '';
-        const url = `${this.documentsBaseUrl}/${collectionPath}${queryStr}`;
+        const url = `${this.getDocumentsBaseUrl(databaseId)}/${collectionPath}${queryStr}`;
         return this.requestJson(url, token, {
             method: 'POST',
             body: JSON.stringify({
@@ -410,22 +423,22 @@ let GachaFirebaseService = GachaFirebaseService_1 = class GachaFirebaseService {
             }),
         });
     }
-    async deleteDocument(docPath, token) {
-        const url = `${this.documentsBaseUrl}/${docPath}`;
+    async deleteDocument(docPath, token, databaseId = '(default)') {
+        const url = `${this.getDocumentsBaseUrl(databaseId)}/${docPath}`;
         await this.requestJson(url, token, { method: 'DELETE' });
     }
-    async commitWrites(writes, token) {
+    async commitWrites(writes, token, databaseId = '(default)') {
         if (writes.length === 0)
             return;
-        const url = `${this.documentsBaseUrl}:commit`;
+        const url = `${this.getDocumentsBaseUrl(databaseId)}:commit`;
         await this.requestJson(url, token, {
             method: 'POST',
             body: JSON.stringify({ writes }),
         });
     }
-    async runQuery(parentPath, structuredQuery, token) {
+    async runQuery(parentPath, structuredQuery, token, databaseId = '(default)') {
         const prefix = parentPath ? `/${parentPath}` : '';
-        const url = `${this.documentsBaseUrl}${prefix}:runQuery`;
+        const url = `${this.getDocumentsBaseUrl(databaseId)}${prefix}:runQuery`;
         const rows = await this.requestJson(url, token, {
             method: 'POST',
             body: JSON.stringify({ structuredQuery }),

@@ -128,7 +128,9 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
       <main className="relative z-10 flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-12">
         {!post ? (
           <div className="p-12 rounded-2xl bg-[#090d24]/90 border border-white/10 text-center space-y-4 my-16 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-            <div className="text-4xl">📜</div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono uppercase tracking-[0.2em] text-[#f5c767]">
+              Bản Tin Veyra
+            </div>
             <h1 className="text-xl font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
               {loadError ? "Không Thể Tải Bài Viết" : "Bài Viết Không Tồn Tại Hoặc Đã Bị Gỡ"}
             </h1>

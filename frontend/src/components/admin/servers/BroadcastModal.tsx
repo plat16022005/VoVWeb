@@ -78,7 +78,7 @@ export default function BroadcastModal({
               onChange={(e) => setTargetServerId(e.target.value)}
               className="w-full bg-[#040614] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#3fe9d6]/50"
             >
-              <option value="all">★ Tất Cả Cụm Máy Chủ (Toàn Cầu)</option>
+              <option value="all">Tất Cả Cụm Máy Chủ (Toàn Cầu)</option>
               {servers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} ({s.code})
@@ -138,7 +138,7 @@ export default function BroadcastModal({
               Xem trước màn hình game (Preview):
             </span>
             <div className="p-2 rounded bg-black/60 border border-amber-400/30 text-amber-300 text-xs font-sans tracking-wide text-center animate-pulse">
-              📢 {message}
+              {message}
             </div>
           </div>
 

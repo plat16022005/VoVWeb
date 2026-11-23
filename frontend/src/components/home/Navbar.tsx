@@ -138,7 +138,7 @@ export default function Navbar({
                 title={`Hồ Sơ Chỉ Huy: ${currentUser.username} (${currentUser.email})`}
               >
                 <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#f5c767] to-[#3fe9d6] flex items-center justify-center text-[10px] font-bold text-[#060814] shadow-[0_0_6px_rgba(63,233,214,0.4)]">
-                  {currentUser.username ? currentUser.username[0].toUpperCase() : "★"}
+                  {currentUser.username ? currentUser.username[0].toUpperCase() : "V"}
                 </div>
                 <span className="hidden sm:inline max-w-[110px] truncate font-mono font-semibold">
                   {currentUser.username || "CHỈ HUY"}

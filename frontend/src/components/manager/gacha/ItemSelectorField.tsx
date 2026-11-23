@@ -65,7 +65,7 @@ export default function ItemSelectorField({
         )}
 
         {prioritizeTicketType4 && ticketItems.length > 0 && (
-          <optgroup label="🎫 Vé Triệu Hồi (Type 4)">
+          <optgroup label="Vé Triệu Hồi (Type 4)">
             {ticketItems.map((item) => (
               <option key={item.id} value={item.id}>
                 [{item.id}] {item.name}
@@ -78,7 +78,7 @@ export default function ItemSelectorField({
         {otherItems.length > 0 && (
           <optgroup
             label={
-              prioritizeTicketType4 ? "📦 Vật Phẩm Khác" : "📦 Danh Mục Vật Phẩm"
+              prioritizeTicketType4 ? "Vật Phẩm Khác" : "Danh Mục Vật Phẩm"
             }
           >
             {otherItems.map((item) => (
@@ -100,4 +100,3 @@ export default function ItemSelectorField({
     </div>
   );
 }
-

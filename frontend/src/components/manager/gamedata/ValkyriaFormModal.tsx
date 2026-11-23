@@ -301,18 +301,13 @@ export default function ValkyriaFormModal({
       <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl bg-[#080c24] border border-[#f5c767]/30 shadow-[0_0_60px_rgba(245,199,103,0.2)] overflow-hidden text-slate-100 font-[family-name:var(--font-inter)]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-[#060814]/90 sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#f5c767]/30 to-[#3fe9d6]/30 border border-[#f5c767]/40 flex items-center justify-center text-xl shadow-inner">
-              {isEditing ? "✏️" : "✨"}
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
-                {isEditing ? `CHỈNH SỬA VALKYRIA: ${name || initialData?.name}` : "THÊM MỚI CHIẾN BINH VALKYRIA"}
-              </h2>
-              <p className="text-xs font-mono text-slate-400">
-                {isEditing ? "Cập nhật hồ sơ, kỹ năng và chỉ số nhân vật" : "Khởi tạo nhân vật mới vào cơ sở dữ liệu Veyra"}
-              </p>
-            </div>
+          <div>
+            <h2 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
+              {isEditing ? `CHỈNH SỬA VALKYRIA: ${name || initialData?.name}` : "THÊM MỚI CHIẾN BINH VALKYRIA"}
+            </h2>
+            <p className="text-xs font-mono text-slate-400">
+              {isEditing ? "Cập nhật hồ sơ, kỹ năng và chỉ số nhân vật" : "Khởi tạo nhân vật mới vào cơ sở dữ liệu Veyra"}
+            </p>
           </div>
 
           <button
@@ -321,9 +316,9 @@ export default function ValkyriaFormModal({
               soundEngine.playClick();
               onClose();
             }}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer"
           >
-            ✕
+            Đóng
           </button>
         </div>
 
@@ -391,9 +386,8 @@ export default function ValkyriaFormModal({
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {/* Error Notification */}
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-center gap-2">
-                <span>⚠️</span>
-                <span>{errorMsg}</span>
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono">
+                {errorMsg}
               </div>
             )}
 
@@ -494,7 +488,7 @@ export default function ValkyriaFormModal({
                     >
                       {ROLE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value} className="bg-[#080c24]">
-                          {opt.icon} {opt.label}
+                          {opt.label}
                         </option>
                       ))}
                     </select>
@@ -568,9 +562,9 @@ export default function ValkyriaFormModal({
                       onChange={(e) => setStatus(e.target.value as any)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#3fe9d6]"
                     >
-                      <option value="Active" className="bg-[#080c24]">🟢 Hoạt Động (Active)</option>
-                      <option value="Testing" className="bg-[#080c24]">🟡 Thử Nghiệm (Testing)</option>
-                      <option value="Hidden" className="bg-[#080c24]">⚪ Ẩn / Chưa Mở (Hidden)</option>
+                      <option value="Active" className="bg-[#080c24]">Hoạt Động (Active)</option>
+                      <option value="Testing" className="bg-[#080c24]">Thử Nghiệm (Testing)</option>
+                      <option value="Hidden" className="bg-[#080c24]">Ẩn / Chưa Mở (Hidden)</option>
                     </select>
                   </div>
 
@@ -595,14 +589,13 @@ export default function ValkyriaFormModal({
             {activeTab === "stats" && (
               <div className="space-y-4">
                 {!canEditSkills && (
-                  <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-mono text-amber-300 flex items-center gap-2">
-                    <span>🔒</span>
-                    <span>Chỉ Xem (Read-only): Bạn không có quyền &quot;Cân Bằng Chỉ Số &amp; Kỹ Năng&quot;. Toàn bộ chỉ số chiến đấu bị khóa chỉnh sửa.</span>
+                  <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-mono text-amber-300">
+                    Chỉ Xem (Read-only): Bạn không có quyền &quot;Cân Bằng Chỉ Số &amp; Kỹ Năng&quot;. Toàn bộ chỉ số chiến đấu bị khóa chỉnh sửa.
                   </div>
                 )}
 
                 <div className="p-3.5 rounded-xl bg-[#3fe9d6]/5 border border-[#3fe9d6]/20 text-xs font-mono text-slate-300">
-                  💡 Các chỉ số cơ bản ở Cấp độ 1 (Level 1 Base Stats). Hệ thống Unity Engine sẽ tự động tính toán hệ số tăng trưởng theo cấp.
+                  Các chỉ số cơ bản ở Cấp độ 1 (Level 1 Base Stats). Hệ thống Unity Engine sẽ tự động tính toán hệ số tăng trưởng theo cấp.
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -725,9 +718,8 @@ export default function ValkyriaFormModal({
                 </div>
 
                 <div className="pt-3 border-t border-white/10">
-                  <h4 className="text-xs font-mono font-bold text-[#f5c767] uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                    <span>📈</span>
-                    <span>Hệ Số Tăng Trưởng Chỉ Số Mỗi Cấp (Growth Per Level)</span>
+                  <h4 className="text-xs font-mono font-bold text-[#f5c767] uppercase tracking-wide mb-3">
+                    Hệ Số Tăng Trưởng Chỉ Số Mỗi Cấp (Growth Per Level)
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -778,9 +770,8 @@ export default function ValkyriaFormModal({
             {activeTab === "skills" && (
               <div className="space-y-4">
                 {!canEditSkills && (
-                  <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-mono text-amber-300 flex items-center gap-2">
-                    <span>🔒</span>
-                    <span>Chỉ Xem (Read-only): Bạn không có quyền &quot;Cân Bằng Chỉ Số &amp; Kỹ Năng&quot;. Toàn bộ kỹ năng chiến đấu bị khóa chỉnh sửa.</span>
+                  <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-mono text-amber-300">
+                    Chỉ Xem (Read-only): Bạn không có quyền &quot;Cân Bằng Chỉ Số &amp; Kỹ Năng&quot;. Toàn bộ kỹ năng chiến đấu bị khóa chỉnh sửa.
                   </div>
                 )}
 
@@ -845,9 +836,8 @@ export default function ValkyriaFormModal({
                     <label className="block text-xs font-mono font-semibold text-slate-300">
                       Hình Ảnh / Splash Art Nhân Vật
                     </label>
-                    <span className="text-[11px] font-mono text-[#3fe9d6] flex items-center gap-1.5 bg-[#3fe9d6]/10 px-2.5 py-0.5 rounded-full border border-[#3fe9d6]/30">
-                      <span>☁️</span>
-                      <span>Lưu trữ Cloudflare R2</span>
+                    <span className="text-[11px] font-mono text-[#3fe9d6] bg-[#3fe9d6]/10 px-2.5 py-0.5 rounded-full border border-[#3fe9d6]/30">
+                      Lưu trữ Cloudflare R2
                     </span>
                   </div>
 
@@ -889,7 +879,7 @@ export default function ValkyriaFormModal({
                   >
                     {uploadingImage ? (
                       <div className="space-y-3 py-2">
-                        <div className="text-2xl animate-bounce">☁️</div>
+                        <div className="w-7 h-7 mx-auto rounded-full border-2 border-[#f5c767] border-t-transparent animate-spin" />
                         <div className="text-xs font-mono font-bold text-[#f5c767]">
                           Đang tải ảnh lên Cloudflare R2 ({uploadProgress}%)...
                         </div>
@@ -902,8 +892,7 @@ export default function ValkyriaFormModal({
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-1.5 py-1">
-                        <div className="text-3xl">📤</div>
+                      <div className="space-y-1.5 py-2">
                         <div className="text-xs font-mono font-bold text-white">
                           Nhấp để tải ảnh lên Cloudflare R2 hoặc kéo thả vào đây
                         </div>
@@ -915,7 +904,7 @@ export default function ValkyriaFormModal({
 
                     {uploadSuccess && (
                       <div className="mt-2 text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 py-1 px-3 rounded-lg border border-emerald-500/30 inline-block animate-fade-in">
-                        ✓ Đã lưu trữ ảnh thành công trên Cloudflare R2!
+                        Đã lưu trữ ảnh thành công trên Cloudflare R2!
                       </div>
                     )}
                   </div>
@@ -966,8 +955,8 @@ export default function ValkyriaFormModal({
                       />
                       <div className="text-[10px] text-slate-500 font-mono">
                         {image && (image.startsWith("http://") || image.startsWith("https://"))
-                          ? "🌐 Đường dẫn đám mây trực tuyến"
-                          : "📁 Đường dẫn ảnh mẫu mặc định hệ thống"}
+                          ? "Đường dẫn đám mây trực tuyến"
+                          : "Đường dẫn ảnh mẫu mặc định hệ thống"}
                       </div>
                     </div>
                   </div>
@@ -1018,9 +1007,8 @@ export default function ValkyriaFormModal({
             </button>
 
             {!canEdit && (
-              <span className="text-xs font-mono text-amber-300 flex items-center gap-1.5">
-                <span>🔒</span>
-                <span>Chế độ Chỉ Xem (Không có quyền Lưu)</span>
+              <span className="text-xs font-mono text-amber-300">
+                Chế độ Chỉ Xem (Không có quyền Lưu)
               </span>
             )}
 
@@ -1039,10 +1027,7 @@ export default function ValkyriaFormModal({
                   <span>Đang Lưu...</span>
                 </>
               ) : (
-                <>
-                  <span>💾</span>
-                  <span>{!canEdit ? "Khóa Lưu" : isEditing ? "Lưu Thay Đổi" : "Tạo Mới Valkyria"}</span>
-                </>
+                <span>{!canEdit ? "Khóa Lưu" : isEditing ? "Lưu Thay Đổi" : "Tạo Mới Valkyria"}</span>
               )}
             </button>
           </div>
@@ -1051,4 +1036,3 @@ export default function ValkyriaFormModal({
     </div>
   );
 }
-

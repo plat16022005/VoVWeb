@@ -164,20 +164,14 @@ export default function AccountPermissionsModal({
       <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl bg-[#090d24] border border-[#f5c767]/30 shadow-[0_0_60px_rgba(245,199,103,0.2)] overflow-hidden font-[family-name:var(--font-inter)] text-slate-100">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-[#0d1435] via-[#090d24] to-[#0d1435] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#f5c767] to-[#3fe9d6] p-[2px] shadow-[0_0_15px_rgba(245,199,103,0.3)]">
-              <div className="w-full h-full bg-[#060814] rounded-[14px] flex items-center justify-center text-lg">
-                🛡️
-              </div>
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
-                Phân Quyền Quản Trị Viên (Manager RBAC)
-              </h2>
-              <p className="text-xs text-slate-400">
-                Thêm tài khoản vào các Nhóm chức năng lớn và cấu hình chi tiết quyền hạn nhỏ.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#f5c767]" />
+              <span>Phân Quyền Quản Trị Viên (Manager RBAC)</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Thêm tài khoản vào các Nhóm chức năng lớn và cấu hình chi tiết quyền hạn nhỏ.
+            </p>
           </div>
 
           <button
@@ -225,7 +219,7 @@ export default function AccountPermissionsModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           {errorMessage && (
             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <span>⚠️</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -253,30 +247,32 @@ export default function AccountPermissionsModal({
               >
                 {/* Major Group Header */}
                 <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 bg-white/[0.02]">
-                  <div className="flex items-start sm:items-center gap-3.5">
-                    <span className="text-3xl shrink-0">{group.icon}</span>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wider uppercase">
-                          {group.title}
-                        </h3>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#f5c767]/10 text-[#f5c767] border border-[#f5c767]/30">
-                          {group.code}
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          isGroupActive ? "bg-[#f5c767]" : "bg-slate-600"
+                        }`}
+                      />
+                      <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wider uppercase">
+                        {group.title}
+                      </h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#f5c767]/10 text-[#f5c767] border border-[#f5c767]/30">
+                        {group.code}
+                      </span>
+                      {isGroupActive && (
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
+                            isAllGranted
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                              : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          }`}
+                        >
+                          Đã cấp {activeSubCount}/{allSubIds.length} quyền
                         </span>
-                        {isGroupActive && (
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
-                              isAllGranted
-                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                            }`}
-                          >
-                            Đã cấp {activeSubCount}/{allSubIds.length} quyền
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{group.description}</p>
+                      )}
                     </div>
+                    <p className="text-xs text-slate-400 mt-0.5">{group.description}</p>
                   </div>
 
                   {/* Master Toggle Switch */}
@@ -309,9 +305,8 @@ export default function AccountPermissionsModal({
                   <div className="p-5 space-y-6">
                     {/* Quick Action Toolbar */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/5 text-xs">
-                      <div className="text-slate-300 flex items-center gap-1.5">
-                        <span className="text-[#3fe9d6]">⚡</span>
-                        <span>Chọn hoặc bỏ chọn các quyền nhỏ để tùy chỉnh hạn mức hoạt động:</span>
+                      <div className="text-slate-300">
+                        Chọn hoặc bỏ chọn các quyền nhỏ để tùy chỉnh hạn mức hoạt động:
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -319,14 +314,14 @@ export default function AccountPermissionsModal({
                           onClick={() => handleGrantAllInGroup(group.id)}
                           className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-mono transition-colors cursor-pointer"
                         >
-                          ✓ Cấp tất cả
+                          Cấp tất cả
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRevokeAllInGroup(group.id)}
                           className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-mono transition-colors cursor-pointer"
                         >
-                          ✕ Thu hồi hết
+                          Thu hồi hết
                         </button>
                       </div>
                     </div>
@@ -450,10 +445,7 @@ export default function AccountPermissionsModal({
                   <span>Đang lưu...</span>
                 </>
               ) : (
-                <>
-                  <span>💾</span>
-                  <span>Lưu Phân Quyền</span>
-                </>
+                <span>Lưu Phân Quyền</span>
               )}
             </button>
           </div>

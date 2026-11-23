@@ -280,7 +280,7 @@ export default function ManagerBlogTab() {
           </button>
         ) : (
           <div className="p-2 text-center rounded-xl bg-slate-800/40 border border-slate-700/50 text-[11px] font-mono text-slate-400">
-            🔒 Chế độ xem bài viết
+            Chế độ xem bài viết
           </div>
         )}
         <input
@@ -383,9 +383,9 @@ export default function ManagerBlogTab() {
                       <button
                         type="button"
                         onClick={() => patch({ coverUrl: "" })}
-                        className="text-[10px] text-rose-400 hover:underline"
+                        className="text-[10px] text-rose-400 hover:underline cursor-pointer"
                       >
-                        ✕ Xóa ảnh bìa
+                        Xóa ảnh bìa
                       </button>
                     )}
                   </label>
@@ -407,10 +407,9 @@ export default function ManagerBlogTab() {
                       type="button"
                       disabled={isUploadingCover}
                       onClick={() => coverInputRef.current?.click()}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#f5c767]/20 to-[#3fe9d6]/20 border border-[#f5c767]/40 text-[#f5c767] hover:border-[#f5c767] hover:bg-[#f5c767]/30 text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40"
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#f5c767]/20 to-[#3fe9d6]/20 border border-[#f5c767]/40 text-[#f5c767] hover:border-[#f5c767] hover:bg-[#f5c767]/30 text-xs font-bold transition-all whitespace-nowrap disabled:opacity-40 cursor-pointer"
                     >
-                      <span>⬆</span>
-                      <span>{isUploadingCover ? `Đang tải ${coverProgress}%` : "Tải Ảnh Lên"}</span>
+                      {isUploadingCover ? `Đang tải ${coverProgress}%` : "Tải Ảnh Lên"}
                     </button>
                   </div>
                 </div>
@@ -464,7 +463,12 @@ export default function ManagerBlogTab() {
                     </span>
                   )}
                   {selected?.publishedAt && <span>Đăng lúc {formatDate(selected.publishedAt)}</span>}
-                  {dirty && <span className="text-[#f5c767]">● Có thay đổi chưa lưu</span>}
+                  {dirty && (
+                    <span className="inline-flex items-center gap-1.5 text-[#f5c767]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f5c767]" />
+                      Có thay đổi chưa lưu
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -487,7 +491,7 @@ export default function ManagerBlogTab() {
                       }
                     >
                       <span>f</span>
-                      <span>{selected.facebookPostId ? "💬 FB Tương Tác" : "Đăng Facebook"}</span>
+                      <span>{selected.facebookPostId ? "FB Tương Tác" : "Đăng Facebook"}</span>
                     </button>
                   )}
 

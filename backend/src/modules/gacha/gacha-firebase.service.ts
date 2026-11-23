@@ -69,8 +69,20 @@ export class GachaFirebaseService {
     );
   }
 
-  private get documentsBaseUrl(): string {
-    return `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents`;
+  private normalizeDatabaseId(databaseId = '(default)'): string {
+    const trimmed = (databaseId || '(default)').trim();
+    if (!trimmed || trimmed === '(default)') {
+      return '(default)';
+    }
+    if (!/^[a-z0-9-]+$/.test(trimmed)) {
+      throw new Error(`Mã cơ sở dữ liệu máy chủ không hợp lệ: "${trimmed}".`);
+    }
+    return trimmed;
+  }
+
+  private getDocumentsBaseUrl(databaseId = '(default)'): string {
+    const db = this.normalizeDatabaseId(databaseId);
+    return `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/${db}/documents`;
   }
 
   private getServiceAccountCreds(): ServiceAccountCreds | null {
@@ -489,8 +501,9 @@ export class GachaFirebaseService {
     return parts[parts.length - 1] || '';
   }
 
-  fullDocumentName(docPath: string): string {
-    return `projects/${this.projectId}/databases/(default)/documents/${docPath}`;
+  fullDocumentName(docPath: string, databaseId = '(default)'): string {
+    const db = this.normalizeDatabaseId(databaseId);
+    return `projects/${this.projectId}/databases/${db}/documents/${docPath}`;
   }
 
   // ==================== FIRESTORE REST CRUD ====================
@@ -531,8 +544,9 @@ export class GachaFirebaseService {
   async getDocument(
     docPath: string,
     token: string,
+    databaseId = '(default)',
   ): Promise<FirestoreRestDocument | null> {
-    const url = `${this.documentsBaseUrl}/${docPath}`;
+    const url = `${this.getDocumentsBaseUrl(databaseId)}/${docPath}`;
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -553,14 +567,16 @@ export class GachaFirebaseService {
     collectionPath: string,
     token: string,
     pageSize = 300,
+    databaseId = '(default)',
   ): Promise<FirestoreRestDocument[]> {
     const docs: FirestoreRestDocument[] = [];
     let pageToken: string | undefined;
+    const baseUrl = this.getDocumentsBaseUrl(databaseId);
 
     do {
       const params = new URLSearchParams({ pageSize: String(pageSize) });
       if (pageToken) params.set('pageToken', pageToken);
-      const url = `${this.documentsBaseUrl}/${collectionPath}?${params.toString()}`;
+      const url = `${baseUrl}/${collectionPath}?${params.toString()}`;
       const res = await this.requestJson<{
         documents?: FirestoreRestDocument[];
         nextPageToken?: string;
@@ -579,11 +595,12 @@ export class GachaFirebaseService {
     documentId: string | null,
     data: Record<string, unknown>,
     token: string,
+    databaseId = '(default)',
   ): Promise<FirestoreRestDocument> {
     const queryStr = documentId
       ? `?documentId=${encodeURIComponent(documentId)}`
       : '';
-    const url = `${this.documentsBaseUrl}/${collectionPath}${queryStr}`;
+    const url = `${this.getDocumentsBaseUrl(databaseId)}/${collectionPath}${queryStr}`;
     return this.requestJson<FirestoreRestDocument>(url, token, {
       method: 'POST',
       body: JSON.stringify({
@@ -592,17 +609,22 @@ export class GachaFirebaseService {
     });
   }
 
-  async deleteDocument(docPath: string, token: string): Promise<void> {
-    const url = `${this.documentsBaseUrl}/${docPath}`;
+  async deleteDocument(
+    docPath: string,
+    token: string,
+    databaseId = '(default)',
+  ): Promise<void> {
+    const url = `${this.getDocumentsBaseUrl(databaseId)}/${docPath}`;
     await this.requestJson(url, token, { method: 'DELETE' });
   }
 
   async commitWrites(
     writes: FirestoreBatchWrite[],
     token: string,
+    databaseId = '(default)',
   ): Promise<void> {
     if (writes.length === 0) return;
-    const url = `${this.documentsBaseUrl}:commit`;
+    const url = `${this.getDocumentsBaseUrl(databaseId)}:commit`;
     await this.requestJson(url, token, {
       method: 'POST',
       body: JSON.stringify({ writes }),
@@ -613,9 +635,10 @@ export class GachaFirebaseService {
     parentPath: string,
     structuredQuery: Record<string, unknown>,
     token: string,
+    databaseId = '(default)',
   ): Promise<FirestoreRestDocument[]> {
     const prefix = parentPath ? `/${parentPath}` : '';
-    const url = `${this.documentsBaseUrl}${prefix}:runQuery`;
+    const url = `${this.getDocumentsBaseUrl(databaseId)}${prefix}:runQuery`;
     const rows = await this.requestJson<
       Array<{ document?: FirestoreRestDocument }>
     >(url, token, {

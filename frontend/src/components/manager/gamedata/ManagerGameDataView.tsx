@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Character } from "@/data/characters";
 import { characterService, sortCharactersByRarity } from "@/services/character.service";
 import { useAuth } from "@/services/auth.service";
@@ -19,7 +19,9 @@ interface ManagerGameDataViewProps {
   initialSubTab?: GameDataSubTab;
 }
 
-export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataViewProps = {}) {
+export default function ManagerGameDataView({
+  initialSubTab = "characters",
+}: ManagerGameDataViewProps = {}) {
   const currentUser = useAuth();
 
   // Permissions
@@ -48,16 +50,7 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     canItemEdit ||
     canItemDelete;
 
-  const [currentSubTab, setCurrentSubTab] = useState<GameDataSubTab>(() => {
-    if (initialSubTab === "gacha" && hasGachaAccess) return "gacha";
-    if (initialSubTab === "items" && hasItemAccess) return "items";
-    if (initialSubTab === "characters" && hasCharacterAccess) return "characters";
-    if (initialSubTab === "worlds") return initialSubTab;
-    if (hasCharacterAccess) return "characters";
-    if (hasGachaAccess) return "gacha";
-    if (hasItemAccess) return "items";
-    return "characters";
-  });
+  const activeSubTab: GameDataSubTab = initialSubTab;
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loadedOnce, setLoadedOnce] = useState(false);
 
@@ -80,26 +73,13 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     setTimeout(() => setToast(null), 3500);
   };
 
-  const activeSubTab: GameDataSubTab = useMemo(() => {
-    if (currentSubTab === "characters" && !hasCharacterAccess) {
-      if (hasGachaAccess) return "gacha";
-      if (hasItemAccess) return "items";
-    }
-    if (currentSubTab === "gacha" && !hasGachaAccess) {
-      if (hasCharacterAccess) return "characters";
-      if (hasItemAccess) return "items";
-    }
-    if (currentSubTab === "items" && !hasItemAccess) {
-      if (hasCharacterAccess) return "characters";
-      if (hasGachaAccess) return "gacha";
-    }
-    return currentSubTab;
-  }, [currentSubTab, hasCharacterAccess, hasGachaAccess, hasItemAccess]);
-
-  const loading = hasCharacterAccess && !loadedOnce;
+  const shouldLoadCharacters =
+    hasCharacterAccess &&
+    (activeSubTab === "characters" || activeSubTab === "items");
+  const loading = shouldLoadCharacters && !loadedOnce;
 
   useEffect(() => {
-    if (!hasCharacterAccess) return;
+    if (!shouldLoadCharacters) return;
     let active = true;
     characterService
       .getCharacters()
@@ -122,7 +102,7 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     return () => {
       active = false;
     };
-  }, [hasCharacterAccess]);
+  }, [shouldLoadCharacters]);
 
   // Open Add Modal
   const handleOpenAdd = () => {
@@ -258,7 +238,9 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
   if (!hasCharacterAccess && !hasGachaAccess && !hasItemAccess) {
     return (
       <div className="py-20 p-8 rounded-3xl bg-[#090d24]/90 border border-amber-500/30 text-center space-y-3">
-        <div className="text-4xl">⚠️</div>
+        <span className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider">
+          Hạn Chế Truy Cập
+        </span>
         <h3 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase">
           Chưa Được Cấp Quyền Thao Tác Chi Tiết
         </h3>
@@ -269,139 +251,30 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     );
   }
 
-  const hasCurrentWritePermission =
-    activeSubTab === "gacha"
-      ? canGachaEdit || canGachaActivate || canGachaDelete
-      : activeSubTab === "items"
-      ? canItemEdit || canItemDelete
-      : canEdit || canEditSkills || canDelete;
+  const isSubFeatureDenied =
+    (activeSubTab === "characters" && !hasCharacterAccess) ||
+    (activeSubTab === "gacha" && !hasGachaAccess) ||
+    (activeSubTab === "items" && !hasItemAccess);
+
+  if (isSubFeatureDenied) {
+    return (
+      <div className="py-20 p-8 rounded-3xl bg-[#090d24]/90 border border-amber-500/30 text-center space-y-3">
+        <span className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider">
+          Hạn Chế Truy Cập
+        </span>
+        <h3 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase">
+          Chưa Được Cấp Quyền Thao Tác Chức Năng Này
+        </h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto font-sans">
+          Tài khoản của bạn chưa được mở quyền truy cập cho mục này trong nhóm Dữ Liệu Game. Vui lòng liên hệ Quản Trị Viên để được cấp quyền.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 font-[family-name:var(--font-inter)] animate-fade-in">
-      {/* 1. HEADER HERO BANNER */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0c1438] via-[#080d24] to-[#0c1438] border border-[#3fe9d6]/30 p-6 sm:p-8 shadow-[0_0_50px_rgba(63,233,214,0.15)]">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#3fe9d6]/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#3fe9d6] via-[#9b51e0] to-[#f5c767] p-[2px] shadow-[0_0_25px_rgba(63,233,214,0.4)] shrink-0">
-              <div className="w-full h-full bg-[#060814] rounded-[14px] flex items-center justify-center font-[family-name:var(--font-rajdhani)] font-black text-2xl sm:text-3xl text-[#3fe9d6]">
-                {activeSubTab === "gacha" ? "🌠" : "⚔️"}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase font-[family-name:var(--font-rajdhani)]">
-                  QUẢN LÝ DỮ LIỆU GAME (GAME MASTER DATA)
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 text-[10px] font-bold font-mono">
-                  UNITY ENGINE READY
-                </span>
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl font-sans">
-                Trung tâm thiết lập hồ sơ chiến binh Valkyria, bộ kỹ năng, chỉ số chiến đấu, hệ thống Banner Gacha theo mùa và thế giới Veyra.
-                Dữ liệu được đồng bộ trực tiếp phục vụ cho Client game và trang chủ chính thức.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono text-slate-400 pt-1">
-                <span>Trạng thái: <strong className="text-emerald-400">Đã Kết Nối An Toàn</strong></span>
-                <span>•</span>
-                <span>
-                  Dữ liệu:{" "}
-                  <strong className="text-white">
-                    {hasCharacterAccess ? `${characters.length} Valkyria` : "Banner Gacha"}
-                  </strong>
-                </span>
-                <span>•</span>
-                <span>
-                  Quyền:{" "}
-                  <strong className={hasCurrentWritePermission ? "text-[#3fe9d6]" : "text-amber-300"}>
-                    {hasCurrentWritePermission ? "Có quyền quản lý" : "Chỉ xem"}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. SUB-TABS NAVIGATION */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-2">
-        {hasCharacterAccess && (
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setCurrentSubTab("characters");
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "characters"
-                ? "bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_15px_rgba(63,233,214,0.2)]"
-                : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <span>⚔️</span>
-            <span>Chiến Binh Valkyria ({characters.length})</span>
-          </button>
-        )}
-
-        {hasGachaAccess && (
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setCurrentSubTab("gacha");
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "gacha"
-                ? "bg-[#f5c767]/20 text-[#f5c767] border border-[#f5c767]/40 shadow-[0_0_15px_rgba(245,199,103,0.2)]"
-                : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <span>🌠</span>
-            <span>Banner Gacha</span>
-          </button>
-        )}
-
-        {hasItemAccess && (
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setCurrentSubTab("items");
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "items"
-                ? "bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_20px_rgba(63,233,214,0.2)]"
-                : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <span>🛡️</span>
-            <span>Vật Phẩm & Trang Bị</span>
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => {
-            soundEngine.playClick();
-            setCurrentSubTab("worlds");
-          }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeSubTab === "worlds"
-              ? "bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40"
-              : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-          }`}
-        >
-          <span>🗺️</span>
-          <span>Bản Đồ Thế Giới Veyra</span>
-          <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-400 font-normal">Sắp mở</span>
-        </button>
-      </div>
-
-      {/* 3. TAB CONTENT */}
+      {/* ACTIVE FEATURE VIEW */}
       {activeSubTab === "characters" && hasCharacterAccess && (
         <ValkyriaListTab
           characters={characters}
@@ -430,8 +303,7 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
       )}
 
       {activeSubTab === "worlds" && (
-        <div className="py-20 text-center rounded-2xl bg-[#090d24]/50 border border-dashed border-white/10 space-y-3">
-          <div className="text-4xl">🗺️</div>
+        <div className="py-20 text-center rounded-2xl bg-[#090d24]/50 border border-dashed border-white/10 space-y-2">
           <h4 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)]">
             Phân Hệ Quản Lý Bản Đồ & Vùng Đất Veyra
           </h4>
@@ -489,4 +361,3 @@ export default function ManagerGameDataView({ initialSubTab }: ManagerGameDataVi
     </div>
   );
 }
-

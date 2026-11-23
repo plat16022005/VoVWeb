@@ -8,6 +8,14 @@
     {
       "database": "server-1",
       "rules": "firestore.server.rules"
+    },
+    {
+      "database": "server-2",
+      "rules": "firestore.server.rules"
+    },
+    {
+      "database": "server-3",
+      "rules": "firestore.server.rules"
     }
   ],
   "functions": [

@@ -156,30 +156,27 @@ export default function BanAccountModal({
       <div className="relative w-full max-w-2xl rounded-2xl bg-[#090c21] border border-rose-500/30 shadow-[0_0_50px_rgba(244,63,94,0.25)] overflow-hidden animate-scaleUp z-10 max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-rose-950/40 via-transparent to-transparent flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 text-lg shadow-[0_0_15px_rgba(244,63,94,0.3)]">
-              🔒
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
-                Khóa Quyền Truy Cập Tài Khoản
-              </h3>
-              <p className="text-xs font-mono text-rose-400/80">
-                Chọn một hoặc nhiều lý do vi phạm và nhập ghi chú để khóa tài khoản
-              </p>
-            </div>
+          <div>
+            <h3 className="text-base font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-400" />
+              <span>Khóa Quyền Truy Cập Tài Khoản</span>
+            </h3>
+            <p className="text-xs font-mono text-rose-400/80 mt-0.5">
+              Chọn một hoặc nhiều lý do vi phạm và nhập ghi chú để khóa tài khoản
+            </p>
           </div>
 
           <button
             type="button"
             disabled={isSubmitting}
+            aria-label="Đóng"
             onClick={() => {
               soundEngine.playClick();
               onClose();
             }}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base leading-none transition-colors cursor-pointer"
           >
-            ✕
+            ×
           </button>
         </div>
 
@@ -261,18 +258,16 @@ export default function BanAccountModal({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Tìm kiếm điều khoản vi phạm..."
-                      className="w-full px-3 py-1.5 pl-8 rounded-lg bg-[#0e122b] border border-white/10 text-xs text-white font-mono placeholder:text-slate-500 focus:outline-none focus:border-rose-400"
+                      className="w-full px-3 py-1.5 pr-8 rounded-lg bg-[#0e122b] border border-white/10 text-xs text-white font-mono placeholder:text-slate-500 focus:outline-none focus:border-rose-400"
                     />
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">
-                      🔍
-                    </span>
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                        aria-label="Xóa từ khóa"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm leading-none cursor-pointer"
                       >
-                        ✕
+                        ×
                       </button>
                     )}
                   </div>
@@ -350,7 +345,7 @@ export default function BanAccountModal({
                                 }`}
                                 title="Xem nội dung chi tiết"
                               >
-                                {isExpanded ? "Thu gọn ▲" : "Chi tiết ▼"}
+                                {isExpanded ? "Thu gọn" : "Chi tiết"}
                               </button>
                             )}
                           </div>
@@ -381,16 +376,17 @@ export default function BanAccountModal({
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] font-mono"
                         >
                           <span className="truncate max-w-[200px]">{t.Title}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleTerm(t.id);
-                            }}
-                            className="hover:text-white font-bold ml-0.5"
-                          >
-                            ✕
-                          </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleTerm(t.id);
+                              }}
+                              aria-label="Bỏ chọn"
+                              className="hover:text-white font-bold ml-0.5 text-sm leading-none cursor-pointer"
+                            >
+                              ×
+                            </button>
                         </span>
                       ))}
                   </div>
@@ -420,7 +416,7 @@ export default function BanAccountModal({
 
           {/* Cảnh báo hậu quả */}
           <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-mono flex items-start gap-2.5">
-            <span className="text-base mt-0.5">⚠️</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0 mt-1.5" />
             <div className="space-y-1">
               <strong className="block text-rose-200">Lưu ý hiệu lực:</strong>
               <p className="text-[11px] text-rose-300/90 leading-relaxed">
@@ -454,12 +450,9 @@ export default function BanAccountModal({
                   <span>Đang Khóa...</span>
                 </>
               ) : (
-                <>
-                  <span>🔒</span>
-                  <span>
-                    Xác Nhận Khóa Tài Khoản {selectedTermIds.length > 0 ? `(${selectedTermIds.length})` : ""}
-                  </span>
-                </>
+                <span>
+                  Xác Nhận Khóa Tài Khoản {selectedTermIds.length > 0 ? `(${selectedTermIds.length})` : ""}
+                </span>
               )}
             </button>
           </div>

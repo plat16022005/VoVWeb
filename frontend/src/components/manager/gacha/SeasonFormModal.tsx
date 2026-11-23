@@ -140,26 +140,21 @@ export default function SeasonFormModal({
       <div className="relative w-full max-w-xl rounded-3xl bg-[#090d24] border border-[#3fe9d6]/30 shadow-[0_0_50px_rgba(63,233,214,0.2)] overflow-hidden text-slate-100">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/10 bg-[#060814]/90 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3fe9d6]/25 to-[#f5c767]/25 border border-[#3fe9d6]/40 flex items-center justify-center text-xl">
-              {mode === "clone" ? "📑" : mode === "edit" ? "✏️" : "🌠"}
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wide">
-                {mode === "clone"
-                  ? `Nhân Bản Mùa Từ [${sourceSeason?.SeasonId}]`
-                  : mode === "edit"
-                  ? `Chỉnh Sửa Thông Tin Mùa [${sourceSeason?.SeasonId}]`
-                  : "Tạo Mới Mùa Phát Hành Banner Gacha"}
-              </h3>
-              <p className="text-[11px] font-mono text-slate-400">
-                {mode === "clone"
-                  ? "Giữ nguyên toàn bộ banner thường, pool tướng và quy đổi quà trùng."
-                  : mode === "edit"
-                  ? "Cập nhật tên hiển thị và khung thời gian hiệu lực của mùa."
-                  : "Khởi tạo mùa mới để cấu hình danh sách banner triệu hồi."}
-              </p>
-            </div>
+          <div>
+            <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase tracking-wide">
+              {mode === "clone"
+                ? `Nhân Bản Mùa Từ [${sourceSeason?.SeasonId}]`
+                : mode === "edit"
+                ? `Chỉnh Sửa Thông Tin Mùa [${sourceSeason?.SeasonId}]`
+                : "Tạo Mới Mùa Phát Hành Banner Gacha"}
+            </h3>
+            <p className="text-[11px] font-mono text-slate-400">
+              {mode === "clone"
+                ? "Giữ nguyên toàn bộ banner thường, pool tướng và quy đổi quà trùng."
+                : mode === "edit"
+                ? "Cập nhật tên hiển thị và khung thời gian hiệu lực của mùa."
+                : "Khởi tạo mùa mới để cấu hình danh sách banner triệu hồi."}
+            </p>
           </div>
 
           <button
@@ -168,17 +163,16 @@ export default function SeasonFormModal({
               soundEngine.playClick();
               onClose();
             }}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer"
           >
-            ✕
+            Đóng
           </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2">
-              <span>⚠️</span>
+            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs">
               <span className="whitespace-pre-line">{errorMsg}</span>
             </div>
           )}
@@ -314,10 +308,10 @@ export default function SeasonFormModal({
               ) : (
                 <span>
                   {mode === "clone"
-                    ? "📑 Nhân Bản Mùa"
+                    ? "Nhân Bản Mùa"
                     : mode === "edit"
-                    ? "💾 Lưu Thay Đổi"
-                    : "✨ Tạo Mùa Mới"}
+                    ? "Lưu Thay Đổi"
+                    : "Tạo Mùa Mới"}
                 </span>
               )}
             </button>
@@ -327,4 +321,3 @@ export default function SeasonFormModal({
     </div>
   );
 }
-

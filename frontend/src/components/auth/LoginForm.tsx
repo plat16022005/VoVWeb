@@ -373,7 +373,7 @@ export default function LoginForm() {
           <div className="space-y-5 animate-fadeIn">
             <div className="p-4 rounded-xl bg-white/5 border border-[#f5c767]/30 text-center space-y-2">
               <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#f5c767] to-[#3fe9d6] mx-auto flex items-center justify-center text-2xl font-bold text-[#060814] shadow-[0_0_15px_rgba(245,199,103,0.5)]">
-                {currentUser.username ? currentUser.username[0].toUpperCase() : "★"}
+                {currentUser.username ? currentUser.username[0].toUpperCase() : "V"}
               </div>
               <div>
                 <p className="text-base font-bold text-white font-mono">

@@ -138,13 +138,12 @@ export default function BannerImageUploader({
                   className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-black/75 hover:bg-rose-600 text-white text-[10px] font-mono border border-white/20 transition-colors cursor-pointer"
                   title="Gỡ ảnh hiện tại"
                 >
-                  ✕ Gỡ
+                  Gỡ
                 </button>
               )}
             </>
           ) : (
-            <div className="text-center p-4 space-y-1">
-              <div className="text-2xl opacity-60">🖼️</div>
+            <div className="text-center p-4">
               <div className="text-[11px] font-mono text-slate-500">
                 Chưa có ảnh {imageKind === "main" ? "16:9" : "tab"}
               </div>
@@ -211,7 +210,7 @@ export default function BannerImageUploader({
                   }}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#3fe9d6]/20 to-[#f5c767]/20 hover:from-[#3fe9d6]/30 hover:to-[#f5c767]/30 border border-[#3fe9d6]/40 text-white text-xs font-mono font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  📤 Chọn Ảnh Từ Máy Tính
+                  Chọn Ảnh Từ Máy Tính
                 </button>
                 {!canUpload && (
                   <div className="text-[10px] font-mono text-amber-300">
@@ -239,19 +238,16 @@ export default function BannerImageUploader({
       </div>
 
       {errorMsg && (
-        <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-sans flex items-start gap-2">
-          <span>⚠️</span>
-          <span>{errorMsg}</span>
+        <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-sans">
+          {errorMsg}
         </div>
       )}
 
       {sizeWarning && (
-        <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-sans flex items-start gap-2">
-          <span>💡</span>
-          <span>{sizeWarning}</span>
+        <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-sans">
+          {sizeWarning}
         </div>
       )}
     </div>
   );
 }
-

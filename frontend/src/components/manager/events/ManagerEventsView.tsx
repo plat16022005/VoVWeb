@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { WebEventDocument, eventsService } from "@/services/events.service";
 import { useAuth } from "@/services/auth.service";
@@ -18,7 +18,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function ManagerEventsView({
-  initialSubTab,
+  initialSubTab = "minigames",
 }: { initialSubTab?: EventHubSubTab } = {}) {
   const currentUser = useAuth();
   const canEdit = hasPermission(currentUser, "event.minigame.edit");
@@ -39,21 +39,7 @@ export default function ManagerEventsView({
     canGiftcodeToggle ||
     canGiftcodeDelete;
 
-  const [currentSubTab, setCurrentSubTab] = useState<EventHubSubTab>(() => {
-    if (initialSubTab === "giftcodes" && hasGiftcodeAccess) return "giftcodes";
-    if (initialSubTab === "minigames" && hasMinigameAccess) return "minigames";
-    return hasMinigameAccess ? "minigames" : "giftcodes";
-  });
-
-  const activeSubTab: EventHubSubTab = useMemo(() => {
-    if (currentSubTab === "minigames" && !hasMinigameAccess && hasGiftcodeAccess) {
-      return "giftcodes";
-    }
-    if (currentSubTab === "giftcodes" && !hasGiftcodeAccess && hasMinigameAccess) {
-      return "minigames";
-    }
-    return currentSubTab;
-  }, [currentSubTab, hasMinigameAccess, hasGiftcodeAccess]);
+  const activeSubTab: EventHubSubTab = initialSubTab;
 
   const [events, setEvents] = useState<WebEventDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +56,7 @@ export default function ManagerEventsView({
   }, []);
 
   useEffect(() => {
-    if (!hasMinigameAccess) return;
+    if (!hasMinigameAccess || activeSubTab !== "minigames") return;
     let active = true;
     eventsService
       .getAllEvents()
@@ -93,7 +79,7 @@ export default function ManagerEventsView({
     return () => {
       active = false;
     };
-  }, [hasMinigameAccess]);
+  }, [hasMinigameAccess, activeSubTab]);
 
   const handleOpenCreate = () => {
     soundEngine.playClick();
@@ -150,14 +136,21 @@ export default function ManagerEventsView({
   const activeCount = events.filter((e) => e.IsActive).length;
   const withUnityBuildCount = events.filter((e) => Boolean(e.UnityBuild)).length;
 
-  if (!hasMinigameAccess && !hasGiftcodeAccess) {
+  const isSubFeatureDenied =
+    (activeSubTab === "minigames" && !hasMinigameAccess) ||
+    (activeSubTab === "giftcodes" && !hasGiftcodeAccess);
+
+  if ((!hasMinigameAccess && !hasGiftcodeAccess) || isSubFeatureDenied) {
     return (
       <div className="py-20 p-8 rounded-3xl bg-[#090d24]/90 border border-amber-500/30 text-center space-y-3">
+        <span className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider">
+          Hạn Chế Truy Cập
+        </span>
         <h3 className="text-lg font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase">
           Chưa Được Cấp Quyền Thao Tác Chi Tiết
         </h3>
         <p className="text-xs text-slate-400 max-w-md mx-auto font-sans">
-          Tài khoản của bạn thuộc nhóm Quản Lý Sự Kiện nhưng tất cả quyền thao tác nhỏ (Minigame Web, Mã Quà Tặng Giftcode) đều đang bị hạn chế. Vui lòng liên hệ Quản Trị Viên để mở quyền.
+          Tài khoản của bạn chưa được mở quyền thao tác cho chức năng này thuộc nhóm Quản Lý Sự Kiện. Vui lòng liên hệ Quản Trị Viên để mở quyền.
         </p>
       </div>
     );
@@ -170,46 +163,6 @@ export default function ManagerEventsView({
           {toastMsg}
         </div>
       )}
-
-      {/* Sub-Tabs Navigation Bar */}
-      <div className="flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-[#090d24]/90 border border-white/10 shadow-lg">
-        {hasMinigameAccess && (
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setCurrentSubTab("minigames");
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "minigames"
-                ? "bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40 shadow-[0_0_20px_rgba(63,233,214,0.2)]"
-                : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <span>Sự Kiện &amp; Minigame Web</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-200">
-              {events.length}
-            </span>
-          </button>
-        )}
-
-        {hasGiftcodeAccess && (
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setCurrentSubTab("giftcodes");
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "giftcodes"
-                ? "bg-[#f5c767]/20 text-[#f5c767] border border-[#f5c767]/45 shadow-[0_0_20px_rgba(245,199,103,0.2)]"
-                : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <span>Mã Quà Tặng (Giftcode)</span>
-          </button>
-        )}
-      </div>
 
       {activeSubTab === "giftcodes" && hasGiftcodeAccess && (
         <GiftcodesManager

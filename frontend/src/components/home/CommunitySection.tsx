@@ -3,11 +3,11 @@
 import { soundEngine } from "@/services/audio.service";
 
 const SOCIAL_CHANNELS = [
-  { name: "Discord", icon: "💬", color: "hover:border-[#5865f2] hover:text-[#5865f2]" },
-  { name: "Facebook", icon: "🌐", color: "hover:border-[#1877f2] hover:text-[#1877f2]" },
-  { name: "YouTube", icon: "▶️", color: "hover:border-[#ff0000] hover:text-[#ff0000]" },
-  { name: "TikTok", icon: "🎵", color: "hover:border-[#00f2fe] hover:text-[#00f2fe]" },
-  { name: "HoYoLAB / VoVLab", icon: "⭐", color: "hover:border-[#f5c767] hover:text-[#f5c767]" },
+  { name: "Discord", code: "DC", color: "hover:border-[#5865f2] hover:text-[#5865f2]" },
+  { name: "Facebook", code: "FB", color: "hover:border-[#1877f2] hover:text-[#1877f2]" },
+  { name: "YouTube", code: "YT", color: "hover:border-[#ff0000] hover:text-[#ff0000]" },
+  { name: "TikTok", code: "TT", color: "hover:border-[#00f2fe] hover:text-[#00f2fe]" },
+  { name: "HoYoLAB / VoVLab", code: "VL", color: "hover:border-[#f5c767] hover:text-[#f5c767]" },
 ];
 
 export default function CommunitySection() {
@@ -26,9 +26,11 @@ export default function CommunitySection() {
             <button
               key={soc.name}
               onClick={() => soundEngine.playClick()}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0f1430] border border-white/15 text-slate-300 transition-all font-semibold text-xs cursor-pointer ${soc.color}`}
+              className={`flex items-center gap-2.5 px-5 py-2.5 rounded-lg bg-[#0f1430] border border-white/15 text-slate-300 transition-all font-semibold text-xs cursor-pointer ${soc.color}`}
             >
-              <span>{soc.icon}</span>
+              <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono text-[10px] tracking-widest uppercase">
+                {soc.code}
+              </span>
               <span>{soc.name}</span>
             </button>
           ))}

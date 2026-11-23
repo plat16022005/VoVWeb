@@ -43,50 +43,58 @@ export default function MilestoneSection({
           {/* Milestones Cards Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             {/* Milestone 1 */}
-            <div className="hsr-card p-4 text-center border-[#f5c767]/40 bg-[#0e132e]/90">
-              <div className="text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
+            <div className="hsr-card p-5 text-center border-[#f5c767]/40 bg-[#0e132e]/90 flex flex-col items-center justify-between gap-2.5">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-slate-400">
+                MỐC 01
+              </div>
+              <div className="text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)] tracking-wider">
                 500.000 Người
               </div>
-              <div className="text-2xl my-2">🪙</div>
               <div className="font-bold text-sm text-white">50.000 Tín Dụng</div>
-              <div className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                ✓ ĐÃ ĐẠT
+              <div className="mt-1 inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ĐÃ ĐẠT
               </div>
             </div>
 
             {/* Milestone 2 */}
-            <div className="hsr-card p-4 text-center border-[#f5c767]/40 bg-[#0e132e]/90">
-              <div className="text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
+            <div className="hsr-card p-5 text-center border-[#f5c767]/40 bg-[#0e132e]/90 flex flex-col items-center justify-between gap-2.5">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-slate-400">
+                MỐC 02
+              </div>
+              <div className="text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)] tracking-wider">
                 1.000.000 Người
               </div>
-              <div className="text-2xl my-2">🎫</div>
               <div className="font-bold text-sm text-white">Vé Tinh Cầu x3</div>
-              <div className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                ✓ ĐÃ ĐẠT
+              <div className="mt-1 inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ĐÃ ĐẠT
               </div>
             </div>
 
             {/* Milestone 3 */}
-            <div className="hsr-card p-4 text-center border-[#f5c767]/40 bg-[#0e132e]/90">
-              <div className="text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
+            <div className="hsr-card p-5 text-center border-[#f5c767]/40 bg-[#0e132e]/90 flex flex-col items-center justify-between gap-2.5">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-slate-400">
+                MỐC 03
+              </div>
+              <div className="text-xs font-bold text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)] tracking-wider">
                 3.000.000 Người
               </div>
-              <div className="text-2xl my-2">👑</div>
               <div className="font-bold text-sm text-white">Khung Avatar Độc Quyền</div>
-              <div className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                ✓ ĐÃ ĐẠT
+              <div className="mt-1 inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ĐÃ ĐẠT
               </div>
             </div>
 
             {/* Milestone 4 (Ultimate) */}
-            <div className="hsr-card p-4 text-center border-[#3fe9d6]/60 bg-gradient-to-b from-[#141d40] to-[#0e132e] shadow-[0_0_25px_rgba(63,233,214,0.25)]">
-              <div className="text-xs font-bold text-[#3fe9d6] uppercase font-[family-name:var(--font-rajdhani)]">
+            <div className="hsr-card p-5 text-center border-[#3fe9d6]/60 bg-gradient-to-b from-[#141d40] to-[#0e132e] shadow-[0_0_25px_rgba(63,233,214,0.25)] flex flex-col items-center justify-between gap-2.5">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-[#3fe9d6]/80">
+                MỐC 04
+              </div>
+              <div className="text-xs font-bold text-[#3fe9d6] uppercase font-[family-name:var(--font-rajdhani)] tracking-wider">
                 5.000.000 Người
               </div>
-              <div className="text-2xl my-2">⭐</div>
               <div className="font-bold text-sm text-[#3fe9d6]">Nhân Vật 4 Sao & Vé x10</div>
-              <div className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40">
-                ★ PHÚC LỢI TỐI THƯỢNG
+              <div className="mt-1 inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-[#3fe9d6]/20 text-[#3fe9d6] border border-[#3fe9d6]/40">
+                PHÚC LỢI TỐI THƯỢNG
               </div>
             </div>
           </div>

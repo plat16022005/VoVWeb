@@ -142,8 +142,8 @@ function Toolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-1 p-2 border-b border-white/10 bg-[#0c1026] sticky top-20 z-20 rounded-t-2xl">
-      <ToolbarButton title="Hoàn tác (Ctrl+Z)" disabled={!s.canUndo} onClick={() => editor.chain().focus().undo().run()}>↶</ToolbarButton>
-      <ToolbarButton title="Làm lại (Ctrl+Y)" disabled={!s.canRedo} onClick={() => editor.chain().focus().redo().run()}>↷</ToolbarButton>
+      <ToolbarButton title="Hoàn tác (Ctrl+Z)" disabled={!s.canUndo} onClick={() => editor.chain().focus().undo().run()}>Hoàn tác</ToolbarButton>
+      <ToolbarButton title="Làm lại (Ctrl+Y)" disabled={!s.canRedo} onClick={() => editor.chain().focus().redo().run()}>Làm lại</ToolbarButton>
       <Divider />
 
       <select
@@ -163,7 +163,7 @@ function Toolbar({
       <ToolbarButton title="In nghiêng (Ctrl+I)" active={s.italic} onClick={() => editor.chain().focus().toggleItalic().run()}><i>I</i></ToolbarButton>
       <ToolbarButton title="Gạch chân (Ctrl+U)" active={s.underline} onClick={() => editor.chain().focus().toggleUnderline().run()}><u>U</u></ToolbarButton>
       <ToolbarButton title="Gạch ngang" active={s.strike} onClick={() => editor.chain().focus().toggleStrike().run()}><s>S</s></ToolbarButton>
-      <ToolbarButton title="Tô sáng (Highlight)" active={s.highlight} onClick={() => editor.chain().focus().toggleHighlight().run()}>🖍</ToolbarButton>
+      <ToolbarButton title="Tô sáng (Highlight)" active={s.highlight} onClick={() => editor.chain().focus().toggleHighlight().run()}>HL</ToolbarButton>
 
       <label
         title="Màu chữ"
@@ -180,17 +180,17 @@ function Toolbar({
       </label>
       <Divider />
 
-      <ToolbarButton title="Căn trái" active={s.left} onClick={() => editor.chain().focus().setTextAlign("left").run()}>⇤</ToolbarButton>
-      <ToolbarButton title="Căn giữa" active={s.center} onClick={() => editor.chain().focus().setTextAlign("center").run()}>↔</ToolbarButton>
-      <ToolbarButton title="Căn phải" active={s.right} onClick={() => editor.chain().focus().setTextAlign("right").run()}>⇥</ToolbarButton>
-      <ToolbarButton title="Căn đều hai bên" active={s.justify} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>☰</ToolbarButton>
+      <ToolbarButton title="Căn trái" active={s.left} onClick={() => editor.chain().focus().setTextAlign("left").run()}>Trái</ToolbarButton>
+      <ToolbarButton title="Căn giữa" active={s.center} onClick={() => editor.chain().focus().setTextAlign("center").run()}>Giữa</ToolbarButton>
+      <ToolbarButton title="Căn phải" active={s.right} onClick={() => editor.chain().focus().setTextAlign("right").run()}>Phải</ToolbarButton>
+      <ToolbarButton title="Căn đều hai bên" active={s.justify} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>Đều</ToolbarButton>
       <Divider />
 
-      <ToolbarButton title="Danh sách chấm" active={s.bulletList} onClick={() => editor.chain().focus().toggleBulletList().run()}>• ≡</ToolbarButton>
-      <ToolbarButton title="Danh sách số" active={s.orderedList} onClick={() => editor.chain().focus().toggleOrderedList().run()}>1. ≡</ToolbarButton>
-      <ToolbarButton title="Trích dẫn" active={s.blockquote} onClick={() => editor.chain().focus().toggleBlockquote().run()}>❝</ToolbarButton>
+      <ToolbarButton title="Danh sách chấm" active={s.bulletList} onClick={() => editor.chain().focus().toggleBulletList().run()}>DS</ToolbarButton>
+      <ToolbarButton title="Danh sách số" active={s.orderedList} onClick={() => editor.chain().focus().toggleOrderedList().run()}>1.</ToolbarButton>
+      <ToolbarButton title="Trích dẫn" active={s.blockquote} onClick={() => editor.chain().focus().toggleBlockquote().run()}>Trích</ToolbarButton>
       <ToolbarButton title="Khối mã" active={s.codeBlock} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>{"</>"}</ToolbarButton>
-      <ToolbarButton title="Đường kẻ ngang" onClick={() => editor.chain().focus().setHorizontalRule().run()}>―</ToolbarButton>
+      <ToolbarButton title="Đường kẻ ngang" onClick={() => editor.chain().focus().setHorizontalRule().run()}>—</ToolbarButton>
       <Divider />
 
       {/* Nhóm Đa Phương Tiện (Ảnh) */}
@@ -201,11 +201,10 @@ function Toolbar({
         onClick={onPickImage}
         className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-cyan-300 hover:border-cyan-400 hover:bg-cyan-500/10 transition-all flex items-center gap-1 disabled:opacity-40"
       >
-        <span>🖼</span>
-        <span className="font-mono text-[11px]">Tải Ảnh</span>
+        <span className="font-mono text-[11px]">Ảnh</span>
       </button>
       <ToolbarButton title="Chèn ảnh bằng link URL" onClick={addImageUrl}>
-        <span className="font-mono text-[11px] text-slate-400">🖼 Link</span>
+        <span className="font-mono text-[11px] text-slate-400">Link ảnh</span>
       </ToolbarButton>
 
       {/* Nhóm Đa Phương Tiện (Video) */}
@@ -216,21 +215,20 @@ function Toolbar({
         onClick={onPickVideo}
         className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-[#f5c767] hover:border-[#f5c767] hover:bg-[#f5c767]/10 transition-all flex items-center gap-1 disabled:opacity-40"
       >
-        <span>🎬</span>
-        <span className="font-mono text-[11px]">Tải Video</span>
+        <span className="font-mono text-[11px]">Video</span>
       </button>
       <ToolbarButton title="Chèn video bằng link URL Cloudflare R2" onClick={addVideoUrl}>
-        <span className="font-mono text-[11px] text-slate-400">🎬 Link</span>
+        <span className="font-mono text-[11px] text-slate-400">Link video</span>
       </ToolbarButton>
 
       <Divider />
-      <ToolbarButton title="Chèn liên kết" active={s.link} onClick={setLink}>🔗</ToolbarButton>
+      <ToolbarButton title="Chèn liên kết" active={s.link} onClick={setLink}>Liên kết</ToolbarButton>
 
       <ToolbarButton
         title="Chèn bảng 3×3"
         onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
       >
-        ▦
+        Bảng
       </ToolbarButton>
 
       {s.table && (
@@ -240,7 +238,7 @@ function Toolbar({
           <ToolbarButton title="Thêm hàng bên dưới" onClick={() => editor.chain().focus().addRowAfter().run()}>+Hàng</ToolbarButton>
           <ToolbarButton title="Xóa cột" onClick={() => editor.chain().focus().deleteColumn().run()}>−Cột</ToolbarButton>
           <ToolbarButton title="Xóa hàng" onClick={() => editor.chain().focus().deleteRow().run()}>−Hàng</ToolbarButton>
-          <ToolbarButton title="Xóa bảng" onClick={() => editor.chain().focus().deleteTable().run()}>🗑</ToolbarButton>
+          <ToolbarButton title="Xóa bảng" onClick={() => editor.chain().focus().deleteTable().run()}>Xóa bảng</ToolbarButton>
         </>
       )}
 
@@ -390,12 +388,13 @@ export default function RichTextEditor({
       {/* Upload Error Banner */}
       {uploadError && (
         <div className="px-6 py-2 bg-rose-500/10 border-b border-rose-500/30 text-xs text-rose-300 flex items-center justify-between">
-          <span>⚠️ {uploadError}</span>
+          <span>Lỗi: {uploadError}</span>
           <button
             onClick={() => setUploadError(null)}
-            className="text-rose-400 hover:text-white font-bold ml-2"
+            aria-label="Đóng thông báo lỗi"
+            className="text-rose-400 hover:text-white font-bold ml-2 text-base leading-none"
           >
-            ✕
+            ×
           </button>
         </div>
       )}

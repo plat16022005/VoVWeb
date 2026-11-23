@@ -70,9 +70,8 @@ export default function GachaSeasonsList({
       {/* 1. OVERVIEW CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 shadow-lg">
-          <div className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Tổng Số Mùa</span>
-            <span className="text-base">🌠</span>
+          <div className="text-xs font-mono text-slate-400 uppercase tracking-wider">
+            Tổng Số Mùa
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-white font-[family-name:var(--font-rajdhani)]">
@@ -85,9 +84,8 @@ export default function GachaSeasonsList({
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-emerald-500/30 shadow-lg">
-          <div className="text-xs font-mono text-emerald-300 uppercase tracking-wider flex items-center justify-between">
-            <span>Đang Phát Hành</span>
-            <span className="text-base">⚡</span>
+          <div className="text-xs font-mono text-emerald-300 uppercase tracking-wider">
+            Đang Phát Hành
           </div>
           <div className="mt-2">
             <div className="text-lg sm:text-xl font-black text-emerald-300 font-[family-name:var(--font-rajdhani)] truncate">
@@ -102,9 +100,8 @@ export default function GachaSeasonsList({
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-[#f5c767]/30 shadow-lg">
-          <div className="text-xs font-mono text-[#f5c767] uppercase tracking-wider flex items-center justify-between">
-            <span>Tổng Banner Con</span>
-            <span className="text-base">🎴</span>
+          <div className="text-xs font-mono text-[#f5c767] uppercase tracking-wider">
+            Tổng Banner Con
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[#f5c767] font-[family-name:var(--font-rajdhani)]">
@@ -117,9 +114,8 @@ export default function GachaSeasonsList({
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-[#3fe9d6]/30 shadow-lg">
-          <div className="text-xs font-mono text-[#3fe9d6] uppercase tracking-wider flex items-center justify-between">
-            <span>Mùa Bản Nháp</span>
-            <span className="text-base">📝</span>
+          <div className="text-xs font-mono text-[#3fe9d6] uppercase tracking-wider">
+            Mùa Bản Nháp
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[#3fe9d6] font-[family-name:var(--font-rajdhani)]">
@@ -136,15 +132,12 @@ export default function GachaSeasonsList({
       <div className="p-4 sm:p-5 rounded-2xl bg-[#090d24]/90 border border-white/10 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shadow-xl">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-              🔍
-            </span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo SeasonId, tên mùa hoặc người cập nhật..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans placeholder:text-slate-500 focus:outline-none focus:border-[#3fe9d6]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 text-white text-xs font-sans placeholder:text-slate-500 focus:outline-none focus:border-[#3fe9d6]"
             />
           </div>
 
@@ -185,7 +178,7 @@ export default function GachaSeasonsList({
             }}
             className="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-mono font-semibold cursor-pointer disabled:opacity-50"
           >
-            {loading ? "⏳ Đang tải..." : "↺ Làm Mới"}
+            {loading ? "Đang tải..." : "Làm Mới"}
           </button>
 
           {canEdit && (
@@ -197,7 +190,7 @@ export default function GachaSeasonsList({
               }}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f5c767] to-[#e6b143] hover:brightness-110 text-[#060814] text-xs font-mono font-bold shadow-[0_0_20px_rgba(245,199,103,0.35)] transition-all cursor-pointer"
             >
-              ✨ Tạo Mùa Mới
+              + Tạo Mùa Mới
             </button>
           )}
         </div>
@@ -212,8 +205,7 @@ export default function GachaSeasonsList({
           </div>
         </div>
       ) : filteredSeasons.length === 0 ? (
-        <div className="py-16 text-center rounded-3xl bg-[#090d24]/60 border border-dashed border-white/15 space-y-3">
-          <div className="text-4xl">🌠</div>
+        <div className="py-16 text-center rounded-3xl bg-[#090d24]/60 border border-dashed border-white/15 space-y-2">
           <h4 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] uppercase">
             {seasons.length === 0
               ? "Chưa Có Mùa Banner Gacha Nào"
@@ -307,7 +299,7 @@ export default function GachaSeasonsList({
                       }}
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#3fe9d6] to-[#0ea5e9] hover:brightness-110 text-[#060814] text-xs font-mono font-bold shadow-[0_0_15px_rgba(63,233,214,0.25)] cursor-pointer"
                     >
-                      🎴 Quản Lý Banner ({bannerList.length})
+                      Quản Lý Banner ({bannerList.length})
                     </button>
 
                     {canEdit && (
@@ -320,7 +312,7 @@ export default function GachaSeasonsList({
                         className="px-3 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/35 text-purple-200 text-xs font-mono font-semibold cursor-pointer"
                         title="Nhân bản mùa này sang mùa mới"
                       >
-                        📑 Nhân Bản
+                        Nhân Bản
                       </button>
                     )}
 
@@ -334,7 +326,7 @@ export default function GachaSeasonsList({
                         className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-mono cursor-pointer"
                         title="Sửa tên & thời gian mùa"
                       >
-                        ✏️ Sửa Mùa
+                        Sửa Mùa
                       </button>
                     )}
 
@@ -348,7 +340,7 @@ export default function GachaSeasonsList({
                           }}
                           className="px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold cursor-pointer"
                         >
-                          ⏸️ Tắt Mở
+                          Tắt Mở
                         </button>
                       ) : (
                         <button
@@ -359,7 +351,7 @@ export default function GachaSeasonsList({
                           }}
                           className="px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold cursor-pointer"
                         >
-                          ⚡ Kích Hoạt
+                          Kích Hoạt
                         </button>
                       ))}
 
@@ -373,7 +365,7 @@ export default function GachaSeasonsList({
                         className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-mono cursor-pointer"
                         title="Xóa mùa nháp"
                       >
-                        🗑️ Xóa
+                        Xóa
                       </button>
                     )}
                   </div>
@@ -386,4 +378,3 @@ export default function GachaSeasonsList({
     </div>
   );
 }
-

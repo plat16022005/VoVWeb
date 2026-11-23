@@ -30,7 +30,8 @@ export default function GameInfoTab({ gameInfo, isAdmin, onSave, saving }: GameI
       {/* 1. Phiên bản Client */}
       <div className="p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <h3 className="text-sm font-bold font-mono text-[#3fe9d6] uppercase tracking-wider flex items-center gap-2">
-          <span>⚔️</span> Phiên Bản Game Client & Bản Build
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
+          <span>Phiên Bản Game Client & Bản Build</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,13 +115,14 @@ export default function GameInfoTab({ gameInfo, isAdmin, onSave, saving }: GameI
       {/* 2. Đường Dẫn Tải Game Chính Thức */}
       <div className="p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <h3 className="text-sm font-bold font-mono text-[#3fe9d6] uppercase tracking-wider flex items-center gap-2">
-          <span>📥</span> Đường Dẫn Tải Game Trực Tiếp
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
+          <span>Đường Dẫn Tải Game Trực Tiếp</span>
         </h3>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-mono text-slate-300 mb-1.5 flex items-center gap-2">
-              <span>🖥️</span> Link Tải Bản PC Windows (.exe)
+            <label className="block text-xs font-mono text-slate-300 mb-1.5">
+              Link Tải Bản PC Windows (.exe)
             </label>
             <input
               type="url"
@@ -133,8 +135,8 @@ export default function GameInfoTab({ gameInfo, isAdmin, onSave, saving }: GameI
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-300 mb-1.5 flex items-center gap-2">
-              <span>📱</span> Link Tải Android (Google Play / APK)
+            <label className="block text-xs font-mono text-slate-300 mb-1.5">
+              Link Tải Android (Google Play / APK)
             </label>
             <input
               type="url"
@@ -147,8 +149,8 @@ export default function GameInfoTab({ gameInfo, isAdmin, onSave, saving }: GameI
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-slate-300 mb-1.5 flex items-center gap-2">
-              <span>🍏</span> Link Tải iOS (App Store / TestFlight)
+            <label className="block text-xs font-mono text-slate-300 mb-1.5">
+              Link Tải iOS (App Store / TestFlight)
             </label>
             <input
               type="url"
@@ -165,7 +167,8 @@ export default function GameInfoTab({ gameInfo, isAdmin, onSave, saving }: GameI
       {/* 3. Kênh Cộng Đồng & Mạng Xã Hội */}
       <div className="p-6 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <h3 className="text-sm font-bold font-mono text-[#3fe9d6] uppercase tracking-wider flex items-center gap-2">
-          <span>🌐</span> Kênh Truyền Thông & Mạng Xã Hội Chính Thức
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
+          <span>Kênh Truyền Thông & Mạng Xã Hội Chính Thức</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -230,10 +233,7 @@ export default function GameInfoTab({ gameInfo, isAdmin, onSave, saving }: GameI
               <span>Đang Lưu...</span>
             </>
           ) : (
-            <>
-              <span>💾</span>
-              <span>Lưu Cấu Hình Game & Tải Về</span>
-            </>
+            <span>Lưu Cấu Hình Game & Tải Về</span>
           )}
         </button>
       </div>

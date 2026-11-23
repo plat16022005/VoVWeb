@@ -126,19 +126,17 @@ export default function ServerLogsTable({ onRefresh }: ServerLogsTableProps) {
     <div className="space-y-4">
       {/* Top Controller Bar */}
       <div className="p-5 rounded-2xl bg-[#090d21]/90 backdrop-blur-md border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🖥️</span>
-          <div>
-            <h3 className="text-sm font-bold font-mono text-white tracking-wide uppercase flex items-center gap-2">
-              Nhật Ký Quản Lý Hạ Tầng & Máy Chủ
-              <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30">
-                Logs/ServerManagement
-              </span>
-            </h3>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Theo dõi lịch sử kích hoạt Security Rules, bật/tắt bảo trì toàn game và từng cụm máy chủ.
-            </p>
-          </div>
+        <div>
+          <h3 className="text-sm font-bold font-mono text-white tracking-wide uppercase flex items-center gap-2 flex-wrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
+            <span>Nhật Ký Quản Lý Hạ Tầng & Máy Chủ</span>
+            <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-[#3fe9d6]/10 text-[#3fe9d6] border border-[#3fe9d6]/30">
+              Server Audit
+            </span>
+          </h3>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Theo dõi lịch sử đồng bộ chính sách bảo mật, bật/tắt bảo trì toàn game và từng cụm máy chủ.
+          </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -152,7 +150,7 @@ export default function ServerLogsTable({ onRefresh }: ServerLogsTableProps) {
             className="px-3 py-2 rounded-xl bg-[#060818] border border-white/10 text-xs text-slate-300 focus:outline-none focus:border-[#3fe9d6]"
           >
             <option value="ALL">Tất Cả Thao Tác</option>
-            <option value="APPLY_RULES">Áp Dụng Rules (APPLY)</option>
+            <option value="APPLY_RULES">Đồng Bộ Chính Sách (APPLY)</option>
             <option value="GLOBAL">Bảo Trì Toàn Game (GLOBAL)</option>
             <option value="CLUSTER">Bảo Trì Cụm Máy Chủ (CLUSTER)</option>
           </select>
@@ -224,8 +222,7 @@ export default function ServerLogsTable({ onRefresh }: ServerLogsTableProps) {
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <span className="text-3xl opacity-50">📋</span>
+                    <div className="flex flex-col items-center justify-center gap-1.5">
                       <p className="text-slate-300 font-semibold">Chưa có nhật ký hạ tầng nào</p>
                       <p className="text-xs text-slate-500">Mọi hành động tạo máy chủ hoặc bảo trì sẽ được tự động ghi lại tại đây.</p>
                     </div>
@@ -297,4 +294,3 @@ export default function ServerLogsTable({ onRefresh }: ServerLogsTableProps) {
     </div>
   );
 }
-

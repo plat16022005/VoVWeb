@@ -71,8 +71,9 @@ export default function RoleRouteGuard({
       <div className="relative min-h-screen w-full bg-[#04050d] text-white flex items-center justify-center p-4">
         <StarCanvas />
         <div className="relative z-10 max-w-md w-full p-6 sm:p-8 rounded-2xl bg-[#090d24]/90 backdrop-blur-xl border border-white/10 text-center space-y-4 shadow-2xl">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(63,233,214,0.2)]">
-            {requiredRole === "Admin" ? "🛡️" : "⚙️"}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-[#3fe9d6]/30 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#3fe9d6]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6] animate-pulse" />
+            <span>{requiredRole === "Admin" ? "Xác Thực Quản Trị" : "Xác Thực Vận Hành"}</span>
           </div>
 
           <div className="space-y-1">

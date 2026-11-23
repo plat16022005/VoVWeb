@@ -139,42 +139,42 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
       case "CREATE_CHARACTER":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
-            <span>➕</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Thêm Mới Valkyria</span>
           </span>
         );
       case "UPDATE_CHARACTER":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-500/15 border border-cyan-500/40 text-cyan-300">
-            <span>✏️</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
             <span>Cập Nhật Thông Số</span>
           </span>
         );
       case "DELETE_CHARACTER":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300">
-            <span>🗑️</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
             <span>Xóa Nhân Vật</span>
           </span>
         );
       case "SEED_CHARACTERS":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/15 border border-purple-500/40 text-purple-300">
-            <span>⚡</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
             <span>Đồng Bộ Máy Chủ</span>
           </span>
         );
       case "RESET_CHARACTERS":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300">
-            <span>🔄</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             <span>Khôi Phục Mặc Định</span>
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-500/15 border border-slate-500/40 text-slate-300">
-            <span>⚔️</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             <span>{title || action}</span>
           </span>
         );
@@ -191,37 +191,27 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-emerald-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-emerald-300 flex items-center gap-1">
-            <span>➕</span> Thêm Mới
-          </span>
+          <span className="text-[11px] font-mono text-emerald-300">Thêm Mới</span>
           <span className="text-xl font-bold font-mono text-emerald-300 mt-1">{stats.createCount}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-cyan-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-cyan-300 flex items-center gap-1">
-            <span>✏️</span> Cập Nhật
-          </span>
+          <span className="text-[11px] font-mono text-cyan-300">Cập Nhật</span>
           <span className="text-xl font-bold font-mono text-cyan-300 mt-1">{stats.updateCount}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-rose-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-rose-300 flex items-center gap-1">
-            <span>🗑️</span> Xóa Bỏ
-          </span>
+          <span className="text-[11px] font-mono text-rose-300">Xóa Bỏ</span>
           <span className="text-xl font-bold font-mono text-rose-300 mt-1">{stats.deleteCount}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-purple-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-purple-300 flex items-center gap-1">
-            <span>⚡</span> Đồng Bộ
-          </span>
+          <span className="text-[11px] font-mono text-purple-300">Đồng Bộ</span>
           <span className="text-xl font-bold font-mono text-purple-300 mt-1">{stats.seedCount}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-amber-500/20 flex flex-col justify-between">
-          <span className="text-[11px] font-mono text-amber-300 flex items-center gap-1">
-            <span>🔄</span> Khôi Phục
-          </span>
+          <span className="text-[11px] font-mono text-amber-300">Khôi Phục</span>
           <span className="text-xl font-bold font-mono text-amber-300 mt-1">{stats.resetCount}</span>
         </div>
       </div>
@@ -230,8 +220,8 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
       <div className="p-5 rounded-2xl bg-[#090c21]/90 backdrop-blur-md border border-white/10 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">⚔️</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
               <h3 className="text-base font-bold font-mono text-[#3fe9d6] uppercase tracking-wider">
                 Nhật Ký Dữ Liệu Game (Valkyria Audit)
               </h3>
@@ -254,10 +244,9 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
                 if (onRefresh) onRefresh();
               }}
               disabled={loading}
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white text-xs font-mono transition-all cursor-pointer disabled:opacity-50"
             >
-              <span className={loading ? "animate-spin" : ""}>↺</span>
-              <span>{loading ? "Đang đồng bộ..." : "Làm Mới"}</span>
+              {loading ? "Đang đồng bộ..." : "Làm Mới"}
             </button>
 
             {/* Nút Xuất CSV */}
@@ -267,10 +256,9 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
                 soundEngine.playClick();
                 handleExportCsv();
               }}
-              className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+              className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-semibold transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]"
             >
-              <span>📥</span>
-              <span>Xuất CSV</span>
+              Xuất CSV
             </button>
           </div>
         </div>
@@ -278,23 +266,21 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
         {/* Thanh Tìm Kiếm & Lọc Hành Động */}
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
-              🔍
-            </span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên Valkyria, ID nhân vật, người thực hiện, chỉ số thay đổi..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#060814] border border-white/10 focus:border-[#3fe9d6]/50 focus:ring-1 focus:ring-[#3fe9d6]/50 text-xs font-mono text-white placeholder-slate-500 outline-none transition-all"
+              className="w-full pl-3.5 pr-8 py-2 rounded-xl bg-[#060814] border border-white/10 focus:border-[#3fe9d6]/50 focus:ring-1 focus:ring-[#3fe9d6]/50 text-xs font-mono text-white placeholder-slate-500 outline-none transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-xs"
+                aria-label="Xóa từ khóa"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-sm leading-none"
               >
-                ✕
+                ×
               </button>
             )}
           </div>
@@ -353,8 +339,7 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400 font-mono">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <span className="text-3xl">⚔️</span>
+                    <div className="flex flex-col items-center justify-center gap-1.5">
                       <span className="text-slate-300 font-bold">Chưa có nhật ký hoạt động nào</span>
                       <span className="text-xs text-slate-500">
                         Mọi thao tác khởi tạo, chỉnh sửa chỉ số chiến đấu và xóa Valkyria sẽ tự động lưu vào đây.
@@ -374,10 +359,7 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
                     >
                       {/* Cột 1: Thời gian */}
                       <td className="py-3.5 px-4 font-mono text-slate-300 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-slate-400">🕒</span>
-                          <span>{log.createdAt}</span>
-                        </div>
+                        <span>{log.createdAt}</span>
                       </td>
 
                       {/* Cột 2: Hành động */}
@@ -412,12 +394,12 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
                                 <button
                                   type="button"
                                   onClick={() => handleCopy(log.id, log.characterId!)}
-                                  className="text-slate-400 hover:text-[#3fe9d6] flex items-center gap-1 transition-colors cursor-pointer"
-                                  title="Sao chép ID nhân vật"
+                                  className="text-slate-400 hover:text-[#3fe9d6] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                  title="Sao chép mã nhân vật"
                                 >
                                   <span>#{log.characterId}</span>
-                                  <span className="text-[10px]">
-                                    {copiedId === log.id ? "✓" : "📋"}
+                                  <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px]">
+                                    {copiedId === log.id ? "Đã chép" : "Chép"}
                                   </span>
                                 </button>
                               )}
@@ -426,7 +408,7 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
                                 <>
                                   <span>•</span>
                                   <span className="text-slate-300">
-                                    {roleOption.icon} {roleOption.value}
+                                    {roleOption.value}
                                   </span>
                                 </>
                               )}
@@ -486,4 +468,3 @@ export default function GameDataLogsTable({ onRefresh }: GameDataLogsTableProps)
     </div>
   );
 }
-

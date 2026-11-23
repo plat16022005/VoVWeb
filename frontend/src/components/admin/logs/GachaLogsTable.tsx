@@ -14,57 +14,57 @@ type ActionFilter =
 
 const ACTION_BADGE_MAP: Record<
   GachaLogAction,
-  { label: string; badgeClass: string; icon: string }
+  { label: string; badgeClass: string; dotClass: string }
 > = {
   CREATE_SEASON: {
     label: "Tạo Mùa Mới",
     badgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-    icon: "✨",
+    dotClass: "bg-emerald-400",
   },
   CLONE_SEASON: {
     label: "Nhân Bản Mùa",
     badgeClass: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-    icon: "📑",
+    dotClass: "bg-sky-400",
   },
   UPDATE_SEASON: {
     label: "Cập Nhật Mùa",
     badgeClass: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
-    icon: "📝",
+    dotClass: "bg-cyan-400",
   },
   ACTIVATE_SEASON: {
     label: "Kích Hoạt Mùa",
     badgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/35",
-    icon: "🚀",
+    dotClass: "bg-amber-400",
   },
   DEACTIVATE_SEASON: {
     label: "Tạm Đóng Mùa",
     badgeClass: "bg-orange-500/15 text-orange-300 border-orange-500/30",
-    icon: "⏸️",
+    dotClass: "bg-orange-400",
   },
   DELETE_SEASON: {
     label: "Xóa Mùa Nháp",
     badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-    icon: "🗑️",
+    dotClass: "bg-rose-400",
   },
   CREATE_BANNER: {
     label: "Thêm Banner",
     badgeClass: "bg-teal-500/15 text-teal-300 border-teal-500/30",
-    icon: "🌠",
+    dotClass: "bg-teal-400",
   },
   UPDATE_BANNER: {
     label: "Sửa Banner",
     badgeClass: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30",
-    icon: "🎛️",
+    dotClass: "bg-indigo-400",
   },
   TOGGLE_BANNER: {
     label: "Bật / Tắt Banner",
     badgeClass: "bg-purple-500/15 text-purple-300 border-purple-500/30",
-    icon: "🔀",
+    dotClass: "bg-purple-400",
   },
   DELETE_BANNER: {
     label: "Xóa Banner",
     badgeClass: "bg-red-500/15 text-red-300 border-red-500/30",
-    icon: "❌",
+    dotClass: "bg-red-400",
   },
 };
 
@@ -268,7 +268,7 @@ export default function GachaLogsTable() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-[#090d24]/80 border border-[#f5c767]/25">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🌠</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f5c767]" />
             <h3 className="text-base font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
               Nhật Ký Kiểm Toán Hệ Thống Banner Gacha
             </h3>
@@ -285,20 +285,18 @@ export default function GachaLogsTable() {
               soundEngine.playClick();
               loadLogs();
             }}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-mono font-bold transition-all cursor-pointer"
           >
-            <span>🔄</span>
-            <span>Làm mới</span>
+            Làm mới
           </button>
 
           <button
             type="button"
             onClick={handleExportCsv}
             disabled={filteredLogs.length === 0}
-            className="px-3.5 py-2 rounded-xl bg-[#f5c767]/15 hover:bg-[#f5c767]/25 text-[#f5c767] border border-[#f5c767]/35 disabled:opacity-40 text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-xl bg-[#f5c767]/15 hover:bg-[#f5c767]/25 text-[#f5c767] border border-[#f5c767]/35 disabled:opacity-40 text-xs font-mono font-bold transition-all cursor-pointer"
           >
-            <span>📥</span>
-            <span>Xuất CSV ({filteredLogs.length})</span>
+            Xuất CSV ({filteredLogs.length})
           </button>
         </div>
       </div>
@@ -351,9 +349,8 @@ export default function GachaLogsTable() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm theo tên mùa, mã banner, chi tiết, người thực hiện..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-[#060814] border border-white/10 focus:border-[#f5c767]/50 text-xs text-white placeholder-slate-500 outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-[#060814] border border-white/10 focus:border-[#f5c767]/50 text-xs text-white placeholder-slate-500 outline-none"
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">🔍</span>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
@@ -403,7 +400,6 @@ export default function GachaLogsTable() {
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
-                    <div className="text-2xl mb-2">📭</div>
                     <div>Chưa có bản ghi nhật ký Banner Gacha nào phù hợp.</div>
                   </td>
                 </tr>
@@ -412,7 +408,7 @@ export default function GachaLogsTable() {
                   const meta = ACTION_BADGE_MAP[log.action] || {
                     label: log.action,
                     badgeClass: "bg-white/10 text-slate-300 border-white/20",
-                    icon: "📌",
+                    dotClass: "bg-slate-400",
                   };
                   const timeInfo = formatLogTimestamp(log);
 
@@ -429,7 +425,7 @@ export default function GachaLogsTable() {
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-mono font-bold ${meta.badgeClass}`}
                         >
-                          <span>{meta.icon}</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
                           <span>{meta.label}</span>
                         </span>
                         <div className="text-[11px] text-slate-400 mt-1 max-w-[200px] truncate" title={log.actionTitle}>
@@ -449,7 +445,7 @@ export default function GachaLogsTable() {
                             title="Sao chép mã mùa"
                             className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-mono text-slate-300 cursor-pointer"
                           >
-                            {copiedId === log.seasonId ? "✓ Đã chép" : log.seasonId}
+                            {copiedId === log.seasonId ? "Đã chép" : log.seasonId}
                           </button>
 
                           {typeof log.version === "number" && (
@@ -470,7 +466,7 @@ export default function GachaLogsTable() {
                               title="Sao chép mã banner"
                               className="px-1.5 py-0.5 rounded bg-[#f5c767]/10 hover:bg-[#f5c767]/20 border border-[#f5c767]/25 text-[10px] font-mono text-[#f5c767] cursor-pointer"
                             >
-                              {copiedId === log.bannerId ? "✓" : log.bannerId}
+                              {copiedId === log.bannerId ? "Đã chép" : log.bannerId}
                             </button>
                             {log.bannerType && (
                               <span className="text-[10px] font-mono uppercase text-slate-400">
@@ -506,4 +502,3 @@ export default function GachaLogsTable() {
     </div>
   );
 }
-

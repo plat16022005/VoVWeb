@@ -41,7 +41,8 @@ export declare class GachaFirebaseService {
     private certsExpiresAt;
     private cachedServiceAccountToken;
     get projectId(): string;
-    private get documentsBaseUrl();
+    private normalizeDatabaseId;
+    private getDocumentsBaseUrl;
     private getServiceAccountCreds;
     private getServiceAccountAccessToken;
     private getGooglePublicCerts;
@@ -70,13 +71,13 @@ export declare class GachaFirebaseService {
     fromFirestoreValue(val: FirestoreValue | undefined): unknown;
     docToObject(doc: FirestoreRestDocument): Record<string, unknown>;
     extractDocId(docName: string): string;
-    fullDocumentName(docPath: string): string;
+    fullDocumentName(docPath: string, databaseId?: string): string;
     private requestJson;
-    getDocument(docPath: string, token: string): Promise<FirestoreRestDocument | null>;
-    listDocuments(collectionPath: string, token: string, pageSize?: number): Promise<FirestoreRestDocument[]>;
-    createDocument(collectionPath: string, documentId: string | null, data: Record<string, unknown>, token: string): Promise<FirestoreRestDocument>;
-    deleteDocument(docPath: string, token: string): Promise<void>;
-    commitWrites(writes: FirestoreBatchWrite[], token: string): Promise<void>;
-    runQuery(parentPath: string, structuredQuery: Record<string, unknown>, token: string): Promise<FirestoreRestDocument[]>;
+    getDocument(docPath: string, token: string, databaseId?: string): Promise<FirestoreRestDocument | null>;
+    listDocuments(collectionPath: string, token: string, pageSize?: number, databaseId?: string): Promise<FirestoreRestDocument[]>;
+    createDocument(collectionPath: string, documentId: string | null, data: Record<string, unknown>, token: string, databaseId?: string): Promise<FirestoreRestDocument>;
+    deleteDocument(docPath: string, token: string, databaseId?: string): Promise<void>;
+    commitWrites(writes: FirestoreBatchWrite[], token: string, databaseId?: string): Promise<void>;
+    runQuery(parentPath: string, structuredQuery: Record<string, unknown>, token: string, databaseId?: string): Promise<FirestoreRestDocument[]>;
 }
 export {};

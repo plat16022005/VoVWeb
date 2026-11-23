@@ -64,15 +64,9 @@ export default function BlogDetailModal({
               className="p-1.5 px-3 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-slate-300 hover:text-white hover:border-[#f5c767]/40 transition-colors flex items-center gap-1.5"
             >
               {copied ? (
-                <>
-                  <span className="text-emerald-400">✓</span>
-                  <span className="text-emerald-400">Đã chép link</span>
-                </>
+                <span className="text-emerald-400">Đã chép link</span>
               ) : (
-                <>
-                  <span>🔗</span>
-                  <span className="hidden sm:inline">Chia sẻ</span>
-                </>
+                <span>Chia sẻ</span>
               )}
             </button>
 
@@ -82,7 +76,7 @@ export default function BlogDetailModal({
               onClick={() => soundEngine.playClick()}
               className="p-1.5 px-3 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/30 text-xs font-mono text-[#3fe9d6] hover:bg-[#3fe9d6]/20 transition-colors hidden sm:inline-flex items-center gap-1"
             >
-              <span>Toàn trang ↗</span>
+              <span>Toàn trang</span>
             </Link>
 
             {/* Close button */}
@@ -91,9 +85,10 @@ export default function BlogDetailModal({
                 soundEngine.playClick();
                 onClose();
               }}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors text-lg leading-none"
+              aria-label="Đóng"
+              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors text-xl leading-none"
             >
-              ✕
+              ×
             </button>
           </div>
         </div>

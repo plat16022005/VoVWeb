@@ -226,18 +226,25 @@ export default function AdminPermissionsView() {
                   : "bg-[#090c21]/95 border-[#3fe9d6]/40 text-[#3fe9d6]"
               }`}
             >
-              <span className="text-xl">
-                {toast.type === "success" ? "✓" : toast.type === "error" ? "⚠️" : "ℹ"}
-              </span>
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${
+                  toast.type === "success"
+                    ? "bg-emerald-400"
+                    : toast.type === "error"
+                    ? "bg-rose-400"
+                    : "bg-[#3fe9d6]"
+                }`}
+              />
               <div className="flex-1 text-xs font-mono">
                 {toast.title && <div className="font-bold mb-0.5">{toast.title}</div>}
                 <div>{toast.message}</div>
               </div>
               <button
                 onClick={() => setToast(null)}
-                className="text-white/60 hover:text-white text-sm"
+                aria-label="Đóng thông báo"
+                className="text-white/60 hover:text-white text-base leading-none cursor-pointer"
               >
-                ✕
+                ×
               </button>
             </div>
           </div>
@@ -270,7 +277,6 @@ export default function AdminPermissionsView() {
                     : "bg-[#090c21] text-slate-400 hover:text-white border border-white/10 hover:border-white/20"
                 }`}
               >
-                <span>🛡️</span>
                 <span>Quản Lý & Phân Quyền</span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
@@ -296,7 +302,6 @@ export default function AdminPermissionsView() {
                     : "bg-[#090c21] text-slate-400 hover:text-white border border-white/10 hover:border-white/20"
                 }`}
               >
-                <span>📑</span>
                 <span>Danh Mục Nhóm & Quyền</span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
@@ -322,7 +327,6 @@ export default function AdminPermissionsView() {
                     : "bg-[#090c21] text-slate-400 hover:text-white border border-white/10 hover:border-white/20"
                 }`}
               >
-                <span>📜</span>
                 <span>Nhật Ký Phân Quyền</span>
               </button>
             </div>
@@ -331,7 +335,7 @@ export default function AdminPermissionsView() {
               {activeTab === "managers"
                 ? "Thiết lập nhóm lớn & quyền con cho từng Quản Lý"
                 : activeTab === "directory"
-                ? "Cấu trúc phân quyền 2 cấp độ lưu trữ tại Subcollection"
+                ? "Cấu trúc phân quyền 2 cấp độ bảo mật cho tài khoản Quản Lý"
                 : "Lịch sử Admin cập nhật phân quyền hệ thống"}
             </div>
           </div>
@@ -366,7 +370,7 @@ export default function AdminPermissionsView() {
           <div className="flex items-center gap-4">
             <span className="text-slate-400">Turn-Based RPG</span>
             <span>•</span>
-            <span className="text-[#3fe9d6]">Bảo Mật Subcollection</span>
+            <span className="text-[#3fe9d6]">Phân Quyền Bảo Mật</span>
           </div>
         </footer>
       </div>
@@ -384,4 +388,3 @@ export default function AdminPermissionsView() {
     </div>
   );
 }
-

@@ -24,19 +24,17 @@ export default function ValkyriaDeleteModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-[family-name:var(--font-inter)]">
       <div className="relative w-full max-w-md rounded-3xl bg-[#090d24] border border-rose-500/40 p-6 shadow-[0_0_50px_rgba(244,63,94,0.25)] text-slate-100 space-y-5">
-        {/* Warning Icon & Title */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-2xl shrink-0">
-            ⚠️
+        {/* Title */}
+        <div className="space-y-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-rose-400 font-bold">
+            Cảnh Báo Thao Tác Vĩnh Viễn
           </div>
-          <div>
-            <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
-              XÁC NHẬN XÓA VALKYRIA
-            </h3>
-            <p className="text-xs font-mono text-slate-400">
-              Hành động này sẽ gỡ bỏ dữ liệu khỏi hệ thống trò chơi.
-            </p>
-          </div>
+          <h3 className="text-base font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
+            XÁC NHẬN XÓA VALKYRIA
+          </h3>
+          <p className="text-xs font-mono text-slate-400">
+            Hành động này sẽ gỡ bỏ dữ liệu khỏi hệ thống trò chơi.
+          </p>
         </div>
 
         {/* Target Character Card Mini */}
@@ -99,10 +97,7 @@ export default function ValkyriaDeleteModal({
                 <span>Đang Xóa...</span>
               </>
             ) : (
-              <>
-                <span>🗑️</span>
-                <span>Xác Nhận Xóa</span>
-              </>
+              <span>Xác Nhận Xóa</span>
             )}
           </button>
         </div>
@@ -110,4 +105,3 @@ export default function ValkyriaDeleteModal({
     </div>
   );
 }
-

@@ -117,13 +117,13 @@ async function logGameDataActivity(
 }
 
 export const ROLE_OPTIONS = [
-  { label: "Archer (Xạ Thủ)", value: "Archer", icon: "🏹", spec: "Xạ Kích Tầm Xa", desc: "Tấn công tầm xa, bạo kích cao" },
-  { label: "Tank (Đỡ Đòn)", value: "Tank", icon: "🛡️", spec: "Hộ Vệ Kiên Cố", desc: "Sinh lực & phòng ngự vững chắc" },
-  { label: "Warrior (Đấu Sĩ)", value: "Warrior", icon: "⚔️", spec: "Tiên Phong Cận Chiến", desc: "Cận chiến, công thủ toàn diện" },
-  { label: "Mage (Pháp Sư)", value: "Mage", icon: "🔮", spec: "Ma Thuật Khống Chế", desc: "Sát thương ma thuật diện rộng" },
-  { label: "Support (Hỗ Trợ)", value: "Support", icon: "✨", spec: "Cường Hóa Đội Hình", desc: "Hỗ trợ, khống chế và buff chỉ số" },
-  { label: "Healer (Trị Liệu)", value: "Healer", icon: "💚", spec: "Trị Liệu Sinh Lực", desc: "Hồi phục sinh lực và thanh tẩy hiệu ứng xấu" },
-  { label: "Assassin (Sát Thủ)", value: "Assassin", icon: "🗡️", spec: "Đột Kích Ám Sát", desc: "Bộc phát sát thương hạ gục nhanh" },
+  { label: "Archer (Xạ Thủ)", value: "Archer", icon: "", spec: "Xạ Kích Tầm Xa", desc: "Tấn công tầm xa, bạo kích cao" },
+  { label: "Tank (Đỡ Đòn)", value: "Tank", icon: "", spec: "Hộ Vệ Kiên Cố", desc: "Sinh lực & phòng ngự vững chắc" },
+  { label: "Warrior (Đấu Sĩ)", value: "Warrior", icon: "", spec: "Tiên Phong Cận Chiến", desc: "Cận chiến, công thủ toàn diện" },
+  { label: "Mage (Pháp Sư)", value: "Mage", icon: "", spec: "Ma Thuật Khống Chế", desc: "Sát thương ma thuật diện rộng" },
+  { label: "Support (Hỗ Trợ)", value: "Support", icon: "", spec: "Cường Hóa Đội Hình", desc: "Hỗ trợ, khống chế và buff chỉ số" },
+  { label: "Healer (Trị Liệu)", value: "Healer", icon: "", spec: "Trị Liệu Sinh Lực", desc: "Hồi phục sinh lực và thanh tẩy hiệu ứng xấu" },
+  { label: "Assassin (Sát Thủ)", value: "Assassin", icon: "", spec: "Đột Kích Ám Sát", desc: "Bộc phát sát thương hạ gục nhanh" },
 ] as const;
 
 export const RARITY_OPTIONS = [

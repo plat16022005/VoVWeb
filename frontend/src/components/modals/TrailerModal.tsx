@@ -28,9 +28,10 @@ export default function TrailerModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Đóng"
             className="text-slate-400 hover:text-white text-2xl font-bold leading-none cursor-pointer"
           >
-            ✕
+            ×
           </button>
         </div>
 
@@ -43,8 +44,10 @@ export default function TrailerModal({
             className="object-cover opacity-60"
           />
           <div className="relative z-10 text-center p-6">
-            <div className="w-20 h-20 mx-auto rounded-full bg-[#f5c767]/20 border-2 border-[#f5c767] flex items-center justify-center text-3xl text-[#f5c767] shadow-[0_0_30px_rgba(245,199,103,0.5)] animate-pulse mb-4 cursor-pointer">
-              ▶
+            <div className="w-20 h-20 mx-auto rounded-full bg-[#f5c767]/20 border-2 border-[#f5c767] flex items-center justify-center text-[#f5c767] shadow-[0_0_30px_rgba(245,199,103,0.5)] animate-pulse mb-4 cursor-pointer">
+              <svg className="w-8 h-8 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
             </div>
             <h5 className="text-xl font-bold text-white uppercase font-[family-name:var(--font-rajdhani)]">
               VALKYRIA OF VEYRA — OFFICIAL CINEMATIC TRAILER

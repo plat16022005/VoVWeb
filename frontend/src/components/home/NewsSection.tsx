@@ -158,7 +158,9 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
         ) : sortedFilteredPosts.length === 0 ? (
           /* Empty State khi chưa có bài viết xuất bản */
           <div className="p-12 rounded-2xl bg-[#090d24]/90 border border-white/10 text-center space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-            <div className="text-4xl">📜</div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono uppercase tracking-[0.2em] text-[#f5c767]">
+              Bản Tin Veyra
+            </div>
             <h3 className="text-xl font-bold text-white font-[family-name:var(--font-rajdhani)] tracking-wide uppercase">
               {newsFilter === "TẤT CẢ"
                 ? "Chưa Có Bài Viết Nào Được Xuất Bản"
@@ -201,7 +203,7 @@ export default function NewsSection({ onOpenPlayModal }: NewsSectionProps) {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#090c1f] via-transparent to-transparent" />
                     <span className="absolute top-4 left-4 px-3 py-1 rounded bg-[#f5c767] text-[#04050d] font-bold text-xs uppercase font-[family-name:var(--font-rajdhani)]">
-                      ★ {featuredPost.category}
+                      {featuredPost.category}
                     </span>
                   </div>
                   <div className="p-6">

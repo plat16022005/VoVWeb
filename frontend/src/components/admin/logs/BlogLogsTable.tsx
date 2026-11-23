@@ -116,19 +116,17 @@ export default function BlogLogsTable({ onRefresh }: BlogLogsTableProps) {
     <div className="space-y-4">
       {/* Top Controller Bar */}
       <div className="p-5 rounded-2xl bg-[#090d21]/90 backdrop-blur-md border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">📰</span>
-          <div>
-            <h3 className="text-sm font-bold font-mono text-white tracking-wide uppercase flex items-center gap-2">
-              Nhật Ký Quản Lý Blog & Tin Tức
-              <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-[#f5c767]/10 text-[#f5c767] border border-[#f5c767]/30">
-                Logs/BlogManagement/Activities
-              </span>
-            </h3>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Ghi nhận mọi thao tác soạn thảo, xuất bản, gỡ bài và xóa bài viết của Quản Trị Viên & Quản Lý.
-            </p>
-          </div>
+        <div>
+          <h3 className="text-sm font-bold font-mono text-white tracking-wide uppercase flex items-center gap-2 flex-wrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f5c767]" />
+            <span>Nhật Ký Quản Lý Blog & Tin Tức</span>
+            <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-[#f5c767]/10 text-[#f5c767] border border-[#f5c767]/30">
+              Blog Audit
+            </span>
+          </h3>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Ghi nhận mọi thao tác soạn thảo, xuất bản, gỡ bài và xóa bài viết của Quản Trị Viên & Quản Lý.
+          </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -178,10 +176,9 @@ export default function BlogLogsTable({ onRefresh }: BlogLogsTableProps) {
           {/* Export CSV */}
           <button
             onClick={handleExportCsv}
-            className="px-3.5 py-2 rounded-xl bg-[#f5c767]/15 border border-[#f5c767]/40 text-[#f5c767] hover:bg-[#f5c767]/25 text-xs font-mono font-semibold transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-xl bg-[#f5c767]/15 border border-[#f5c767]/40 text-[#f5c767] hover:bg-[#f5c767]/25 text-xs font-mono font-semibold transition-colors cursor-pointer"
           >
-            <span>📥</span>
-            <span>Xuất CSV</span>
+            Xuất CSV
           </button>
         </div>
       </div>
@@ -243,7 +240,7 @@ export default function BlogLogsTable({ onRefresh }: BlogLogsTableProps) {
                     {/* Người thực hiện */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-[#3fe9d6]">
-                        <span>👤</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
                         <span>{log.performedBy}</span>
                       </div>
                     </td>

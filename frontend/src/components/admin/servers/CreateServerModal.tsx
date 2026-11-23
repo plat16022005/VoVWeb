@@ -111,7 +111,7 @@ export default function CreateServerModal({
                 KHỞI TẠO CỤM MÁY CHỦ GAME TỰ ĐỘNG
               </h3>
               <p className="text-xs font-mono text-[#3fe9d6]">
-                Firebase Cloud Function — createNewServer v2
+                Hệ thống khởi tạo cụm máy chủ tự động
               </p>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function CreateServerModal({
                 />
               </div>
               <h4 className="text-sm font-bold font-[family-name:var(--font-rajdhani)] text-white uppercase tracking-wider">
-                ĐANG CẤP PHÁT MÁY CHỦ TRÊN GOOGLE CLOUD...
+                ĐANG CẤP PHÁT CỤM MÁY CHỦ MỚI...
               </h4>
               <p className="text-xs font-mono text-slate-400 mt-1">
                 Quá trình này có thể mất từ 10 - 30 giây để hoàn tất.
@@ -167,19 +167,19 @@ export default function CreateServerModal({
                 currentStep >= 1 ? "bg-[#3fe9d6]/10 border-[#3fe9d6]/40 text-[#3fe9d6]" : "bg-white/5 border-white/10 text-slate-500"
               }`}>
                 <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px]">1</span>
-                <span>Khởi tạo Database vật lý Firestore Native...</span>
+                <span>Khởi tạo không gian dữ liệu máy chủ độc lập...</span>
               </div>
               <div className={`p-2.5 rounded-lg border flex items-center gap-2.5 transition-all ${
                 currentStep >= 2 ? "bg-[#3fe9d6]/10 border-[#3fe9d6]/40 text-[#3fe9d6]" : "bg-white/5 border-white/10 text-slate-500"
               }`}>
                 <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px]">2</span>
-                <span>Biên dịch & Release Security Rules...</span>
+                <span>Đồng bộ chính sách bảo mật hệ thống...</span>
               </div>
               <div className={`p-2.5 rounded-lg border flex items-center gap-2.5 transition-all ${
                 currentStep >= 3 ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400" : "bg-white/5 border-white/10 text-slate-500"
               }`}>
                 <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px]">3</span>
-                <span>Đăng ký vào GameConfig/ServerList...</span>
+                <span>Đăng ký cụm máy chủ vào danh sách hệ thống...</span>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function CreateServerModal({
                 required
               />
               <span className="text-[11px] font-mono text-slate-400 mt-0.5 block">
-                Chỉ cho phép chữ thường, số và gạch ngang. Database Cloud sẽ được tạo theo mã này.
+                Chỉ cho phép chữ thường, số và gạch ngang. Cụm máy chủ mới sẽ được khởi tạo theo mã này.
               </span>
             </div>
 
@@ -222,14 +222,14 @@ export default function CreateServerModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-mono text-slate-300 mb-1">
-                  Khu Vực Database (Location)
+                  Khu Vực Máy Chủ (Region)
                 </label>
                 <select
                   value={locationId}
                   onChange={(e) => setLocationId(e.target.value)}
                   className="w-full bg-[#040614] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#3fe9d6]/50 cursor-pointer"
                 >
-                  <option value="asia-southeast1">Singapore (asia-southeast1) ★</option>
+                  <option value="asia-southeast1">Singapore (asia-southeast1) — Khuyên dùng</option>
                   <option value="asia-northeast1">Tokyo (asia-northeast1)</option>
                   <option value="us-central1">Iowa (us-central1)</option>
                   <option value="europe-west1">Bỉ (europe-west1)</option>
@@ -255,11 +255,11 @@ export default function CreateServerModal({
             <div className="p-3 rounded-xl bg-[#060818] border border-white/10 text-[11px] font-mono text-slate-400 space-y-1">
               <div className="text-white font-bold flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3fe9d6]" />
-                Quy trình Cloud Function tự động thực hiện:
+                Quy trình khởi tạo máy chủ tự động:
               </div>
-              <div>• Khởi tạo Shard Firestore Native Database độc lập trên GCP.</div>
-              <div>• Tự động nạp bộ rules bảo mật <code className="text-[#3fe9d6]">firestore.server.rules</code>.</div>
-              <div>• Đồng bộ máy chủ mới vào bảng chọn server in-game <code className="text-[#f5c767]">GameConfig/ServerList</code>.</div>
+              <div>• Khởi tạo không gian dữ liệu độc lập cho cụm máy chủ mới.</div>
+              <div>• Tự động đồng bộ cấu hình bảo mật tiêu chuẩn.</div>
+              <div>• Cập nhật máy chủ mới vào danh sách chọn máy chủ trong game.</div>
             </div>
 
             {/* Footer buttons */}

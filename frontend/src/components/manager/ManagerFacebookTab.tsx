@@ -128,7 +128,7 @@ export default function ManagerFacebookTab() {
     const nextState = !post.facebookAutoReplyEnabled;
     const defaultMsg =
       post.facebookAutoReplyMessage ||
-      "Chào Chỉ Huy {name}! Cảm ơn bạn đã quan tâm và để lại bình luận cho Valkyria of Veyra. Hãy tiếp tục theo dõi Fanpage để cập nhật các tin tức và đợt Closed Beta mới nhất nhé! ✨";
+      "Chào Chỉ Huy {name}! Cảm ơn bạn đã quan tâm và để lại bình luận cho Valkyria of Veyra. Hãy tiếp tục theo dõi Fanpage để cập nhật các tin tức và đợt Closed Beta mới nhất nhé!";
 
     try {
       await blogsService.updateFacebookAutoReply(post.id, nextState, defaultMsg);
@@ -245,9 +245,10 @@ export default function ManagerFacebookTab() {
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#1877F2] flex items-center justify-center text-white text-3xl font-bold shadow-[0_0_25px_rgba(24,119,242,0.6)]">
                 f
               </div>
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#070a1e] flex items-center justify-center text-[10px] text-white font-bold" title="Kết nối trực tiếp">
-                ✓
-              </span>
+              <span
+                className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#070a1e]"
+                title="Kết nối trực tiếp"
+              />
             </div>
 
             <div className="space-y-1">
@@ -255,8 +256,9 @@ export default function ManagerFacebookTab() {
                 <h2 className="text-lg sm:text-xl font-black text-white tracking-wide uppercase font-[family-name:var(--font-rajdhani)]">
                   Valkyria of Veyra (Official Fanpage)
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono">
-                  🟢 ĐÃ KẾT NỐI CHÍNH THỨC
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  ĐÃ KẾT NỐI CHÍNH THỨC
                 </span>
               </div>
 
@@ -318,9 +320,8 @@ export default function ManagerFacebookTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Bài Đã Đăng FB */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d26] border border-white/10 shadow-lg flex flex-col justify-between hover:border-[#1877F2]/40 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="font-bold">Bài Viết Fanpage</span>
-            <span className="text-base">📢</span>
+          <div className="text-xs text-slate-400 font-bold">
+            Bài Viết Fanpage
           </div>
           <div className="my-2">
             <div className="text-2xl sm:text-3xl font-black text-white font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -328,16 +329,15 @@ export default function ManagerFacebookTab() {
             </div>
           </div>
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
-            <span className="text-emerald-400">✓ {Math.round((stats.publishedFb / (stats.total || 1)) * 100)}%</span>
+            <span className="text-emerald-400">{Math.round((stats.publishedFb / (stats.total || 1)) * 100)}%</span>
             <span>đã lên sóng FB</span>
           </div>
         </div>
 
         {/* Card 2: Tổng Lượt Thích / Cảm Xúc */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d26] border border-white/10 shadow-lg flex flex-col justify-between hover:border-cyan-500/40 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="font-bold">Lượt Cảm Xúc (Reactions)</span>
-            <span className="text-base">👍❤️</span>
+          <div className="text-xs text-slate-400 font-bold">
+            Lượt Cảm Xúc (Reactions)
           </div>
           <div className="my-2">
             <div className="text-2xl sm:text-3xl font-black text-[#3fe9d6] font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -351,9 +351,8 @@ export default function ManagerFacebookTab() {
 
         {/* Card 3: Tổng Bình Luận */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d26] border border-white/10 shadow-lg flex flex-col justify-between hover:border-amber-500/40 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="font-bold">Bình Luận Chỉ Huy</span>
-            <span className="text-base">💬</span>
+          <div className="text-xs text-slate-400 font-bold">
+            Bình Luận Chỉ Huy
           </div>
           <div className="my-2">
             <div className="text-2xl sm:text-3xl font-black text-[#f5c767] font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -367,9 +366,8 @@ export default function ManagerFacebookTab() {
 
         {/* Card 4: Bot Tự Động Rep */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#090d26] border border-white/10 shadow-lg flex flex-col justify-between hover:border-emerald-500/40 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="font-bold">Auto-Reply Bot</span>
-            <span className="text-base">🤖</span>
+          <div className="text-xs text-slate-400 font-bold">
+            Auto-Reply Bot
           </div>
           <div className="my-2">
             <div className="text-2xl sm:text-3xl font-black text-emerald-400 font-[family-name:var(--font-rajdhani)] tracking-wide">
@@ -398,7 +396,6 @@ export default function ManagerFacebookTab() {
                 : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5"
             }`}
           >
-            <span>📢</span>
             <span>BẢNG TIN FANPAGE TRỰC TIẾP</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px]">
               {feedPosts.length}
@@ -417,7 +414,6 @@ export default function ManagerFacebookTab() {
                 : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5"
             }`}
           >
-            <span>📑</span>
             <span>ĐỒNG BỘ BÀI VIẾT BLOG</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px]">
               {posts.length}
@@ -465,9 +461,10 @@ export default function ManagerFacebookTab() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-2 text-xs text-slate-400 hover:text-white"
+              className="absolute right-3 top-2 text-xs text-slate-400 hover:text-white cursor-pointer"
+              aria-label="Xóa từ khóa"
             >
-              ✕
+              ×
             </button>
           )}
         </div>
@@ -537,12 +534,9 @@ export default function ManagerFacebookTab() {
       {/* 4. POSTS LIST TABLE */}
       <div className="rounded-2xl bg-[#090d26] border border-white/10 overflow-hidden shadow-xl">
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📑</span>
-            <h3 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
-              Danh Sách Bài Viết Facebook ({filteredPosts.length})
-            </h3>
-          </div>
+          <h3 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider font-[family-name:var(--font-rajdhani)]">
+            Danh Sách Bài Viết Facebook ({filteredPosts.length})
+          </h3>
           <span className="text-xs text-slate-400 font-mono">
             Hiển thị {filteredPosts.length} / {posts.length} bài
           </span>
@@ -554,8 +548,7 @@ export default function ManagerFacebookTab() {
             <p className="text-xs font-mono">Đang tải danh sách bài viết...</p>
           </div>
         ) : filteredPosts.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 space-y-2">
-            <div className="text-3xl">📭</div>
+          <div className="py-16 text-center text-slate-400">
             <p className="text-xs">Không tìm thấy bài viết nào phù hợp với bộ lọc hiện tại.</p>
           </div>
         ) : (
@@ -658,21 +651,21 @@ export default function ManagerFacebookTab() {
                   <div className="flex flex-wrap items-center gap-4 lg:gap-6 self-start lg:self-auto py-2 lg:py-0 border-t lg:border-t-0 border-white/5">
                     {/* Metrics Stream */}
                     {isLinked ? (
-                      <div className="flex items-center gap-3 text-xs font-mono">
-                        <div className="p-2 rounded-xl bg-[#050716] border border-white/10 flex items-center gap-1.5 text-slate-300" title="Lượt Thích / Cảm xúc">
-                          <span>👍</span>
+                      <div className="flex items-center gap-2.5 text-xs font-mono">
+                        <div className="px-2.5 py-1.5 rounded-xl bg-[#050716] border border-white/10 flex items-center gap-1.5 text-slate-300" title="Lượt Thích / Cảm xúc">
+                          <span className="text-[10px] text-slate-400">Thích</span>
                           <span className="font-bold text-white">
                             {isLoadingMetrics ? "..." : metrics ? formatNumber(metrics.likes) : "0"}
                           </span>
                         </div>
-                        <div className="p-2 rounded-xl bg-[#050716] border border-white/10 flex items-center gap-1.5 text-[#f5c767]" title="Lượt Bình Luận">
-                          <span>💬</span>
+                        <div className="px-2.5 py-1.5 rounded-xl bg-[#050716] border border-white/10 flex items-center gap-1.5 text-[#f5c767]" title="Lượt Bình Luận">
+                          <span className="text-[10px] text-slate-400">BL</span>
                           <span className="font-bold">
                             {isLoadingMetrics ? "..." : metrics ? formatNumber(metrics.comments) : "0"}
                           </span>
                         </div>
-                        <div className="p-2 rounded-xl bg-[#050716] border border-white/10 flex items-center gap-1.5 text-emerald-400" title="Lượt Chia Sẻ">
-                          <span>🔁</span>
+                        <div className="px-2.5 py-1.5 rounded-xl bg-[#050716] border border-white/10 flex items-center gap-1.5 text-emerald-400" title="Lượt Chia Sẻ">
+                          <span className="text-[10px] text-slate-400">Share</span>
                           <span className="font-bold">
                             {isLoadingMetrics ? "..." : metrics ? formatNumber(metrics.shares) : "0"}
                           </span>
@@ -702,7 +695,11 @@ export default function ManagerFacebookTab() {
                           : "Bạn chưa được cấp quyền điều chỉnh Bot Auto-Reply"
                       }
                     >
-                      <span>🤖</span>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          autoReplyActive ? "bg-emerald-400" : "bg-slate-500"
+                        }`}
+                      />
                       <span>Bot: {autoReplyActive ? "BẬT" : "TẮT"}</span>
                     </button>
                   </div>
@@ -714,7 +711,7 @@ export default function ManagerFacebookTab() {
                       onClick={() => handleOpenSocialHub(post)}
                       className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1877F2] to-[#0ea5e9] hover:from-[#166fe5] hover:to-[#0284c7] text-white text-xs font-bold shadow-[0_0_15px_rgba(24,119,242,0.35)] transition-all flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>{isLinked ? "💬 Quản Lý & Bình Luận" : "📢 Đăng Lên Facebook"}</span>
+                      <span>{isLinked ? "Quản Lý & Bình Luận" : "Đăng Lên Facebook"}</span>
                     </button>
 
                     {post.facebookPostUrl && (
@@ -770,11 +767,10 @@ export default function ManagerFacebookTab() {
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl bg-[#090d24] border border-[#1877F2]/60 text-white text-xs font-bold shadow-[0_0_30px_rgba(24,119,242,0.4)] animate-fade-in flex items-center gap-2">
-          <span>✓</span>
+          <span className="w-2 h-2 rounded-full bg-[#1877F2]" />
           <span>{toastMessage}</span>
         </div>
       )}
     </div>
   );
 }
-

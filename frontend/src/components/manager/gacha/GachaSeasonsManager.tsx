@@ -403,10 +403,10 @@ export default function GachaSeasonsManager() {
         }
         confirmLabel={
           confirmState?.type === "activate"
-            ? "⚡ Kích Hoạt Ngay"
+            ? "Kích Hoạt Ngay"
             : confirmState?.type === "deactivate"
-            ? "⏸️ Chuyển Về Nháp"
-            : "🗑️ Xác Nhận Xóa"
+            ? "Chuyển Về Nháp"
+            : "Xác Nhận Xóa"
         }
         description={
           confirmState?.type === "activate"
@@ -447,4 +447,3 @@ export default function GachaSeasonsManager() {
     </div>
   );
 }
-
