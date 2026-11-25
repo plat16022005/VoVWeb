@@ -85,6 +85,37 @@ export interface PlayerInventoryEntry {
   UpdatedAt: string;
 }
 
+export interface PlayerServerCharacterOption {
+  serverId: string;
+  serverName: string;
+  serverStatus: string;
+  hasCharacter: boolean;
+  inGameName: string;
+  level: number;
+  totalCombatPower: number;
+  avatarId: string;
+  isLastPlayed: boolean;
+}
+
+export interface PlayerInventoryClaimItem {
+  ItemId: string;
+  ItemName: string;
+  Rarity: EventRewardRarity;
+  Quantity: number;
+}
+
+export interface PlayerInventoryClaimRecord {
+  ClaimId: string;
+  MailId: string;
+  EventId: string;
+  ServerId: string;
+  ServerName: string;
+  CharacterName: string;
+  CharacterLevel: number;
+  Items: PlayerInventoryClaimItem[];
+  ClaimedAt: string;
+}
+
 export interface ReferralHelpEntry {
   Username: string;
   TicketsEarned: number;
@@ -100,6 +131,7 @@ export interface PlayerEventState {
   ClaimedMissions: Record<string, string>;
   Inventory: Record<string, PlayerInventoryEntry>;
   RecentRewards: PlayerSpinRecord[];
+  ClaimedHistory?: PlayerInventoryClaimRecord[];
   InviteCode: string;
   HelpGivenCount: number;
   HelpReceivedCount: number;
@@ -450,6 +482,37 @@ class EventsServiceClient {
     playerState: PlayerEventState;
   }> {
     return this.request(`/${encodeURIComponent(eventId)}/spin`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getPlayerServerCharacters(eventId: string): Promise<{
+    uid: string;
+    username: string;
+    lastServerId: string;
+    servers: PlayerServerCharacterOption[];
+  }> {
+    return this.request(`/${encodeURIComponent(eventId)}/characters`);
+  }
+
+  async claimInventoryToMail(
+    eventId: string,
+    payload: {
+      serverId: string;
+      itemId?: string;
+      quantity?: number;
+    }
+  ): Promise<{
+    mailId: string;
+    serverId: string;
+    serverName: string;
+    characterName: string;
+    characterLevel: number;
+    claimedItems: PlayerInventoryClaimItem[];
+    playerState: PlayerEventState;
+  }> {
+    return this.request(`/${encodeURIComponent(eventId)}/inventory/claim`, {
       method: "POST",
       body: JSON.stringify(payload),
     });

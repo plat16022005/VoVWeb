@@ -1,7 +1,7 @@
 import { GachaFirebaseService } from '../gacha/gacha-firebase.service.js';
 import { AuthenticatedOperator } from '../gacha/gacha.types.js';
 import { EventMediaPresignResult, EventsR2Service } from './events-r2.service.js';
-import { EventActivityLog, EventMissionConfig, PlayerEventState, PlayerSpinRecord, WebEventDocument } from './events.types.js';
+import { EventActivityLog, EventMissionConfig, PlayerEventState, PlayerInventoryClaimItem, PlayerServerCharacterOption, PlayerSpinRecord, WebEventDocument } from './events.types.js';
 export declare class EventsService {
     private readonly firebase;
     private readonly r2;
@@ -49,6 +49,23 @@ export declare class EventsService {
     }>;
     recordSpinAndSaveReward(authHeader: string | undefined, rawEventId: string, rawBody: Record<string, unknown>): Promise<{
         reward: PlayerSpinRecord;
+        playerState: PlayerEventState;
+    }>;
+    private rarityLabelToMailRarityInt;
+    private getRegisteredServersList;
+    getPlayerServerCharacters(authHeader: string | undefined, rawEventId?: string): Promise<{
+        uid: string;
+        username: string;
+        lastServerId: string;
+        servers: PlayerServerCharacterOption[];
+    }>;
+    claimInventoryToMail(authHeader: string | undefined, rawEventId: string, rawBody: Record<string, unknown>): Promise<{
+        mailId: string;
+        serverId: string;
+        serverName: string;
+        characterName: string;
+        characterLevel: number;
+        claimedItems: PlayerInventoryClaimItem[];
         playerState: PlayerEventState;
     }>;
     getEventLogs(operator: AuthenticatedOperator, limitCount?: number): Promise<EventActivityLog[]>;

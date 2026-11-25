@@ -271,19 +271,27 @@ service cloud.firestore {
 
     // 3.3. Hòm thư Cá Nhân Người Chơi (Users/{userId}/Mailbox/{mailId} — CHỈ chứa Type == 'personal'):
     // - ĐỌC: Admin/Manager đọc toàn bộ; chính chủ (isOwner(userId)) CHỈ đọc được thư đang ở trạng thái 'SENT'
-    // - TẠO: Chỉ Admin/Manager, chuẩn hóa schema 24 trường gắn chặt với {userId} và shard database,
-    //        Status == 'SENT', IsRead == false, IsClaimed == false, ClaimedAt == ''
+    // - TẠO: Cho phép Admin/Manager hoặc chính chủ (isOwner(userId)) khi rút quà Kho Đồ Sự Kiện Web
+    //        (Category == 'EVENT' và ReferenceTicketId không rỗng), chuẩn hóa schema 24 trường gắn chặt
+    //        với {userId} và shard database, Status == 'SENT', IsRead == false, IsClaimed == false, ClaimedAt == ''
     // - CẬP NHẬT: Chỉ Admin/Manager, chuẩn hóa schema 24 trường, khóa cứng các trường bất biến và
     //             trạng thái nhận quà của người chơi (IsRead, IsClaimed, ClaimedAt chỉ Cloud Function cập nhật)
     // - XÓA: Chỉ Admin/Manager
-    // - Người chơi: TUYỆT ĐỐI chỉ đọc (đánh dấu đã đọc / nhận quà xử lý qua Cloud Function)
+    // - Người chơi: Chỉ đọc và tạo thư rút quà sự kiện Web (đánh dấu đã đọc / nhận quà trong game xử lý qua Cloud Function)
     match /Users/{userId}/Mailbox/{mailId} {
       allow read: if isAdminOrManager()
         || (
           isOwner(userId)
           && resource.data.Status == 'SENT'
         );
-      allow create: if isAdminOrManager()
+      allow create: if (
+          isAdminOrManager()
+          || (
+            isOwner(userId)
+            && request.resource.data.Category == 'EVENT'
+            && request.resource.data.ReferenceTicketId.size() >= 1
+          )
+        )
         && isValidPersonalMail(request.resource.data, mailId, userId, database)
         && request.resource.data.Status == 'SENT'
         && request.resource.data.IsRead == false

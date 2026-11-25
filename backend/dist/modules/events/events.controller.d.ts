@@ -26,6 +26,21 @@ export declare class EventsController {
         reward: import("./events.types.js").PlayerSpinRecord;
         playerState: import("./events.types.js").PlayerEventState;
     }>;
+    getPlayerServerCharacters(eventId: string, authHeader?: string): Promise<{
+        uid: string;
+        username: string;
+        lastServerId: string;
+        servers: import("./events.types.js").PlayerServerCharacterOption[];
+    }>;
+    claimInventoryToMail(eventId: string, authHeader: string | undefined, body: Record<string, unknown>): Promise<{
+        mailId: string;
+        serverId: string;
+        serverName: string;
+        characterName: string;
+        characterLevel: number;
+        claimedItems: import("./events.types.js").PlayerInventoryClaimItem[];
+        playerState: import("./events.types.js").PlayerEventState;
+    }>;
     getAllEvents(authHeader?: string): Promise<import("./events.types.js").WebEventDocument[]>;
     getEventLogs(authHeader: string | undefined, limitParam?: string): Promise<import("./events.types.js").EventActivityLog[]>;
     getEventById(authHeader: string | undefined, eventId: string): Promise<import("./events.types.js").WebEventDocument>;

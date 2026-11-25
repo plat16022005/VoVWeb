@@ -71,6 +71,34 @@ export interface PlayerInventoryEntry {
     Quantity: number;
     UpdatedAt: string;
 }
+export interface PlayerServerCharacterOption {
+    serverId: string;
+    serverName: string;
+    serverStatus: string;
+    hasCharacter: boolean;
+    inGameName: string;
+    level: number;
+    totalCombatPower: number;
+    avatarId: string;
+    isLastPlayed: boolean;
+}
+export interface PlayerInventoryClaimItem {
+    ItemId: string;
+    ItemName: string;
+    Rarity: EventRewardRarity;
+    Quantity: number;
+}
+export interface PlayerInventoryClaimRecord {
+    ClaimId: string;
+    MailId: string;
+    EventId: string;
+    ServerId: string;
+    ServerName: string;
+    CharacterName: string;
+    CharacterLevel: number;
+    Items: PlayerInventoryClaimItem[];
+    ClaimedAt: string;
+}
 export interface ReferralHelpEntry {
     Username: string;
     TicketsEarned: number;
@@ -85,6 +113,7 @@ export interface PlayerEventState {
     ClaimedMissions: Record<string, string>;
     Inventory: Record<string, PlayerInventoryEntry>;
     RecentRewards: PlayerSpinRecord[];
+    ClaimedHistory?: PlayerInventoryClaimRecord[];
     InviteCode: string;
     HelpGivenCount: number;
     HelpReceivedCount: number;

@@ -7,7 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { brotliDecompressSync, gunzipSync } from 'node:zlib';
-import { GachaFirebaseService } from '../gacha/gacha-firebase.service.js';
+import {
+   FirestoreBatchWrite,
+  GachaFirebaseService,
+} from '../gacha/gacha-firebase.service.js';
 import { AuthenticatedOperator } from '../gacha/gacha.types.js';
 import {
   CreateEventMediaPresignInput,
@@ -25,7 +28,10 @@ import {
   EventRewardItemConfig,
   EventRewardRarity,
   PlayerEventState,
+  PlayerInventoryClaimItem,
+  PlayerInventoryClaimRecord,
   PlayerInventoryEntry,
+  PlayerServerCharacterOption,
   PlayerSpinRecord,
   ReferralHelpEntry,
   UnityWebGlBuildInfo,
@@ -33,8 +39,14 @@ import {
 } from './events.types.js';
 
 const WEB_EVENTS_COLLECTION = 'WebEvents';
+const USERS_COLLECTION = 'Users';
+const MAILBOX_COLLECTION = 'Mailbox';
+const ITEM_CONFIGS_COLLECTION = 'ItemConfigs';
+const SERVER_LIST_DOC_PATH = 'GameConfig/ServerList';
 const EVENT_LOGS_COLLECTION_PATH = 'Logs/EventManagement/Activities';
 const VALID_ID_REGEX = /^[a-z0-9_]+$/;
+const VALID_SERVER_ID_REGEX = /^[a-z0-9-]+$/;
+const VALID_ITEM_ID_REGEX = /^[A-Za-z0-9_-]{1,80}$/;
 const DAILY_CHECKIN_MISSION_ID = 'daily_checkin';
 const MAX_REFERRAL_GIVEN = 5;
 const MAX_REFERRAL_RECEIVED = 5;
@@ -1190,6 +1202,7 @@ export class EventsService {
         ClaimedMissions: {},
         Inventory: {},
         RecentRewards: [],
+        ClaimedHistory: [],
         InviteCode: inviteCode,
         HelpGivenCount: 0,
         HelpReceivedCount: 0,
@@ -1307,6 +1320,9 @@ export class EventsService {
           : {},
       RecentRewards: Array.isArray(raw.RecentRewards)
         ? (raw.RecentRewards as PlayerSpinRecord[])
+        : [],
+      ClaimedHistory: Array.isArray(raw.ClaimedHistory)
+        ? (raw.ClaimedHistory as PlayerInventoryClaimRecord[])
         : [],
       InviteCode: inviteCode,
       HelpGivenCount: helpedTargetUids.length,
@@ -1789,6 +1805,587 @@ export class EventsService {
 
     return {
       reward: spinRecord,
+      playerState: updatedState,
+    };
+  }
+
+  // ==================== PLAYER SERVER CHARACTERS & MAIL CLAIM ====================
+
+  private rarityLabelToMailRarityInt(rarity: EventRewardRarity): number {
+    switch (rarity) {
+      case 'UR':
+        return 3;
+      case 'SSR':
+        return 2;
+      case 'SR':
+        return 1;
+      case 'R':
+      default:
+        return 0;
+    }
+  }
+
+  private async getRegisteredServersList(
+    token: string,
+  ): Promise<Array<{ serverId: string; name: string; status: string }>> {
+    const serverDoc = await this.firebase
+      .getDocument(SERVER_LIST_DOC_PATH, token)
+      .catch(() => null);
+    const servers: Array<{ serverId: string; name: string; status: string }> = [];
+    if (serverDoc) {
+      const obj = this.firebase.docToObject(serverDoc);
+      for (const [rawServerId, value] of Object.entries(obj)) {
+        const cleanId = rawServerId.trim().toLowerCase();
+        if (
+          !cleanId ||
+          cleanId === 'default' ||
+          cleanId === '(default)' ||
+          !VALID_SERVER_ID_REGEX.test(cleanId)
+        ) {
+          continue;
+        }
+        if (!value || typeof value !== 'object') continue;
+        const rec = value as Record<string, unknown>;
+        const name =
+          typeof rec.Name === 'string' && rec.Name.trim()
+            ? rec.Name.trim()
+            : cleanId;
+        const status =
+          typeof rec.Status === 'string' && rec.Status.trim()
+            ? rec.Status.trim()
+            : 'Normal';
+        servers.push({ serverId: cleanId, name, status });
+      }
+      servers.sort((a, b) => a.serverId.localeCompare(b.serverId));
+    }
+    return servers;
+  }
+
+  /**
+   * Tra cứu danh sách các cụm máy chủ kèm nhân vật thực tế của người chơi trên từng database server-x
+   */
+  async getPlayerServerCharacters(
+    authHeader: string | undefined,
+    rawEventId?: string,
+  ): Promise<{
+    uid: string;
+    username: string;
+    lastServerId: string;
+    servers: PlayerServerCharacterOption[];
+  }> {
+    if (rawEventId) {
+      this.assertValidId(rawEventId, 'Mã sự kiện');
+    }
+    const user = await this.firebase.authorizeAuthenticatedUser(authHeader);
+    const [registeredServers, userDoc] = await Promise.all([
+      this.getRegisteredServersList(user.authTokenForFirestore),
+      this.firebase
+        .getDocument(`${USERS_COLLECTION}/${user.uid}`, user.authTokenForFirestore)
+        .catch(() => null),
+    ]);
+
+    const userObj = userDoc ? this.firebase.docToObject(userDoc) : {};
+    const lastServerId =
+      typeof userObj.LastServerId === 'string'
+        ? userObj.LastServerId.trim().toLowerCase()
+        : '';
+    const serverCharsMap =
+      userObj.ServerCharacters && typeof userObj.ServerCharacters === 'object'
+        ? (userObj.ServerCharacters as Record<string, unknown>)
+        : {};
+
+    const shardProfiles = await Promise.allSettled(
+      registeredServers.map((srv) =>
+        this.firebase.getDocument(
+          `${USERS_COLLECTION}/${user.uid}/UserData/Profile`,
+          user.authTokenForFirestore,
+          srv.serverId,
+        ),
+      ),
+    );
+
+    const options: PlayerServerCharacterOption[] = registeredServers.map(
+      (srv, idx) => {
+        const outcome = shardProfiles[idx];
+        const profileDoc =
+          outcome.status === 'fulfilled' ? outcome.value : null;
+        const fallbackChar = serverCharsMap[srv.serverId];
+
+        if (profileDoc) {
+          const pObj = this.firebase.docToObject(profileDoc);
+          const inGameName =
+            (typeof pObj.InGameName === 'string' && pObj.InGameName.trim()) ||
+            (typeof pObj.Name === 'string' && pObj.Name.trim()) ||
+            user.username;
+          const level = Math.max(1, Math.trunc(Number(pObj.Level) || 1));
+          const totalCombatPower = Math.max(
+            0,
+            Math.trunc(Number(pObj.TotalCombatPower) || 0),
+          );
+          const avatarId =
+            typeof pObj.AvatarId === 'string' && pObj.AvatarId.trim()
+              ? pObj.AvatarId.trim()
+              : 'avatar_hitomi_01';
+
+          return {
+            serverId: srv.serverId,
+            serverName: srv.name,
+            serverStatus: srv.status,
+            hasCharacter: true,
+            inGameName,
+            level,
+            totalCombatPower,
+            avatarId,
+            isLastPlayed: srv.serverId === lastServerId,
+          };
+        }
+
+        if (fallbackChar && typeof fallbackChar === 'object') {
+          const rec = fallbackChar as Record<string, unknown>;
+          const inGameName =
+            (typeof rec.Name === 'string' && rec.Name.trim()) ||
+            (typeof rec.InGameName === 'string' && rec.InGameName.trim()) ||
+            user.username;
+          const level = Math.max(1, Math.trunc(Number(rec.Level) || 1));
+          const totalCombatPower = Math.max(
+            0,
+            Math.trunc(Number(rec.TotalCombatPower) || 0),
+          );
+          return {
+            serverId: srv.serverId,
+            serverName: srv.name,
+            serverStatus: srv.status,
+            hasCharacter: true,
+            inGameName,
+            level,
+            totalCombatPower,
+            avatarId: 'avatar_hitomi_01',
+            isLastPlayed: srv.serverId === lastServerId,
+          };
+        }
+
+        return {
+          serverId: srv.serverId,
+          serverName: srv.name,
+          serverStatus: srv.status,
+          hasCharacter: false,
+          inGameName: '',
+          level: 0,
+          totalCombatPower: 0,
+          avatarId: '',
+          isLastPlayed: srv.serverId === lastServerId,
+        };
+      },
+    );
+
+    options.sort((a, b) => {
+      if (a.hasCharacter !== b.hasCharacter) return a.hasCharacter ? -1 : 1;
+      if (a.isLastPlayed !== b.isLastPlayed) return a.isLastPlayed ? -1 : 1;
+      return a.serverId.localeCompare(b.serverId);
+    });
+
+    return {
+      uid: user.uid,
+      username: user.username,
+      lastServerId,
+      servers: options,
+    };
+  }
+
+  /**
+   * Nhận vật phẩm từ Kho Đồ sự kiện và chuyển trực tiếp vào Hòm Thư Cá Nhân (Users/{uid}/Mailbox/{mailId})
+   * tại database server-x của nhân vật mà người chơi đã chọn
+   */
+  async claimInventoryToMail(
+    authHeader: string | undefined,
+    rawEventId: string,
+    rawBody: Record<string, unknown>,
+  ): Promise<{
+    mailId: string;
+    serverId: string;
+    serverName: string;
+    characterName: string;
+    characterLevel: number;
+    claimedItems: PlayerInventoryClaimItem[];
+    playerState: PlayerEventState;
+  }> {
+    const event = await this.getPublicEventById(rawEventId, authHeader);
+    const rawServerInput =
+      typeof rawBody.serverId === 'string'
+        ? rawBody.serverId
+        : typeof rawBody.ServerId === 'string'
+          ? rawBody.ServerId
+          : '';
+    const serverId = rawServerInput.trim().toLowerCase();
+
+    if (
+      !serverId ||
+      serverId === 'default' ||
+      serverId === '(default)' ||
+      serverId === 'all' ||
+      !VALID_SERVER_ID_REGEX.test(serverId)
+    ) {
+      throw new BadRequestException(
+        'Vui lòng chọn máy chủ và nhân vật nhận thưởng hợp lệ.',
+      );
+    }
+
+    const {
+      user,
+      state: playerState,
+      helpedTargetUids,
+      claimedHelperUids,
+    } = await this.loadStoredPlayerState(authHeader, event);
+
+    const [registeredServers, userDoc, shardProfileDoc, itemConfigDocs] =
+      await Promise.all([
+        this.getRegisteredServersList(user.authTokenForFirestore),
+        this.firebase
+          .getDocument(
+            `${USERS_COLLECTION}/${user.uid}`,
+            user.authTokenForFirestore,
+          )
+          .catch(() => null),
+        this.firebase
+          .getDocument(
+            `${USERS_COLLECTION}/${user.uid}/UserData/Profile`,
+            user.authTokenForFirestore,
+            serverId,
+          )
+          .catch(() => null),
+        this.firebase
+          .listDocuments(ITEM_CONFIGS_COLLECTION, user.authTokenForFirestore)
+          .catch(() => []),
+      ]);
+
+    const matchedServer = registeredServers.find(
+      (s) => s.serverId === serverId,
+    );
+    if (!matchedServer) {
+      throw new BadRequestException(
+        `Máy chủ "${serverId}" không tồn tại hoặc chưa mở hoạt động.`,
+      );
+    }
+
+    const userObj = userDoc ? this.firebase.docToObject(userDoc) : {};
+    const playerCode =
+      typeof userObj.PlayerCode === 'string' ||
+      typeof userObj.PlayerCode === 'number'
+        ? String(userObj.PlayerCode).trim().slice(0, 32)
+        : '';
+    const serverCharsMap =
+      userObj.ServerCharacters && typeof userObj.ServerCharacters === 'object'
+        ? (userObj.ServerCharacters as Record<string, unknown>)
+        : {};
+    const fallbackChar = serverCharsMap[serverId];
+
+    if (!shardProfileDoc && !fallbackChar) {
+      throw new BadRequestException(
+        `Bạn chưa khởi tạo nhân vật tại máy chủ "${matchedServer.name}". Vui lòng đăng nhập vào game tại máy chủ này để tạo nhân vật trước khi nhận quà.`,
+      );
+    }
+
+    const profileObj = shardProfileDoc
+      ? this.firebase.docToObject(shardProfileDoc)
+      : fallbackChar && typeof fallbackChar === 'object'
+        ? (fallbackChar as Record<string, unknown>)
+        : {};
+    const characterName = (
+      (typeof profileObj.InGameName === 'string' &&
+        profileObj.InGameName.trim()) ||
+      (typeof profileObj.Name === 'string' && profileObj.Name.trim()) ||
+      user.username ||
+      'Chỉ Huy'
+    ).slice(0, 120);
+    const characterLevel = Math.max(
+      1,
+      Math.trunc(Number(profileObj.Level) || 1),
+    );
+
+    const rawItemInput =
+      typeof rawBody.itemId === 'string'
+        ? rawBody.itemId
+        : typeof rawBody.ItemId === 'string'
+          ? rawBody.ItemId
+          : '';
+    const requestedItemId = rawItemInput.trim();
+    const isClaimAll =
+      !requestedItemId || requestedItemId.toUpperCase() === 'ALL';
+
+    const currentInventory = { ...playerState.Inventory };
+    const availableEntries = Object.values(currentInventory).filter(
+      (entry) =>
+        entry &&
+        typeof entry.ItemId === 'string' &&
+        entry.ItemId.trim() &&
+        Number(entry.Quantity) > 0,
+    );
+
+    if (availableEntries.length === 0) {
+      throw new BadRequestException(
+        'Kho đồ sự kiện của bạn hiện đang trống, chưa có vật phẩm để nhận.',
+      );
+    }
+
+    const claimedItems: PlayerInventoryClaimItem[] = [];
+    const depletedItemIds: string[] = [];
+    const updatedItemEntries: PlayerInventoryEntry[] = [];
+    const nowIso = new Date().toISOString();
+
+    if (isClaimAll) {
+      const sliceToClaim = availableEntries.slice(0, 30);
+      for (const entry of sliceToClaim) {
+        const qty = Math.max(1, Math.min(999999, Math.trunc(Number(entry.Quantity) || 1)));
+        claimedItems.push({
+          ItemId: entry.ItemId,
+          ItemName: entry.ItemName || entry.ItemId,
+          Rarity: entry.Rarity || 'SR',
+          Quantity: qty,
+        });
+        delete currentInventory[entry.ItemId];
+        depletedItemIds.push(entry.ItemId);
+      }
+    } else {
+      const targetKey = Object.keys(currentInventory).find(
+        (k) => k.toLowerCase() === requestedItemId.toLowerCase(),
+      );
+      const targetEntry = targetKey ? currentInventory[targetKey] : undefined;
+      if (!targetEntry || !targetKey || Number(targetEntry.Quantity) <= 0) {
+        throw new BadRequestException(
+          'Vật phẩm đã chọn không còn trong kho đồ sự kiện hoặc đã được nhận.',
+        );
+      }
+
+      const maxQty = Math.max(1, Math.trunc(Number(targetEntry.Quantity) || 1));
+      const requestedQty =
+        rawBody.quantity !== undefined
+          ? Math.max(1, Math.min(maxQty, Math.trunc(Number(rawBody.quantity) || maxQty)))
+          : maxQty;
+
+      claimedItems.push({
+        ItemId: targetEntry.ItemId,
+        ItemName: targetEntry.ItemName || targetEntry.ItemId,
+        Rarity: targetEntry.Rarity || 'SR',
+        Quantity: requestedQty,
+      });
+
+      const remainingQty = maxQty - requestedQty;
+      if (remainingQty <= 0) {
+        delete currentInventory[targetKey];
+        depletedItemIds.push(targetEntry.ItemId);
+      } else {
+        const updatedEntry: PlayerInventoryEntry = {
+          ...targetEntry,
+          Quantity: remainingQty,
+          UpdatedAt: nowIso,
+        };
+        currentInventory[targetKey] = updatedEntry;
+        updatedItemEntries.push(updatedEntry);
+      }
+    }
+
+    // Đối chiếu bảng ItemConfigs để đồng bộ chính xác mã vật phẩm & phẩm chất trong game
+    const itemConfigsMap = new Map<
+      string,
+      { itemName: string; rarity: number }
+    >();
+    for (const doc of itemConfigDocs) {
+      const id = this.firebase.extractDocId(doc.name);
+      const obj = this.firebase.docToObject(doc);
+      const itemId =
+        (typeof obj.ItemId === 'string' && obj.ItemId.trim()) || id;
+      const itemName =
+        (typeof obj.ItemName === 'string' && obj.ItemName.trim()) ||
+        (typeof obj.Name === 'string' && obj.Name.trim()) ||
+        itemId;
+      const rarity = Math.max(
+        0,
+        Math.min(4, Math.trunc(Number(obj.Rarity) || 0)),
+      );
+      itemConfigsMap.set(itemId, { itemName, rarity });
+    }
+
+    let addGold = 0;
+    let addGems = 0;
+    let addEnergy = 0;
+    const mailItems: Array<{
+      ItemId: string;
+      ItemName: string;
+      Quantity: number;
+      Rarity: number;
+    }> = [];
+
+    for (const claimed of claimedItems) {
+      const cleanId = claimed.ItemId.trim();
+      const lowerId = cleanId.toLowerCase();
+      const cfg = itemConfigsMap.get(cleanId);
+
+      if (!cfg && ['gold', 'currency_gold', 'xu_vang'].includes(lowerId)) {
+        addGold = Math.min(1000000000, addGold + claimed.Quantity);
+      } else if (
+        !cfg &&
+        ['gems', 'currency_gems', 'pha_le', 'item_08', 'veyra_gem_500'].includes(
+          lowerId,
+        )
+      ) {
+        addGems = Math.min(10000000, addGems + claimed.Quantity);
+      } else if (
+        !cfg &&
+        ['energy', 'currency_energy', 'the_luc'].includes(lowerId)
+      ) {
+        addEnergy = Math.min(100000, addEnergy + claimed.Quantity);
+      } else {
+        const safeItemId = VALID_ITEM_ID_REGEX.test(cleanId)
+          ? cleanId
+          : cleanId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 80) || 'item_01';
+        mailItems.push({
+          ItemId: safeItemId,
+          ItemName: (cfg?.itemName || claimed.ItemName || safeItemId).slice(
+            0,
+            120,
+          ),
+          Quantity: Math.max(1, Math.min(999999, claimed.Quantity)),
+          Rarity:
+            cfg !== undefined
+              ? cfg.rarity
+              : this.rarityLabelToMailRarityInt(claimed.Rarity),
+        });
+      }
+    }
+
+    const datePart = nowIso.slice(0, 10).replace(/-/g, '');
+    const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const mailId = `mail_ev_${datePart}_${randomPart}`;
+    const expiresAt = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    const itemsSummaryText = claimedItems
+      .map((it) => `• [${it.Rarity}] ${it.ItemName} x${it.Quantity}`)
+      .join('\n');
+
+    const mailTitle = `[Sự Kiện] ${event.Title}`.slice(0, 150);
+    const mailContent =
+      `Chúc mừng Chỉ Huy ${characterName}!\n\n` +
+      `Hệ thống đã chuyển vật phẩm từ Kho Đồ sự kiện "${event.Title}" về nhân vật của bạn tại máy chủ ${matchedServer.name}:\n` +
+      `${itemsSummaryText}\n\n` +
+      `Hãy nhấn Nhận Quà để chuyển vật phẩm vào túi đồ nhân vật.`.slice(
+        0,
+        4000,
+      );
+
+    // Đúng 24 trường chuẩn của Users/{userId}/Mailbox/{mailId} trong firestore.server.rules
+    const personalMailDoc: Record<string, unknown> = {
+      MailId: mailId,
+      ServerId: serverId,
+      Type: 'personal',
+      Category: 'EVENT',
+      Title: mailTitle,
+      Content: mailContent,
+      SenderName: 'Sự Kiện Veyra',
+      TargetServers: [serverId],
+      ReceiverId: user.uid,
+      UserId: user.uid,
+      ReceiverName: characterName,
+      ReceiverPlayerCode: playerCode,
+      HasRewards: true,
+      Rewards: {
+        Gold: addGold,
+        Gems: addGems,
+        Energy: addEnergy,
+        Items: mailItems,
+      },
+      ReferenceTicketId: event.EventId.slice(0, 64),
+      Status: 'SENT',
+      IsRead: false,
+      IsClaimed: false,
+      ClaimedAt: '',
+      ExpiresAt: expiresAt,
+      CreatedAt: nowIso,
+      UpdatedAt: nowIso,
+      CreatedBy: 'Hệ Thống Sự Kiện Veyra',
+      UpdatedBy: 'Hệ Thống Sự Kiện Veyra',
+    };
+
+    // 1. Tạo thư cá nhân trực tiếp vào database serverId: Users/{uid}/Mailbox/{mailId}
+    await this.firebase.createDocument(
+      `${USERS_COLLECTION}/${user.uid}/${MAILBOX_COLLECTION}`,
+      mailId,
+      personalMailDoc,
+      user.authTokenForFirestore,
+      serverId,
+    );
+
+    // 2. Cập nhật Kho Đồ sự kiện và lưu lịch sử nhận quà qua thư trên (default)
+    const claimRecord: PlayerInventoryClaimRecord = {
+      ClaimId: `claim_${Date.now()}_${randomPart.slice(0, 4)}`,
+      MailId: mailId,
+      EventId: event.EventId,
+      ServerId: serverId,
+      ServerName: matchedServer.name,
+      CharacterName: characterName,
+      CharacterLevel: characterLevel,
+      Items: claimedItems,
+      ClaimedAt: nowIso,
+    };
+
+    const prevHistory = Array.isArray(playerState.ClaimedHistory)
+      ? playerState.ClaimedHistory
+      : [];
+    const updatedState: PlayerEventState = {
+      ...playerState,
+      Inventory: currentInventory,
+      ClaimedHistory: [claimRecord, ...prevHistory].slice(0, 30),
+      LastUpdated: nowIso,
+    };
+
+    const stateDocPath = `${WEB_EVENTS_COLLECTION}/${event.EventId}/PlayerStates/${user.uid}`;
+    const defaultWrites: FirestoreBatchWrite[] = [
+      {
+        update: {
+          name: this.firebase.fullDocumentName(stateDocPath),
+          fields: this.firebase.objectToFields(
+            this.buildFirestorePlayerDoc(
+              updatedState,
+              helpedTargetUids,
+              claimedHelperUids,
+            ),
+          ),
+        },
+      },
+      ...updatedItemEntries.map(
+        (entry): FirestoreBatchWrite => ({
+          update: {
+            name: this.firebase.fullDocumentName(
+              `${USERS_COLLECTION}/${user.uid}/Inventory/${entry.ItemId}`,
+            ),
+            fields: this.firebase.objectToFields(
+              entry as unknown as Record<string, unknown>,
+            ),
+          },
+        }),
+      ),
+      ...depletedItemIds.map(
+        (itemId): FirestoreBatchWrite => ({
+          delete: this.firebase.fullDocumentName(
+            `${USERS_COLLECTION}/${user.uid}/Inventory/${itemId}`,
+          ),
+        }),
+      ),
+    ];
+
+    await this.firebase.commitWrites(
+      defaultWrites,
+      user.authTokenForFirestore,
+    );
+
+    return {
+      mailId,
+      serverId,
+      serverName: matchedServer.name,
+      characterName,
+      characterLevel,
+      claimedItems,
       playerState: updatedState,
     };
   }

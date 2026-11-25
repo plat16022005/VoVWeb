@@ -120,6 +120,27 @@ export class EventsController {
     );
   }
 
+  @Get(':eventId/characters')
+  async getPlayerServerCharacters(
+    @Param('eventId') eventId: string,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    return this.eventsService.getPlayerServerCharacters(authHeader, eventId);
+  }
+
+  @Post(':eventId/inventory/claim')
+  async claimInventoryToMail(
+    @Param('eventId') eventId: string,
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.eventsService.claimInventoryToMail(
+      authHeader,
+      eventId,
+      body ?? {},
+    );
+  }
+
   // ==================== ADMIN / MANAGER CRUD ====================
 
   @Get()

@@ -58,6 +58,12 @@ let EventsController = class EventsController {
     async recordSpinAndSaveReward(eventId, authHeader, body) {
         return this.eventsService.recordSpinAndSaveReward(authHeader, eventId, body ?? {});
     }
+    async getPlayerServerCharacters(eventId, authHeader) {
+        return this.eventsService.getPlayerServerCharacters(authHeader, eventId);
+    }
+    async claimInventoryToMail(eventId, authHeader, body) {
+        return this.eventsService.claimInventoryToMail(authHeader, eventId, body ?? {});
+    }
     async getAllEvents(authHeader) {
         const operator = await this.firebase.authorizeOperator(authHeader, {
             permissionGroupId: 'event_management',
@@ -198,6 +204,23 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], EventsController.prototype, "recordSpinAndSaveReward", null);
+__decorate([
+    Get(':eventId/characters'),
+    __param(0, Param('eventId')),
+    __param(1, Headers('authorization')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "getPlayerServerCharacters", null);
+__decorate([
+    Post(':eventId/inventory/claim'),
+    __param(0, Param('eventId')),
+    __param(1, Headers('authorization')),
+    __param(2, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "claimInventoryToMail", null);
 __decorate([
     Get(),
     __param(0, Headers('authorization')),

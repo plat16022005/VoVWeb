@@ -5,6 +5,7 @@ import Link from "next/link";
 import StarCanvas from "@/components/common/StarCanvas";
 import {
   PlayerEventState,
+  PlayerServerCharacterOption,
   PlayerSpinRecord,
   WebEventDocument,
   eventsService,
@@ -76,6 +77,17 @@ export default function EventPlayerArenaView({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [wonPopup, setWonPopup] = useState<PlayerSpinRecord | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Modal chọn nhân vật theo từng server để nhận vật phẩm Kho Đồ qua thư trong game
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [claimTargetItemId, setClaimTargetItemId] = useState<string>("ALL");
+  const [serverCharacters, setServerCharacters] = useState<
+    PlayerServerCharacterOption[]
+  >([]);
+  const [selectedServerId, setSelectedServerId] = useState<string>("");
+  const [loadingCharacters, setLoadingCharacters] = useState(false);
+  const [claimingInventory, setClaimingInventory] = useState(false);
+  const [claimErrorMsg, setClaimErrorMsg] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -408,6 +420,77 @@ export default function EventPlayerArenaView({
     }
   };
 
+  const handleFetchServerCharacters = useCallback(async () => {
+    if (!eventDoc || !currentUser) return;
+    setLoadingCharacters(true);
+    setClaimErrorMsg(null);
+    try {
+      const res = await eventsService.getPlayerServerCharacters(eventDoc.EventId);
+      setServerCharacters(res.servers);
+      const preferred =
+        res.servers.find((s) => s.hasCharacter && s.isLastPlayed) ||
+        res.servers.find((s) => s.hasCharacter);
+      setSelectedServerId((prev) => {
+        if (prev && res.servers.some((s) => s.serverId === prev && s.hasCharacter)) {
+          return prev;
+        }
+        return preferred ? preferred.serverId : "";
+      });
+    } catch (err: unknown) {
+      setClaimErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Không thể tải danh sách máy chủ và nhân vật."
+      );
+    } finally {
+      setLoadingCharacters(false);
+    }
+  }, [eventDoc, currentUser]);
+
+  const handleOpenClaimModal = (targetItemId: string = "ALL") => {
+    soundEngine.playClick();
+    if (!currentUser) {
+      showToast("Vui lòng đăng nhập tài khoản Chỉ Huy để nhận vật phẩm về game.");
+      return;
+    }
+    setClaimTargetItemId(targetItemId);
+    setClaimErrorMsg(null);
+    setClaimModalOpen(true);
+    void handleFetchServerCharacters();
+  };
+
+  const handleConfirmClaimToMail = async () => {
+    if (!eventDoc || !currentUser) return;
+    if (!selectedServerId) {
+      setClaimErrorMsg("Vui lòng chọn một nhân vật tại máy chủ cần nhận thưởng.");
+      return;
+    }
+    setClaimingInventory(true);
+    setClaimErrorMsg(null);
+    soundEngine.playClick();
+    try {
+      const res = await eventsService.claimInventoryToMail(eventDoc.EventId, {
+        serverId: selectedServerId,
+        ...(claimTargetItemId !== "ALL" ? { itemId: claimTargetItemId } : {}),
+      });
+      setPlayerState(res.playerState);
+      syncAuthToIframe(eventDoc, res.playerState);
+      soundEngine.playCelestialChime();
+      setClaimModalOpen(false);
+      showToast(
+        `Đã gửi ${res.claimedItems.length} loại vật phẩm vào Hòm Thư nhân vật ${res.characterName} (${res.serverName})!`
+      );
+    } catch (err: unknown) {
+      setClaimErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Không thể gửi vật phẩm vào thư. Vui lòng thử lại."
+      );
+    } finally {
+      setClaimingInventory(false);
+    }
+  };
+
   const todayKey = new Date().toISOString().slice(0, 10);
   const inventoryItems = Object.values(playerState?.Inventory || {});
   const ticketDisplay = String(playerState?.SpinTickets ?? 0).padStart(2, "0");
@@ -667,7 +750,7 @@ export default function EventPlayerArenaView({
                     {[
                       { id: "missions" as const, label: "Nhận Lượt (2)" },
                       { id: "rewards" as const, label: `Phần Thưởng (${eventDoc.Rewards.length})` },
-                      { id: "inventory" as const, label: `Túi Đồ (${inventoryItems.length})` },
+                      { id: "inventory" as const, label: `Kho Đồ (${inventoryItems.length})` },
                     ].map((tab) => {
                       const active = folioTab === tab.id;
                       return (
@@ -950,13 +1033,29 @@ export default function EventPlayerArenaView({
 
                     {folioTab === "inventory" && (
                       <div className="p-4 space-y-5">
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-[family-name:var(--font-rajdhani)]">
-                            Vật Phẩm Đã Sở Hữu
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-[family-name:var(--font-rajdhani)]">
+                              Kho Đồ Sự Kiện ({inventoryItems.length})
+                            </div>
+                            {inventoryItems.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenClaimModal("ALL")}
+                                className="px-2.5 py-1 bg-[#f5c767] hover:bg-[#ffdc8a] text-[#060814] font-bold text-[10px] uppercase tracking-wider font-[family-name:var(--font-rajdhani)] transition-colors cursor-pointer shrink-0"
+                              >
+                                Nhận Tất Cả Qua Thư
+                              </button>
+                            )}
                           </div>
+
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            Nhấn <strong className="text-[#f5c767]">Nhận</strong> để chọn máy chủ và nhân vật. Vật phẩm sẽ được gửi trực tiếp vào Hòm Thư trong game.
+                          </p>
+
                           {inventoryItems.length === 0 ? (
-                            <div className="py-6 text-center text-xs text-slate-500 border border-dashed border-white/10">
-                              Chưa có vật phẩm nào trong túi đồ sự kiện.
+                            <div className="py-6 px-3 text-center text-xs text-slate-500 border border-dashed border-white/10">
+                              Chưa có vật phẩm nào trong kho đồ sự kiện.
                             </div>
                           ) : (
                             <div className="divide-y divide-white/10 border border-white/10 bg-[#050815]">
@@ -966,21 +1065,33 @@ export default function EventPlayerArenaView({
                                 return (
                                   <div
                                     key={entry.ItemId}
-                                    className="px-3 py-2.5 flex items-center justify-between gap-2"
+                                    className="px-3 py-2.5 flex items-center justify-between gap-2 hover:bg-white/[0.02]"
                                   >
                                     <div className="flex items-center gap-2 min-w-0">
                                       <span
-                                        className={`px-1.5 py-0.5 text-[10px] font-bold border ${style.tag}`}
+                                        className={`px-1.5 py-0.5 text-[10px] font-bold border shrink-0 ${style.tag}`}
                                       >
                                         {entry.Rarity}
                                       </span>
-                                      <span className="text-xs font-medium text-white truncate">
-                                        {entry.ItemName}
-                                      </span>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-medium text-white truncate">
+                                          {entry.ItemName}
+                                        </div>
+                                        <div className="text-[10px] text-[#f5c767] font-bold tabular-nums">
+                                          Số lượng: x{entry.Quantity}
+                                        </div>
+                                      </div>
                                     </div>
-                                    <span className="text-xs font-bold text-[#f5c767] tabular-nums shrink-0">
-                                      x{entry.Quantity}
-                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleOpenClaimModal(entry.ItemId)
+                                      }
+                                      className="px-2.5 py-1 bg-[#3fe9d6]/15 hover:bg-[#3fe9d6] border border-[#3fe9d6]/45 text-[#3fe9d6] hover:text-[#050814] text-[10px] font-bold uppercase tracking-wider font-[family-name:var(--font-rajdhani)] transition-colors cursor-pointer shrink-0"
+                                    >
+                                      Nhận
+                                    </button>
                                   </div>
                                 );
                               })}
@@ -988,9 +1099,59 @@ export default function EventPlayerArenaView({
                           )}
                         </div>
 
+                        {playerState?.ClaimedHistory &&
+                          playerState.ClaimedHistory.length > 0 && (
+                            <div className="space-y-2 pt-3 border-t border-white/10">
+                              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400 font-[family-name:var(--font-rajdhani)]">
+                                <span>Đã Gửi Vào Hòm Thư</span>
+                                <span className="text-emerald-400">
+                                  {playerState.ClaimedHistory.length} lần
+                                </span>
+                              </div>
+                              <div className="divide-y divide-white/10 border border-white/10 bg-[#050815]">
+                                {playerState.ClaimedHistory.slice(0, 8).map(
+                                  (claim) => (
+                                    <div
+                                      key={claim.ClaimId}
+                                      className="p-2.5 space-y-1 text-[11px]"
+                                    >
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="font-semibold text-[#3fe9d6] truncate">
+                                          {claim.CharacterName} (Lv.{claim.CharacterLevel})
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 shrink-0">
+                                          {claim.ServerName}
+                                        </span>
+                                      </div>
+                                      <div className="text-slate-200 leading-snug">
+                                        {claim.Items.map(
+                                          (it) =>
+                                            `[${it.Rarity}] ${it.ItemName} x${it.Quantity}`
+                                        ).join(", ")}
+                                      </div>
+                                      <div className="flex items-center justify-between text-[10px] text-slate-500">
+                                        <span className="text-emerald-400/90">
+                                          Đã chuyển vào thư nhân vật
+                                        </span>
+                                        <span className="tabular-nums">
+                                          {new Date(
+                                            claim.ClaimedAt
+                                          ).toLocaleTimeString("vi-VN", {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                         <div className="space-y-2 pt-3 border-t border-white/10">
                           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400 font-[family-name:var(--font-rajdhani)]">
-                            <span>Lịch Sử Gần Đây</span>
+                            <span>Lịch Sử Quay Gần Đây</span>
                             <span className="text-[#3fe9d6]">
                               {playerState?.TotalSpins ?? 0} lượt
                             </span>
@@ -1044,7 +1205,7 @@ export default function EventPlayerArenaView({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="hsr-card w-full max-w-md bg-[#080c1f] border-[#f5c767]/60 p-7 text-center space-y-5 shadow-[0_0_60px_rgba(245,199,103,0.2)]">
             <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#3fe9d6] uppercase font-[family-name:var(--font-rajdhani)]">
-              <span className="hsr-diamond" /> ĐÃ ĐỒNG BỘ TÚI ĐỒ <span className="hsr-diamond" />
+              <span className="hsr-diamond" /> ĐÃ CẤT VÀO KHO ĐỒ SỰ KIỆN <span className="hsr-diamond" />
             </div>
 
             <h3 className="text-2xl font-bold font-[family-name:var(--font-chakra-petch)] text-white uppercase tracking-wide">
@@ -1063,16 +1224,298 @@ export default function EventPlayerArenaView({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                soundEngine.playClick();
-                setWonPopup(null);
-              }}
-              className="hsr-btn-gold w-full py-3 text-xs cursor-pointer"
-            >
-              <span>Xác Nhận</span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const wonItemId = wonPopup.ItemId;
+                  setWonPopup(null);
+                  setFolioTab("inventory");
+                  handleOpenClaimModal(wonItemId);
+                }}
+                className="hsr-btn-gold w-full py-3 text-xs cursor-pointer"
+              >
+                <span>Nhận Về Thư Game</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.playClick();
+                  setWonPopup(null);
+                  setFolioTab("inventory");
+                }}
+                className="hsr-btn-glass w-full py-3 text-xs cursor-pointer"
+              >
+                <span>Xem Kho Đồ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Chọn Máy Chủ & Nhân Vật Nhận Quà Qua Hòm Thư */}
+      {claimModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="hsr-card w-full max-w-xl bg-[#080c1f] border-[#f5c767]/50 overflow-hidden flex flex-col max-h-[90vh] shadow-[0_0_60px_rgba(0,0,0,0.85)]">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-[#050816] border-b border-white/10 flex items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-[#f5c767] uppercase font-[family-name:var(--font-rajdhani)]">
+                  <span className="hsr-diamond" /> KHO ĐỒ SỰ KIỆN · CHUYỂN VÀO HÒM THƯ
+                </div>
+                <h3 className="text-lg font-bold font-[family-name:var(--font-chakra-petch)] text-white uppercase tracking-wide mt-0.5">
+                  Chọn Máy Chủ & Nhân Vật Nhận Thưởng
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                disabled={claimingInventory}
+                onClick={() => {
+                  soundEngine.playClick();
+                  setClaimModalOpen(false);
+                }}
+                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/15 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar">
+              {claimErrorMsg && (
+                <div className="p-3.5 bg-rose-500/15 border border-rose-500/40 text-xs text-rose-200 leading-relaxed">
+                  {claimErrorMsg}
+                </div>
+              )}
+
+              {/* 1. Vật phẩm sẽ gửi vào Hòm Thư */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 font-[family-name:var(--font-rajdhani)]">
+                    1. Vật Phẩm Chuyển Về Hòm Thư
+                  </span>
+
+                  {inventoryItems.length > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      {claimTargetItemId !== "ALL" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            soundEngine.playClick();
+                            setClaimTargetItemId("ALL");
+                          }}
+                          className="px-2.5 py-1 bg-[#f5c767]/15 hover:bg-[#f5c767]/25 border border-[#f5c767]/40 text-[10px] font-bold uppercase tracking-wider text-[#f5c767] transition-colors cursor-pointer"
+                        >
+                          Chuyển sang Nhận Tất Cả ({inventoryItems.length})
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="divide-y divide-white/10 border border-white/15 bg-[#050815] max-h-40 overflow-y-auto custom-scrollbar">
+                  {(claimTargetItemId === "ALL"
+                    ? inventoryItems
+                    : inventoryItems.filter(
+                        (it) => it.ItemId === claimTargetItemId
+                      )
+                  ).map((entry) => {
+                    const style =
+                      RARITY_STYLES[entry.Rarity] || RARITY_STYLES.SR;
+                    return (
+                      <div
+                        key={entry.ItemId}
+                        className="px-3.5 py-2.5 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className={`px-1.5 py-0.5 text-[10px] font-bold border shrink-0 ${style.tag}`}
+                          >
+                            {entry.Rarity}
+                          </span>
+                          <span className="text-xs font-semibold text-white truncate">
+                            {entry.ItemName}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold text-[#f5c767] tabular-nums shrink-0">
+                          x{entry.Quantity}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Chọn Máy chủ & Nhân vật */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 font-[family-name:var(--font-rajdhani)]">
+                    2. Chọn Nhân Vật Theo Máy Chủ
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={loadingCharacters || claimingInventory}
+                    onClick={() => {
+                      soundEngine.playClick();
+                      void handleFetchServerCharacters();
+                    }}
+                    className="text-[11px] font-semibold text-[#3fe9d6] hover:underline cursor-pointer disabled:opacity-50"
+                  >
+                    {loadingCharacters ? "Đang tải..." : "Làm mới danh sách"}
+                  </button>
+                </div>
+
+                {loadingCharacters ? (
+                  <div className="p-8 bg-[#050815] border border-white/10 flex flex-col items-center justify-center space-y-2.5">
+                    <div className="w-6 h-6 border-2 border-[#3fe9d6] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs text-slate-400">
+                      Đang tra cứu nhân vật trên các cụm máy chủ Veyra...
+                    </span>
+                  </div>
+                ) : serverCharacters.length === 0 ? (
+                  <div className="p-5 bg-[#050815] border border-white/10 text-center text-xs text-slate-400">
+                    Không tìm thấy cụm máy chủ nào đang hoạt động.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {serverCharacters.map((srv) => {
+                      const isSelected =
+                        srv.hasCharacter && selectedServerId === srv.serverId;
+                      return (
+                        <button
+                          key={srv.serverId}
+                          type="button"
+                          disabled={!srv.hasCharacter || claimingInventory}
+                          onClick={() => {
+                            if (!srv.hasCharacter) return;
+                            soundEngine.playClick();
+                            setSelectedServerId(srv.serverId);
+                            setClaimErrorMsg(null);
+                          }}
+                          className={`w-full p-3.5 text-left border transition-all flex items-center justify-between gap-3 ${
+                            !srv.hasCharacter
+                              ? "bg-[#050815]/50 border-white/10 opacity-55 cursor-not-allowed"
+                              : isSelected
+                                ? "bg-[#0d1435] border-[#f5c767] shadow-[0_0_20px_rgba(245,199,103,0.18)] cursor-pointer"
+                                : "bg-[#050815] border-white/15 hover:border-[#3fe9d6]/50 cursor-pointer"
+                          }`}
+                        >
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2 py-0.5 bg-white/10 text-[10px] font-mono font-bold uppercase text-[#3fe9d6]">
+                                {srv.serverId.toUpperCase()}
+                              </span>
+                              <span className="text-xs font-bold text-white">
+                                {srv.serverName}
+                              </span>
+                              {srv.isLastPlayed && srv.hasCharacter && (
+                                <span className="px-1.5 py-0.5 bg-[#f5c767]/15 border border-[#f5c767]/40 text-[10px] font-bold text-[#f5c767] uppercase">
+                                  Chơi gần nhất
+                                </span>
+                              )}
+                            </div>
+
+                            {srv.hasCharacter ? (
+                              <div className="flex flex-wrap items-center gap-3 text-xs">
+                                <span className="text-slate-200">
+                                  Nhân vật:{" "}
+                                  <strong className="text-[#f5c767]">
+                                    {srv.inGameName}
+                                  </strong>
+                                </span>
+                                <span className="text-slate-400">
+                                  Cấp độ:{" "}
+                                  <strong className="text-white">
+                                    Lv.{srv.level}
+                                  </strong>
+                                </span>
+                                {srv.totalCombatPower > 0 && (
+                                  <span className="text-slate-400">
+                                    Lực chiến:{" "}
+                                    <strong className="text-[#3fe9d6] tabular-nums">
+                                      {srv.totalCombatPower.toLocaleString("vi-VN")}
+                                    </strong>
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-500">
+                                Chưa khởi tạo nhân vật tại máy chủ này
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="shrink-0">
+                            {srv.hasCharacter ? (
+                              <span
+                                className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                                  isSelected
+                                    ? "bg-[#f5c767] text-[#050814] border-[#f5c767]"
+                                    : "bg-white/5 text-slate-300 border-white/15"
+                                }`}
+                              >
+                                {isSelected ? "Đang Chọn" : "Chọn"}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono uppercase text-slate-600">
+                                Chưa có NV
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {!serverCharacters.some((s) => s.hasCharacter) && (
+                      <div className="p-3.5 bg-amber-500/10 border border-amber-500/35 text-xs text-amber-200 leading-relaxed">
+                        Tài khoản của Chỉ Huy hiện chưa khởi tạo nhân vật ở bất kỳ máy chủ nào. Vui lòng đăng nhập vào game <strong>Valkyria of Veyra</strong> để tạo nhân vật trước khi nhận quà sự kiện qua thư.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Ghi chú phương thức nhận */}
+              <div className="p-3.5 bg-[#050816] border border-[#3fe9d6]/30 text-[11px] text-slate-300 leading-relaxed">
+                Sau khi xác nhận, vật phẩm sẽ được trừ khỏi <strong className="text-white">Kho Đồ Sự Kiện</strong> và chuyển ngay vào <strong className="text-[#3fe9d6]">Hòm Thư Cá Nhân</strong> của nhân vật đã chọn trong game.
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-[#050816] border-t border-white/10 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={claimingInventory}
+                onClick={() => {
+                  soundEngine.playClick();
+                  setClaimModalOpen(false);
+                }}
+                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/15 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  claimingInventory ||
+                  loadingCharacters ||
+                  !selectedServerId ||
+                  !serverCharacters.some(
+                    (s) => s.serverId === selectedServerId && s.hasCharacter
+                  )
+                }
+                onClick={handleConfirmClaimToMail}
+                className="px-5 py-2.5 bg-[#f5c767] hover:bg-[#ffdc8a] text-[#050814] font-bold text-xs uppercase tracking-wider font-[family-name:var(--font-rajdhani)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {claimingInventory
+                  ? "Đang gửi vào Hòm Thư..."
+                  : "Xác Nhận Nhận Qua Thư"}
+              </button>
+            </div>
           </div>
         </div>
       )}
