@@ -37,3 +37,75 @@ jobs:
       - run: npm run lint --if-present
       - run: npm run build --if-present
       - run: npm test --if-present
+
+  deploy-firestore-rules:
+    name: Deploy Firestore Rules
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Auto-sync Active Servers from Firestore into firebase.json
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            (async () => {
+              const cfg = JSON.parse(fs.readFileSync("firebase.json", "utf8"));
+              const existing = new Set(
+                (cfg.firestore || [])
+                  .map((d) => d.database)
+                  .filter((db) => db && db !== "(default)")
+              );
+              try {
+                const url = "https://firestore.googleapis.com/v1/projects/valkyria-of-verya/databases/(default)/documents/GameConfig/ServerList";
+                const res = await fetch(url);
+                if (res.ok) {
+                  const doc = await res.json();
+                  for (const serverId of Object.keys(doc.fields || {})) {
+                    existing.add(serverId.trim().toLowerCase());
+                  }
+                }
+              } catch (err) {
+                console.warn("Could not fetch dynamic ServerList, using firebase.json defaults:", err.message);
+              }
+              const servers = Array.from(existing).sort();
+              console.log("Discovered active server shards:", servers.join(", "));
+              cfg.firestore = [
+                {
+                  database: "(default)",
+                  rules: "firestore.rules",
+                  indexes: "firestore.indexes.json"
+                },
+                ...servers.map((serverId) => ({
+                  database: serverId,
+                  rules: "firestore.server.rules"
+                }))
+              ];
+              fs.writeFileSync("firebase.json", JSON.stringify(cfg, null, 2));
+            })();
+          '
+
+      - name: Deploy Firestore Rules to Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+            export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+            npx --yes firebase-tools deploy --only firestore:rules --project valkyria-of-verya --non-interactive
+            rm -f "$RUNNER_TEMP/firebase-sa.json"
+          elif [ -n "$FIREBASE_TOKEN" ]; then
+            npx --yes firebase-tools deploy --only firestore:rules --project valkyria-of-verya --token "$FIREBASE_TOKEN" --non-interactive
+          else
+            echo "::error::Missing Firebase credentials! Please add FIREBASE_SERVICE_ACCOUNT (or FIREBASE_TOKEN) in GitHub Repository Secrets."
+            exit 1
+          fi
+
