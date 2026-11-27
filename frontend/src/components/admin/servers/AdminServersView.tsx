@@ -338,7 +338,7 @@ export default function AdminServersView() {
           </div>
 
           {/* Right Controls: Auto-sync toggle & Ping & Refresh & Create Button */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
             {/* Auto-sync button */}
             <button
               onClick={() => {
@@ -346,7 +346,7 @@ export default function AdminServersView() {
                 setIsAutoSync(!isAutoSync);
               }}
               title="Tự động đồng bộ số liệu mỗi 10 giây"
-              className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono transition-all cursor-pointer ${
                 isAutoSync
                   ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                   : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
