@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extractBlogMedia, toUnicodeBold } from "./facebookFormatter";
+import {
+  convertBlogToFacebookText,
+  extractBlogMedia,
+  toUnicodeBold,
+} from "./facebookFormatter";
 
 describe("toUnicodeBold", () => {
   it("chuyển chữ và số Latinh sang Unicode in đậm", () => {
@@ -47,9 +51,12 @@ describe("extractBlogMedia", () => {
     const html =
       '<img src="https://cdn.test/cover.png"><img src="https://cdn.test/x.png"><img src="https://cdn.test/x.png">';
     const urls = extractBlogMedia(html, "https://cdn.test/cover.png").map(
-      (m) => m.url,
+      (m) => m.url
     );
-    expect(urls).toEqual(["https://cdn.test/cover.png", "https://cdn.test/x.png"]);
+    expect(urls).toEqual([
+      "https://cdn.test/cover.png",
+      "https://cdn.test/x.png",
+    ]);
   });
 
   it("nhận diện thẻ video", () => {
@@ -57,5 +64,34 @@ describe("extractBlogMedia", () => {
     const result = extractBlogMedia(html);
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe("video");
+  });
+});
+
+describe("convertBlogToFacebookText", () => {
+  it("chuyển đổi tiêu đề, đoạn trích, danh sách và thẻ in đậm sang bài đăng Fanpage", () => {
+    const text = convertBlogToFacebookText({
+      title: "Cập Nhật Phiên Bản Mới",
+      excerpt: "Khám phá vùng đất Veyra",
+      contentHtml:
+        "<h2>Nội Dung Chính</h2><ul><li>Valkyria mới</li></ul><p><strong>SSR</strong> và <strong>Nữ Chiến Binh</strong></p>",
+      postUrl: "https://vovgame.online/blog/cap-nhat",
+    });
+
+    expect(text).toContain("【 CẬP NHẬT PHIÊN BẢN MỚI 】");
+    expect(text).toContain("Khám phá vùng đất Veyra");
+    expect(text).toContain("• Valkyria mới");
+    expect(text).toContain("𝗦𝗦𝗥");
+    expect(text).toContain("【Nữ Chiến Binh】");
+    expect(text).toContain("https://vovgame.online/blog/cap-nhat");
+    expect(text).toContain("#ValkyriaOfVeyra");
+  });
+
+  it("ẩn đường dẫn bài viết nếu là URL localhost", () => {
+    const text = convertBlogToFacebookText({
+      title: "Bản Tin Thử Nghiệm",
+      contentHtml: "<p>Nội dung</p>",
+      postUrl: "http://localhost:3002/blog/test",
+    });
+    expect(text).not.toContain("localhost:3002");
   });
 });

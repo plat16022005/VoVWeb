@@ -124,6 +124,19 @@ Tài liệu này ghi nhận toàn bộ kiến trúc, bài học và quy chuẩn 
   - **Backend (`backend/`) nắm toàn bộ logic xử lý**: Mọi quy trình validate dữ liệu đầu vào, kiểm tra quyền (Admin/Manager & Sub-permissions từ Firebase ID Token), CRUD cơ sở dữ liệu, ký URL/xóa file lưu trữ (Cloudflare R2) và ghi Nhật ký Kiểm toán (`Logs`) phải thực thi tập trung ở NestJS Backend (`/api/*`).
   - Các dữ liệu chưa công khai (ví dụ mùa Banner ở trạng thái bản nháp) phải được bảo vệ chặt chẽ ở tầng Security Rules và API Backend để tránh rò rỉ dữ liệu chưa phát hành.
 
+---
+
+## 11. Quy chuẩn Kiểm Thử Tự Động & CI/CD (Mandatory Unit Testing & CI/CD)
+- **Nguyên tắc Bắt Buộc Viết Unit Test Cho Mọi Chức Năng (MANDATORY)**:
+  - Bất cứ khi nào xây dựng một **chức năng mới** hoặc cập nhật/sửa đổi **chức năng hiện có** (dù thuộc phân hệ **Admin**, **Manager** hay **Web cho Người Chơi / Player**), **BẮT BUỘC PHẢI VIẾT HOẶC CẬP NHẬT BỘ UNIT TEST TƯƠNG ỨNG** ở cả **Backend** lẫn **Frontend**:
+    1. **Backend (`backend/src/**/*.spec.ts`)**: Sử dụng **Vitest** (`npm --prefix backend test`). Phải kiểm thử đầy đủ logic nghiệp vụ trong Service/Controller, ràng buộc dữ liệu đầu vào (validation), xử lý ngoại lệ (`BadRequestException`, `ForbiddenException`, `NotFoundException`, `ConflictException`) và kiểm tra phân quyền RBAC.
+    2. **Frontend (`frontend/src/**/*.test.{ts,tsx}`)**: Sử dụng **Vitest + JSDOM** (`npm --prefix frontend test`). Phải kiểm thử đầy đủ các hàm helper, định dạng dữ liệu, ánh xạ trạng thái trong `src/services/`, `src/data/`, `src/utils/` và tuân thủ quy chuẩn cốt truyện.
+    3. **Xác nhận trước khi hoàn tất**: Luôn chạy kiểm tra test và lint ở local đảm bảo PASS 100% trước khi báo cáo hoàn thành để không bao giờ làm gãy pipeline CI.
+- **Quy chuẩn Nhánh & Pipeline CI/CD**:
+  - **GitHub Actions CI (`.github/workflows/node.js.yml`)**: Chạy song song 2 job `build (frontend)` và `build (backend)` trên **Node.js 24** (`npm ci` -> `npm run lint` -> `npm run build` -> `npm test`) khi push hoặc tạo Pull Request vào `main` và `production`.
+  - **Luồng Triển Khai (CD)**: Phát triển và kiểm thử trên nhánh `main`; nhánh `production` được bảo vệ bởi **GitHub Ruleset** (bắt buộc qua Pull Request và vượt qua cả 2 status checks `build (frontend)` & `build (backend)` mới được phép merge). Vercel (`vovgame.online`) và Render chỉ tự động deploy từ nhánh `production`.
+
+
 
 
 
