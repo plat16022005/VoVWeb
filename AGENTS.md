@@ -134,7 +134,7 @@ Tài liệu này ghi nhận toàn bộ kiến trúc, bài học và quy chuẩn 
     3. **Xác nhận trước khi hoàn tất**: Luôn chạy kiểm tra test và lint ở local đảm bảo PASS 100% trước khi báo cáo hoàn thành để không bao giờ làm gãy pipeline CI.
 - **Quy chuẩn Nhánh & Pipeline CI/CD**:
   - **GitHub Actions CI (`.github/workflows/node.js.yml`)**: Chạy song song 2 job `build (frontend)` và `build (backend)` trên **Node.js 24** (`npm ci` -> `npm run lint` -> `npm run build` -> `npm test`) khi push hoặc tạo Pull Request vào `main` và `production`.
-  - **Luồng Triển Khai (CD)**: Phát triển và kiểm thử trên nhánh `main`; nhánh `production` được bảo vệ bởi **GitHub Ruleset** (bắt buộc qua Pull Request và vượt qua cả 2 status checks `build (frontend)` & `build (backend)` mới được phép merge). Vercel (`vovgame.online`) và Render chỉ tự động deploy từ nhánh `production`.
+  - **Luồng Triển Khai (CD)**: Phát triển và kiểm thử trên nhánh `main`; nhánh `production` được bảo vệ bởi **GitHub Ruleset** (bắt buộc qua Pull Request và vượt qua cả 2 status checks `build (frontend)` & `build (backend)` mới được phép merge). Khi merge vào `production`, Vercel (`vovgame.online`) tự động deploy Frontend, Render tự động deploy Backend, và job `deploy-firestore-rules` trên GitHub Actions tự động truy vấn danh sách máy chủ thực tế từ `GameConfig/ServerList` để triển khai `firestore.rules` (cho `(default)`) & `firestore.server.rules` (cho toàn bộ cụm máy chủ hiện có) lên Firebase mà không cần sửa `firebase.json` thủ công.
 
 
 
