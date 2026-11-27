@@ -74,7 +74,7 @@ export default function BlogDetailModal({
             <Link
               href={`/blog/${post.id}`}
               onClick={() => soundEngine.playClick()}
-              className="p-1.5 px-3 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/30 text-xs font-mono text-[#3fe9d6] hover:bg-[#3fe9d6]/20 transition-colors hidden sm:inline-flex items-center gap-1"
+              className="p-1.5 px-2.5 sm:px-3 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/30 text-xs font-mono text-[#3fe9d6] hover:bg-[#3fe9d6]/20 transition-colors inline-flex items-center gap-1"
             >
               <span>Toàn trang</span>
             </Link>

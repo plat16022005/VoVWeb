@@ -25,7 +25,7 @@ export default function WorldSection() {
           </div>
 
           {/* World Selector Tabs */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {WORLDS.map((w) => (
               <button
                 key={w.id}
