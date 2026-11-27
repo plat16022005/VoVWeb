@@ -4,8 +4,9 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/services/auth.service";
 import { hasPermission } from "@/data/permissions";
 import SystemMailManager from "./SystemMailManager";
+import PlayerDataManager from "./PlayerDataManager";
 
-export type SupportSubTab = "mail";
+export type SupportSubTab = "mail" | "players";
 
 export default function ManagerSupportView({
   initialSubTab = "mail",
@@ -30,12 +31,22 @@ export default function ManagerSupportView({
     canSendGlobalReward ||
     canDelete;
 
+  const canRevokePlayerItem = hasPermission(
+    currentUser,
+    "support.player.revoke_item"
+  );
+  const hasPlayerDataAccess =
+    hasPermission(currentUser, "support.player.view") || canRevokePlayerItem;
+
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
   }, []);
 
-  if (!hasMailAccess) {
+  if (
+    (initialSubTab === "mail" && !hasMailAccess) ||
+    (initialSubTab === "players" && !hasPlayerDataAccess)
+  ) {
     return (
       <div className="py-20 p-8 rounded-3xl bg-[#090d24]/90 border border-amber-500/30 text-center space-y-3">
         <span className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider">
@@ -45,7 +56,7 @@ export default function ManagerSupportView({
           Chưa Được Cấp Quyền Thao Tác Chi Tiết
         </h3>
         <p className="text-xs text-slate-400 max-w-md mx-auto font-sans">
-          Tài khoản của bạn thuộc nhóm Hỗ Trợ Người Chơi nhưng toàn bộ quyền thao tác chi tiết (Hòm Thư Hệ Thống) đều đang bị hạn chế. Vui lòng liên hệ Quản Trị Viên để mở quyền.
+          Tài khoản của bạn thuộc nhóm Hỗ Trợ Người Chơi nhưng chưa được mở quyền thao tác cho chức năng này. Vui lòng liên hệ Quản Trị Viên để được cấp quyền.
         </p>
       </div>
     );
@@ -65,6 +76,13 @@ export default function ManagerSupportView({
           canSendPersonalReward={canSendPersonalReward}
           canSendGlobalReward={canSendGlobalReward}
           canDelete={canDelete}
+          onNotify={showToast}
+        />
+      )}
+
+      {initialSubTab === "players" && (
+        <PlayerDataManager
+          canRevoke={canRevokePlayerItem}
           onNotify={showToast}
         />
       )}

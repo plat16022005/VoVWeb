@@ -247,25 +247,89 @@ export async function getServerLogs(limitCount = 200): Promise<ServerAuditLog[]>
 }
 
 /**
+ * Lấy Firebase ID Token của Admin hiện tại và tự động kích hoạt đồng bộ Custom Claim { role: 'admin' }
+ * nếu Token chưa có claim 'admin' (giúp Cloud Functions createNewServer & applyRulesToServer xác thực 100%).
+ */
+async function getVerifiedAdminIdToken(forceRefresh = false): Promise<string> {
+  if (!auth) {
+    throw new Error("Hệ thống xác thực chưa sẵn sàng.");
+  }
+  if (typeof auth.authStateReady === "function") {
+    await auth.authStateReady();
+  }
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error(
+      "Phiên đăng nhập Quản trị viên đã hết hạn. Vui lòng đăng nhập lại."
+    );
+  }
+
+  let tokenResult = await user.getIdTokenResult(forceRefresh);
+  const currentClaimRole = String(tokenResult.claims?.role || "").toLowerCase();
+
+  if (currentClaimRole !== "admin" && db) {
+    try {
+      const userDocRef = doc(db, "Users", user.uid);
+      const snap = await getDoc(userDocRef);
+      const rawRole = snap.exists() ? String(snap.data()?.Role || "") : "";
+      if (rawRole.toLowerCase() === "admin") {
+        // Kích hoạt Cloud Function trigger onUserRoleChanged (yêu cầu Role thay đổi sang chữ thường 'admin')
+        if (rawRole === "admin") {
+          await setDoc(userDocRef, { Role: "Admin" }, { merge: true });
+          await new Promise((r) => setTimeout(r, 450));
+        }
+        await setDoc(userDocRef, { Role: "admin" }, { merge: true });
+
+        // Chờ Cloud Function onUserRoleChanged cập nhật Custom Claims trên Firebase Auth
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await new Promise((r) => setTimeout(r, 1100));
+          tokenResult = await user.getIdTokenResult(true);
+          if (String(tokenResult.claims?.role || "").toLowerCase() === "admin") {
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[ServerManagement] Không thể tự đồng bộ Admin Claim:", err);
+    }
+  }
+
+  return tokenResult.token;
+}
+
+/**
  * Gọi Backend NestJS để kích hoạt Firebase Cloud Function createNewServer
  */
 export async function callCreateNewServer(
   payload: CreateServerPayload
 ): Promise<CreateServerResult> {
   const url = `${API_BASE_URL}/servers/create`;
+  let idToken = await getVerifiedAdminIdToken(false);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      serverId: payload.serverId,
-      serverName: payload.serverName,
-      locationId: payload.locationId || "asia-southeast1",
-      status: payload.status || "Normal",
-    }),
-  });
+  const sendRequest = async (token: string) =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        serverId: payload.serverId,
+        serverName: payload.serverName,
+        locationId: payload.locationId || "asia-southeast1",
+        status: payload.status || "Normal",
+      }),
+    });
+
+  let response = await sendRequest(idToken);
+  if (response.status === 400 || response.status === 401 || response.status === 403) {
+    const cloneJson = await response.clone().json().catch(() => ({}));
+    const msg = String(cloneJson?.message || cloneJson?.error || "");
+    if (msg.includes("Chỉ Quản trị viên") || msg.includes("Chỉ Admin")) {
+      idToken = await getVerifiedAdminIdToken(true);
+      response = await sendRequest(idToken);
+    }
+  }
 
   const resJson = await response.json();
 
@@ -288,13 +352,26 @@ export async function callApplyRulesToServer(
   serverId: string
 ): Promise<{ success: boolean; message: string; serverId: string }> {
   const url = `${API_BASE_URL}/servers/${serverId}/rules`;
+  let idToken = await getVerifiedAdminIdToken(false);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  const sendRequest = async (token: string) =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+  let response = await sendRequest(idToken);
+  if (response.status === 400 || response.status === 401 || response.status === 403) {
+    const cloneJson = await response.clone().json().catch(() => ({}));
+    const msg = String(cloneJson?.message || cloneJson?.error || "");
+    if (msg.includes("Chỉ Admin") || msg.includes("Chỉ Quản trị viên")) {
+      idToken = await getVerifiedAdminIdToken(true);
+      response = await sendRequest(idToken);
+    }
+  }
 
   const resJson = await response.json();
 

@@ -15,7 +15,7 @@ GachaModule = __decorate([
     Module({
         controllers: [GachaController],
         providers: [GachaFirebaseService, GachaR2Service, GachaService],
-        exports: [GachaService, GachaFirebaseService],
+        exports: [GachaService, GachaFirebaseService, GachaR2Service],
     })
 ], GachaModule);
 export { GachaModule };

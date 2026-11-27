@@ -13,6 +13,7 @@ import EventLogsTable from "./EventLogsTable";
 import ItemLogsTable from "./ItemLogsTable";
 import GiftcodeLogsTable from "./GiftcodeLogsTable";
 import MailLogsTable from "./MailLogsTable";
+import PlayerDataLogsTable from "./PlayerDataLogsTable";
 import { soundEngine } from "@/services/audio.service";
 
 type ActiveLogTab =
@@ -26,7 +27,8 @@ type ActiveLogTab =
   | "items"
   | "events"
   | "giftcodes"
-  | "mail";
+  | "mail"
+  | "playerdata";
 
 interface LogCategoryGroup {
   groupName: string;
@@ -127,6 +129,12 @@ export default function AdminLogsView() {
           label: "Hòm Thư & Hỗ Trợ Người Chơi",
           badge: "Mailbox Audit",
           description: "Gửi thư toàn server, đền bù báo lỗi cá nhân, đính kèm quà & thu hồi thư",
+        },
+        {
+          id: "playerdata",
+          label: "Dữ Liệu & Túi Đồ Người Chơi",
+          badge: "Inventory Audit",
+          description: "Kiểm tra túi đồ, thu hồi và xóa vật phẩm / trang bị của người chơi theo máy chủ",
         },
       ],
     },
@@ -367,6 +375,7 @@ export default function AdminLogsView() {
             {activeTab === "events" && <EventLogsTable />}
             {activeTab === "giftcodes" && <GiftcodeLogsTable />}
             {activeTab === "mail" && <MailLogsTable />}
+            {activeTab === "playerdata" && <PlayerDataLogsTable />}
           </div>
         </main>
 

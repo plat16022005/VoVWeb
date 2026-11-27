@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CONSUMABLE_EFFECT_OPTIONS,
   EQUIP_SLOT_OPTIONS,
@@ -11,8 +11,14 @@ import {
   ITEM_RARITY_OPTIONS,
   ITEM_TYPE_OPTIONS,
   ItemConfigDocument,
+  getItemRarityMeta,
+  getItemTypeMeta,
   itemConfigService,
 } from "@/services/itemConfig.service";
+import {
+  deleteItemTempImages,
+  uploadItemIconImage,
+} from "@/services/r2Upload.service";
 import { soundEngine } from "@/services/audio.service";
 
 interface ItemFormModalProps {
@@ -87,8 +93,134 @@ function ItemFormModalContent({
     () => editingItem?.RequiredShardsToSummon ?? 50
   );
 
+  // Icon / Hình ảnh vật phẩm
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [iconUrl, setIconUrl] = useState<string>(
+    () => editingItem?.IconUrl || ""
+  );
+  const [iconKey, setIconKey] = useState<string>(
+    () => editingItem?.IconKey || ""
+  );
+  const [tempUploadedKeys, setTempUploadedKeys] = useState<string[]>([]);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+  const [iconErrorMsg, setIconErrorMsg] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const rarityMeta = getItemRarityMeta(rarity);
+  const typeMeta = getItemTypeMeta(type);
+
+  const normalizeImageBlobToFile = useCallback((blob: Blob | File): File => {
+    const rawType = (blob.type || "image/png").toLowerCase();
+    let mime = "image/png";
+    let ext = "png";
+    if (rawType.includes("jpeg") || rawType.includes("jpg")) {
+      mime = "image/jpeg";
+      ext = "jpg";
+    } else if (rawType.includes("webp")) {
+      mime = "image/webp";
+      ext = "webp";
+    }
+
+    if (
+      blob instanceof File &&
+      blob.name &&
+      /\.(png|jpe?g|webp)$/i.test(blob.name)
+    ) {
+      return blob;
+    }
+
+    return new File([blob], `clipboard_${Date.now()}.${ext}`, {
+      type: mime,
+    });
+  }, []);
+
+  const handleUploadIconFile = useCallback(
+    async (rawFile: Blob | File) => {
+      setIconErrorMsg(null);
+      if (rawFile.type && !rawFile.type.startsWith("image/")) {
+        setIconErrorMsg(
+          "Định dạng tệp không hợp lệ. Chỉ hỗ trợ ảnh PNG, JPG/JPEG hoặc WebP."
+        );
+        return;
+      }
+      const file = normalizeImageBlobToFile(rawFile);
+      if (file.size > 5 * 1024 * 1024) {
+        setIconErrorMsg("Dung lượng ảnh biểu tượng vật phẩm tối đa là 5MB.");
+        return;
+      }
+
+      try {
+        setUploadingIcon(true);
+        setUploadProgress(0);
+        const res = await uploadItemIconImage(
+          file,
+          { itemId: itemId.trim() || "item_icon" },
+          (pct) => setUploadProgress(pct)
+        );
+        if (res.key) {
+          setTempUploadedKeys((prev) =>
+            prev.includes(res.key) ? prev : [...prev, res.key]
+          );
+        }
+        setIconUrl(res.publicUrl);
+        setIconKey(res.key);
+        soundEngine.playCelestialChime();
+      } catch (err: unknown) {
+        setIconErrorMsg(
+          err instanceof Error && err.message
+            ? err.message
+            : "Không thể tải ảnh biểu tượng lên kho lưu trữ."
+        );
+      } finally {
+        setUploadingIcon(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    },
+    [itemId, normalizeImageBlobToFile]
+  );
+
+  // Lắng nghe tổ hợp phím Ctrl+V / Cmd+V trên toàn bộ Modal để dán ảnh từ Clipboard ngay lập tức
+  useEffect(() => {
+    const onWindowPaste = (e: ClipboardEvent) => {
+      if (uploadingIcon || submitting) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const blob = item.getAsFile();
+          if (blob) {
+            e.preventDefault();
+            void handleUploadIconFile(blob);
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", onWindowPaste);
+    return () => window.removeEventListener("paste", onWindowPaste);
+  }, [handleUploadIconFile, submitting, uploadingIcon]);
+
+  const handleCloseWithCleanup = async () => {
+    if (submitting || uploadingIcon) return;
+    soundEngine.playClick();
+    const initialKey = editingItem?.IconKey || "";
+    const unusedTempKeys = tempUploadedKeys.filter(
+      (k) => k && k !== initialKey
+    );
+    if (unusedTempKeys.length > 0) {
+      void deleteItemTempImages(unusedTempKeys);
+    }
+    onClose();
+  };
 
   const handleSelectType = (nextType: GameItemType) => {
     soundEngine.playClick();
@@ -154,11 +286,21 @@ function ItemFormModalContent({
           type === GameItemType.Shard
             ? Number(requiredShardsToSummon) || 50
             : 50,
+        IconUrl: iconUrl.trim(),
+        IconKey: iconUrl.trim() ? iconKey.trim() : "",
       };
 
       const saved = isEditing
         ? await itemConfigService.updateItemConfig(payload.ItemId, payload)
         : await itemConfigService.createItemConfig(payload);
+
+      const initialKey = editingItem?.IconKey || "";
+      const orphanTemps = tempUploadedKeys.filter(
+        (k) => k && k !== (payload.IconKey || "") && k !== initialKey
+      );
+      if (orphanTemps.length > 0) {
+        void deleteItemTempImages(orphanTemps);
+      }
 
       soundEngine.playCelestialChime();
       onSaved(
@@ -196,8 +338,8 @@ function ItemFormModalContent({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            disabled={submitting}
+            onClick={() => void handleCloseWithCleanup()}
+            disabled={submitting || uploadingIcon}
             className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer text-xs font-mono"
           >
             Đóng
@@ -228,11 +370,10 @@ function ItemFormModalContent({
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelectType(opt.value)}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      active
-                        ? "bg-[#3fe9d6]/15 border-[#3fe9d6] text-white shadow-[0_0_15px_rgba(63,233,214,0.2)]"
-                        : "bg-[#060919] border-white/10 text-slate-400 hover:text-white hover:border-white/25"
-                    }`}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${active
+                      ? "bg-[#3fe9d6]/15 border-[#3fe9d6] text-white shadow-[0_0_15px_rgba(63,233,214,0.2)]"
+                      : "bg-[#060919] border-white/10 text-slate-400 hover:text-white hover:border-white/25"
+                      }`}
                   >
                     <div className="text-[10px] font-mono uppercase tracking-wider text-[#3fe9d6]">
                       Type {opt.value}
@@ -362,12 +503,167 @@ function ItemFormModalContent({
             </div>
           </div>
 
-          {/* 3. Cấu hình riêng theo từng Type */}
+          {/* 2.5. Hình Ảnh / Biểu Tượng Vật Phẩm (IconUrl) */}
+          <div className="p-5 rounded-2xl bg-[#060919] border border-white/10 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-xs font-mono uppercase text-[#3fe9d6] font-bold">
+                  3. Biểu Tượng Vật Phẩm (Item Icon)
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Hiển thị trong Danh mục Vật phẩm, Hòm thư Đền bù, Giftcode và Túi đồ người chơi theo cụm máy chủ.
+                </p>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-[#3fe9d6]/10 border border-[#3fe9d6]/30 text-[10px] font-mono text-[#3fe9d6]">
+                PNG / JPG / WebP · Tối đa 5MB (Khuyến nghị 256×256)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+              {/* Khung xem trước ô vật phẩm theo phẩm chất */}
+              <div className="sm:col-span-4 flex flex-col items-center justify-center p-4 rounded-2xl bg-[#090d24] border border-white/10 space-y-2">
+                <div
+                  className={`relative w-24 h-24 rounded-2xl overflow-hidden border-2 flex items-center justify-center transition-colors ${rarityMeta.borderClass}`}
+                >
+                  {iconUrl ? (
+                    <>
+                      <img
+                        src={iconUrl}
+                        alt={itemName || itemId}
+                        className="w-full h-full object-contain p-1.5"
+                      />
+                      <button
+                        type="button"
+                        disabled={uploadingIcon || submitting}
+                        onClick={() => {
+                          soundEngine.playClick();
+                          setIconUrl("");
+                          setIconKey("");
+                        }}
+                        className="absolute top-1 right-1 px-1.5 py-0.5 rounded-md bg-black/80 hover:bg-rose-600 text-white text-[10px] font-mono border border-white/20 transition-colors cursor-pointer"
+                        title="Gỡ ảnh hiện tại"
+                      >
+                        Gỡ
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-center px-2 space-y-1">
+                      <div
+                        className="text-xs font-mono font-bold"
+                        style={{ color: rarityMeta.hexColor }}
+                      >
+                        {typeMeta.shortLabel}
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400">
+                        Chưa có ảnh
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <span className="text-[11px] font-mono text-slate-400 truncate max-w-full">
+                  {itemName.trim() || itemId.trim() || "Ô vật phẩm mẫu"}
+                </span>
+              </div>
+
+              {/* Khu vực kéo thả tải ảnh & nhập URL */}
+              <div className="sm:col-span-8 space-y-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                  disabled={uploadingIcon || submitting}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleUploadIconFile(file);
+                  }}
+                  className="hidden"
+                />
+
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (!uploadingIcon && !submitting) setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    if (uploadingIcon || submitting) return;
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) void handleUploadIconFile(file);
+                  }}
+                  onClick={() => {
+                    if (!uploadingIcon && !submitting) {
+                      soundEngine.playClick();
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className={`p-4 rounded-xl border-2 border-dashed text-center transition-all cursor-pointer space-y-2 ${dragOver
+                    ? "border-[#3fe9d6] bg-[#3fe9d6]/10"
+                    : uploadingIcon
+                      ? "border-[#f5c767] bg-[#f5c767]/5"
+                      : "border-white/15 bg-[#090d24]/80 hover:border-[#3fe9d6]/60 hover:bg-white/[0.02]"
+                    }`}
+                >
+                  {uploadingIcon ? (
+                    <div className="space-y-2 py-1">
+                      <div className="text-xs font-mono font-bold text-[#f5c767]">
+                        Đang tải biểu tượng vật phẩm lên kho lưu trữ... {uploadProgress}%
+                      </div>
+                      <div className="w-full max-w-xs mx-auto h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#3fe9d6] to-[#f5c767] transition-all duration-200"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-xs font-mono font-semibold text-white">
+                        Tải ảnh lên
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-400">
+                        Ưu tiên ảnh PNG nền trong suốt tỷ lệ 1:1 để hiển thị đẹp nhất trong Túi Đồ
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                    Hoặc dán trực tiếp đường dẫn ảnh (IconUrl):
+                  </label>
+                  <input
+                    type="text"
+                    value={iconUrl}
+                    disabled={uploadingIcon || submitting}
+                    onChange={(e) => {
+                      setIconUrl(e.target.value);
+                      if (!e.target.value.trim()) {
+                        setIconKey("");
+                      }
+                    }}
+                    placeholder="https://... hoặc để trống nếu dùng biểu tượng mặc định"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#090d24] border border-white/15 text-xs font-mono text-slate-200 focus:outline-none focus:border-[#3fe9d6]"
+                  />
+                </div>
+
+                {iconErrorMsg && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-mono">
+                    {iconErrorMsg}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Cấu hình riêng theo từng Type */}
           {type === GameItemType.Consumable && (
             <div className="p-5 rounded-2xl bg-[#060919] border border-emerald-500/30 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase text-emerald-300 font-bold">
-                  3. Thuộc Tính Vật Phẩm Tiêu Hao (Consumable)
+                  4. Thuộc Tính Vật Phẩm Tiêu Hao (Consumable)
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
                   Kích hoạt khi người chơi bấm Sử Dụng trong Túi Đồ
@@ -420,7 +716,7 @@ function ItemFormModalContent({
             <div className="p-5 rounded-2xl bg-[#060919] border border-[#f5c767]/35 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-mono uppercase text-[#f5c767] font-bold">
-                  3. Định Danh Mẫu Trang Bị (Equipment — Chỉ Số Động)
+                  4. Định Danh Mẫu Trang Bị (Equipment — Chỉ Số Động)
                 </span>
                 <span className="px-2.5 py-0.5 rounded bg-[#f5c767]/15 border border-[#f5c767]/30 text-[11px] font-mono text-[#f5c767]">
                   Chỉ số chính &amp; dòng phụ sinh ngẫu nhiên trên Server
@@ -467,7 +763,7 @@ function ItemFormModalContent({
             <div className="p-5 rounded-2xl bg-[#060919] border border-purple-500/35 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase text-purple-300 font-bold">
-                  3. Thuộc Tính Mảnh Ghép Triệu Hồi Tướng (Shard)
+                  4. Thuộc Tính Mảnh Ghép Triệu Hồi Tướng (Shard)
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
                   Dùng để ghép hoặc đột phá sao cho Valkyria
@@ -522,22 +818,24 @@ function ItemFormModalContent({
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
             <button
               type="button"
-              onClick={onClose}
-              disabled={submitting}
+              onClick={() => void handleCloseWithCleanup()}
+              disabled={submitting || uploadingIcon}
               className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-mono cursor-pointer"
             >
               Hủy Bỏ
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || uploadingIcon}
               className="px-6 py-2.5 rounded-xl bg-[#3fe9d6] hover:bg-[#6ef5e5] text-[#050814] font-bold text-xs font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
             >
               {submitting
                 ? "Đang Lưu..."
-                : isEditing
-                  ? "Lưu Cập Nhật"
-                  : "Tạo Vật Phẩm"}
+                : uploadingIcon
+                  ? "Đang Tải Ảnh..."
+                  : isEditing
+                    ? "Lưu Cập Nhật"
+                    : "Tạo Vật Phẩm"}
             </button>
           </div>
         </form>

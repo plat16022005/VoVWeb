@@ -1,5 +1,6 @@
-// Service hỗ trợ tải trực tiếp file lên Cloudflare R2 qua Presigned URL có thanh tiến trình
+// Service hỗ trợ tải trực tiếp file lên kho lưu trữ đám mây qua Presigned URL có thanh tiến trình
 import { gachaService } from "./gacha.service";
+import { itemConfigService } from "./itemConfig.service";
 
 export interface UploadResult {
   publicUrl: string;
@@ -144,5 +145,56 @@ export async function deleteGachaTempImages(keys: string[]): Promise<void> {
     await gachaService.cleanupTempMedia(cleanKeys);
   } catch (err) {
     console.warn("Không thể dọn ảnh tạm trên hệ thống lưu trữ:", err);
+  }
+}
+
+/**
+ * Tải ảnh biểu tượng Vật Phẩm (Item Icon) lên kho lưu trữ qua Backend Presigned URL.
+ */
+export async function uploadItemIconImage(
+  file: File,
+  params: {
+    itemId?: string;
+  },
+  onProgress?: (percent: number) => void
+): Promise<UploadResult> {
+  const presigned = await itemConfigService.createMediaPresign({
+    itemId: params.itemId,
+    fileName: file.name,
+    contentType: file.type || "application/octet-stream",
+    fileSize: file.size,
+  });
+
+  if (!presigned.uploadUrl || !presigned.publicUrl || !presigned.key) {
+    throw new Error("Không nhận được thông tin tải lên hợp lệ từ máy chủ.");
+  }
+
+  await putFileWithPresignedUrl(
+    file,
+    presigned.uploadUrl,
+    onProgress,
+    presigned.contentType
+  );
+
+  return {
+    publicUrl: presigned.publicUrl,
+    mediaType: "image",
+    key: presigned.key,
+  };
+}
+
+/**
+ * Dọn các ảnh biểu tượng vật phẩm tải tạm nhưng chưa lưu qua Backend API.
+ */
+export async function deleteItemTempImages(keys: string[]): Promise<void> {
+  const cleanKeys = Array.from(
+    new Set(keys.map((k) => k?.trim()).filter((k): k is string => Boolean(k)))
+  );
+  if (cleanKeys.length === 0) return;
+
+  try {
+    await itemConfigService.cleanupTempMedia(cleanKeys);
+  } catch (err) {
+    console.warn("Không thể dọn ảnh vật phẩm tạm trên kho lưu trữ:", err);
   }
 }

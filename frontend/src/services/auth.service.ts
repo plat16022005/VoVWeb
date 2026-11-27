@@ -185,6 +185,31 @@ function ensureGlobalAuthInit() {
             if (data.CreatedAt) createdAt = data.CreatedAt;
             if (data.LastLogin) lastLogin = data.LastLogin;
 
+            // Tự động đồng bộ Firebase Auth Custom Claim (role: 'admin' | 'manager') qua trigger onUserRoleChanged
+            // để Cloud Functions & các cụm máy chủ (server-1, server-2...) nhận diện đúng token của Admin/Manager
+            if (!isBanned && (role === "Admin" || role === "Manager")) {
+              const targetLowerRole = role.toLowerCase();
+              firebaseUser
+                .getIdTokenResult()
+                .then(async (tokenRes) => {
+                  const claimRole = String(
+                    tokenRes.claims?.role || ""
+                  ).toLowerCase();
+                  if (claimRole !== targetLowerRole && db) {
+                    const userRef = doc(db, "Users", firebaseUser.uid);
+                    if (data.Role === targetLowerRole) {
+                      await updateDoc(userRef, { Role: role });
+                      await new Promise((r) => setTimeout(r, 400));
+                    }
+                    await updateDoc(userRef, { Role: targetLowerRole });
+                    setTimeout(() => {
+                      firebaseUser.getIdToken(true).catch(() => {});
+                    }, 1800);
+                  }
+                })
+                .catch(() => {});
+            }
+
             // Đọc trực tiếp từ Subcollection Users/{uid}/Permissions nếu là Manager
             if (role === "Manager") {
               try {

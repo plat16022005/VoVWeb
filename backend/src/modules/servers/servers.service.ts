@@ -1,5 +1,8 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { CreateServerDto } from './dto/create-server.dto.js';
+import { DEFAULT_SERVER_RULES } from './default-server-rules.js';
 
 export interface GameServerResponse {
   id: string;
@@ -41,6 +44,23 @@ export class ServersService {
 
   private readonly internalSecret =
     process.env.INTERNAL_ADMIN_SECRET || 'VOV_SECRET_ADMIN_16022005';
+
+  private readLocalServerRulesContent(): string {
+    const candidates = [
+      path.resolve(process.cwd(), '../firestore.server.rules'),
+      path.resolve(process.cwd(), 'firestore.server.rules'),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        try {
+          return fs.readFileSync(p, 'utf-8');
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return DEFAULT_SERVER_RULES;
+  }
 
   // 🛡️ Bộ nhớ đệm RAM (10s) chống spam Firestore nhưng vẫn cập nhật nhanh
   private cachedServers: GameServerResponse[] | null = null;
@@ -267,7 +287,7 @@ export class ServersService {
   /**
    * Gọi Cloud Function tạo Server Gameplay mới trên Google Cloud Firestore Native
    */
-  async createServer(dto: CreateServerDto) {
+  async createServer(dto: CreateServerDto, authHeader?: string) {
     const serverId = (dto.serverId || '').trim().toLowerCase();
     const serverName = (dto.serverName || '').trim();
     const locationId = (dto.locationId || 'asia-southeast1').trim();
@@ -278,12 +298,18 @@ export class ServersService {
     );
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-internal-secret': this.internalSecret,
+      };
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        headers.Authorization = authHeader;
+      }
+
+      const rulesContent = this.readLocalServerRulesContent();
       const response = await fetch(this.createServerUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-secret': this.internalSecret,
-        },
+        headers,
         body: JSON.stringify({
           data: {
             serverId,
@@ -291,6 +317,7 @@ export class ServersService {
             locationId,
             status,
             internalSecret: this.internalSecret,
+            ...(rulesContent ? { rulesContent } : {}),
           },
         }),
       });
@@ -327,22 +354,29 @@ export class ServersService {
   /**
    * Gọi Cloud Function cập nhật/áp dụng Rules cho server đã tồn tại
    */
-  async applyRules(serverId: string) {
+  async applyRules(serverId: string, authHeader?: string) {
     this.logger.log(
       `[ServersService] Đang gửi yêu cầu áp dụng rules cho ${serverId}...`,
     );
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-internal-secret': this.internalSecret,
+      };
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        headers.Authorization = authHeader;
+      }
+
+      const rulesContent = this.readLocalServerRulesContent();
       const response = await fetch(this.applyRulesUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-secret': this.internalSecret,
-        },
+        headers,
         body: JSON.stringify({
           data: {
             serverId,
             internalSecret: this.internalSecret,
+            ...(rulesContent ? { rulesContent } : {}),
           },
         }),
       });

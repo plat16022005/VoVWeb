@@ -27,6 +27,7 @@ export declare class ServersService {
     private readonly createServerUrl;
     private readonly applyRulesUrl;
     private readonly internalSecret;
+    private readLocalServerRulesContent;
     private cachedServers;
     private lastFetchTime;
     private readonly CACHE_TTL_MS;
@@ -39,6 +40,6 @@ export declare class ServersService {
         minSupportedVersion: string;
     }>;
     getAllServers(forceRefresh?: boolean): Promise<GameServerResponse[]>;
-    createServer(dto: CreateServerDto): Promise<any>;
-    applyRules(serverId: string): Promise<any>;
+    createServer(dto: CreateServerDto, authHeader?: string): Promise<any>;
+    applyRules(serverId: string, authHeader?: string): Promise<any>;
 }

@@ -5,7 +5,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 var ServersService_1;
+import fs from 'node:fs';
+import path from 'node:path';
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { DEFAULT_SERVER_RULES } from './default-server-rules.js';
 let ServersService = ServersService_1 = class ServersService {
     logger = new Logger(ServersService_1.name);
     projectId = process.env.FIREBASE_PROJECT_ID || 'valkyria-of-verya';
@@ -14,6 +17,22 @@ let ServersService = ServersService_1 = class ServersService {
     applyRulesUrl = process.env.FIREBASE_APPLY_RULES_URL ||
         'https://applyrulestoserver-26irq6o5iq-as.a.run.app';
     internalSecret = process.env.INTERNAL_ADMIN_SECRET || 'VOV_SECRET_ADMIN_16022005';
+    readLocalServerRulesContent() {
+        const candidates = [
+            path.resolve(process.cwd(), '../firestore.server.rules'),
+            path.resolve(process.cwd(), 'firestore.server.rules'),
+        ];
+        for (const p of candidates) {
+            if (fs.existsSync(p)) {
+                try {
+                    return fs.readFileSync(p, 'utf-8');
+                }
+                catch {
+                }
+            }
+        }
+        return DEFAULT_SERVER_RULES;
+    }
     cachedServers = null;
     lastFetchTime = 0;
     CACHE_TTL_MS = 10000;
@@ -176,19 +195,24 @@ let ServersService = ServersService_1 = class ServersService {
             throw new HttpException(`Không thể tải danh sách máy chủ: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    async createServer(dto) {
+    async createServer(dto, authHeader) {
         const serverId = (dto.serverId || '').trim().toLowerCase();
         const serverName = (dto.serverName || '').trim();
         const locationId = (dto.locationId || 'asia-southeast1').trim();
         const status = (dto.status || 'Normal').trim();
         this.logger.log(`[ServersService] Đang gửi yêu cầu tạo server ${serverId} tới Cloud Function...`);
         try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'x-internal-secret': this.internalSecret,
+            };
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                headers.Authorization = authHeader;
+            }
+            const rulesContent = this.readLocalServerRulesContent();
             const response = await fetch(this.createServerUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-internal-secret': this.internalSecret,
-                },
+                headers,
                 body: JSON.stringify({
                     data: {
                         serverId,
@@ -196,6 +220,7 @@ let ServersService = ServersService_1 = class ServersService {
                         locationId,
                         status,
                         internalSecret: this.internalSecret,
+                        ...(rulesContent ? { rulesContent } : {}),
                     },
                 }),
             });
@@ -220,19 +245,25 @@ let ServersService = ServersService_1 = class ServersService {
             throw new HttpException(`Không thể kết nối tới Cloud Function: ${error.message}`, HttpStatus.GATEWAY_TIMEOUT);
         }
     }
-    async applyRules(serverId) {
+    async applyRules(serverId, authHeader) {
         this.logger.log(`[ServersService] Đang gửi yêu cầu áp dụng rules cho ${serverId}...`);
         try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'x-internal-secret': this.internalSecret,
+            };
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                headers.Authorization = authHeader;
+            }
+            const rulesContent = this.readLocalServerRulesContent();
             const response = await fetch(this.applyRulesUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-internal-secret': this.internalSecret,
-                },
+                headers,
                 body: JSON.stringify({
                     data: {
                         serverId,
                         internalSecret: this.internalSecret,
+                        ...(rulesContent ? { rulesContent } : {}),
                     },
                 }),
             });

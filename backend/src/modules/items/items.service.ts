@@ -9,6 +9,7 @@ import {
   FirestoreBatchWrite,
   GachaFirebaseService,
 } from '../gacha/gacha-firebase.service.js';
+import { GachaR2Service } from '../gacha/gacha-r2.service.js';
 import { AuthenticatedOperator } from '../gacha/gacha.types.js';
 import {
   GameConsumableEffectType,
@@ -218,7 +219,16 @@ function parseRarity(raw: unknown): GameItemRarity {
 export class ItemsService {
   private readonly logger = new Logger(ItemsService.name);
 
-  constructor(private readonly firebase: GachaFirebaseService) {}
+  constructor(
+    private readonly firebase: GachaFirebaseService,
+    private readonly r2: GachaR2Service,
+  ) {}
+
+  private extractItemKeyFromUrl(iconUrl: string): string {
+    if (!iconUrl) return '';
+    const match = iconUrl.match(/\/(items\/[a-zA-Z0-9_.-]+)(?:\?.*)?$/);
+    return match ? match[1] : '';
+  }
 
   private assertValidItemId(rawId: unknown): string {
     const trimmed = typeof rawId === 'string' ? rawId.trim().toLowerCase() : '';
@@ -288,6 +298,17 @@ export class ItemsService {
       50,
     );
 
+    const iconUrl =
+      typeof raw.IconUrl === 'string' && raw.IconUrl.trim()
+        ? raw.IconUrl.trim()
+        : typeof raw.ImageUrl === 'string' && raw.ImageUrl.trim()
+          ? raw.ImageUrl.trim()
+          : '';
+    const rawIconKey =
+      typeof raw.IconKey === 'string' && raw.IconKey.trim()
+        ? raw.IconKey.trim()
+        : this.extractItemKeyFromUrl(iconUrl);
+
     const lastUpdated =
       typeof raw.LastUpdated === 'string' && raw.LastUpdated.trim()
         ? raw.LastUpdated.trim()
@@ -311,6 +332,8 @@ export class ItemsService {
       SetId: setId,
       TargetHeroId: targetHeroId,
       RequiredShardsToSummon: requiredShardsToSummon,
+      IconUrl: iconUrl,
+      IconKey: rawIconKey,
       ...(lastUpdated ? { LastUpdated: lastUpdated } : {}),
       ...(updatedBy ? { UpdatedBy: updatedBy } : {}),
     };
@@ -393,6 +416,29 @@ export class ItemsService {
       );
     }
 
+    const iconUrl =
+      typeof rawBody.IconUrl === 'string'
+        ? rawBody.IconUrl.trim().slice(0, 2048)
+        : '';
+    if (
+      iconUrl &&
+      !iconUrl.startsWith('https://') &&
+      !iconUrl.startsWith('http://') &&
+      !iconUrl.startsWith('/')
+    ) {
+      throw new BadRequestException(
+        'Đường dẫn ảnh biểu tượng vật phẩm (IconUrl) không hợp lệ.',
+      );
+    }
+
+    const rawIconKey =
+      typeof rawBody.IconKey === 'string'
+        ? rawBody.IconKey.trim().slice(0, 512)
+        : '';
+    const iconKey = iconUrl
+      ? rawIconKey || this.extractItemKeyFromUrl(iconUrl)
+      : '';
+
     const nowIso = new Date().toISOString();
     return {
       ItemId: itemId,
@@ -408,6 +454,8 @@ export class ItemsService {
       SetId: setId,
       TargetHeroId: targetHeroId,
       RequiredShardsToSummon: requiredShardsToSummon,
+      IconUrl: iconUrl,
+      IconKey: iconKey,
       LastUpdated: nowIso,
       UpdatedBy: formatOperatorLabel(operator),
     };
@@ -537,16 +585,20 @@ export class ItemsService {
     rawBody: Record<string, unknown>,
   ): Promise<ItemConfigDocument> {
     const itemId = this.assertValidItemId(rawItemId);
-    const existing = await this.firebase.getDocument(
+    const existingDoc = await this.firebase.getDocument(
       `${ITEM_CONFIGS_COLLECTION}/${itemId}`,
       operator.authTokenForFirestore,
     );
-    if (!existing) {
+    if (!existingDoc) {
       throw new NotFoundException(
         `Không tìm thấy vật phẩm "${itemId}" để cập nhật.`,
       );
     }
 
+    const existing = this.normalizeItemDocument(
+      itemId,
+      this.firebase.docToObject(existingDoc),
+    );
     const itemDoc = this.validateAndBuildPayload(itemId, rawBody, operator);
 
     await this.firebase.commitWrites(
@@ -564,6 +616,12 @@ export class ItemsService {
       ],
       operator.authTokenForFirestore,
     );
+
+    const oldKey = existing.IconKey || '';
+    const newKey = itemDoc.IconKey || '';
+    if (oldKey && oldKey !== newKey) {
+      await this.r2.deleteItemIconObjects([oldKey]).catch(() => undefined);
+    }
 
     await this.logItemActivity(operator, {
       action: 'UPDATE_ITEM',
@@ -603,6 +661,12 @@ export class ItemsService {
       operator.authTokenForFirestore,
     );
 
+    if (existing.IconKey) {
+      await this.r2
+        .deleteItemIconObjects([existing.IconKey])
+        .catch(() => undefined);
+    }
+
     await this.logItemActivity(operator, {
       action: 'DELETE_ITEM',
       actionTitle: 'Xóa vật phẩm khỏi danh mục game',
@@ -625,9 +689,19 @@ export class ItemsService {
     const nowIso = new Date().toISOString();
     const opLabel = formatOperatorLabel(operator);
 
+    // Giữ lại ảnh biểu tượng (IconUrl & IconKey) nếu quản trị viên đã tải lên cho vật phẩm mẫu trước đó
+    const existingItems = await this.getAllItems(operator).catch(() => []);
+    const existingMap = new Map<string, ItemConfigDocument>();
+    for (const it of existingItems) {
+      existingMap.set(it.ItemId, it);
+    }
+
     const writes: FirestoreBatchWrite[] = UNITY_SAMPLE_ITEMS.map((sample) => {
+      const prev = existingMap.get(sample.ItemId);
       const docData: ItemConfigDocument = {
         ...sample,
+        IconUrl: prev?.IconUrl || sample.IconUrl || '',
+        IconKey: prev?.IconKey || sample.IconKey || '',
         LastUpdated: nowIso,
         UpdatedBy: opLabel,
       };
@@ -659,6 +733,66 @@ export class ItemsService {
     return {
       seededCount: UNITY_SAMPLE_ITEMS.length,
       items,
+    };
+  }
+
+  // ==================== MEDIA PRESIGN & CLEANUP ====================
+
+  createMediaPresignUrl(body: Record<string, unknown>) {
+    const fileSizeRaw = body.fileSize;
+    const fileSize =
+      typeof fileSizeRaw === 'number' && Number.isFinite(fileSizeRaw)
+        ? fileSizeRaw
+        : undefined;
+
+    return this.r2.createItemIconPresignUrl({
+      itemId: body.itemId ? String(body.itemId) : undefined,
+      fileName: body.fileName ? String(body.fileName) : undefined,
+      contentType: String(body.contentType ?? ''),
+      fileSize,
+    });
+  }
+
+  async cleanupUnusedTempMedia(
+    operator: AuthenticatedOperator,
+    rawKeys: unknown,
+  ): Promise<{ deletedKeys: string[]; skippedLiveKeys: string[] }> {
+    if (!Array.isArray(rawKeys)) {
+      throw new BadRequestException('Danh sách khóa ảnh cần dọn không hợp lệ.');
+    }
+
+    const keys = rawKeys
+      .map((k) => (typeof k === 'string' ? k.trim() : ''))
+      .filter(Boolean);
+
+    if (keys.length === 0) {
+      return { deletedKeys: [], skippedLiveKeys: [] };
+    }
+
+    const allItems = await this.getAllItems(operator);
+    const liveKeys = new Set<string>();
+    for (const item of allItems) {
+      if (item.IconKey) liveKeys.add(item.IconKey);
+      if (item.IconUrl) {
+        const extracted = this.extractItemKeyFromUrl(item.IconUrl);
+        if (extracted) liveKeys.add(extracted);
+      }
+    }
+
+    const safeToDelete: string[] = [];
+    const skippedLiveKeys: string[] = [];
+    for (const key of keys) {
+      if (liveKeys.has(key)) {
+        skippedLiveKeys.push(key);
+      } else {
+        safeToDelete.push(key);
+      }
+    }
+
+    const res = await this.r2.deleteItemIconObjects(safeToDelete);
+    return {
+      deletedKeys: res.deletedKeys,
+      skippedLiveKeys,
     };
   }
 

@@ -561,7 +561,7 @@ export const adminService = {
           UserId: newUid,
           Username: data.username.trim(),
           Email: data.email.trim(),
-          Role: data.role,
+          Role: data.role.toLowerCase(),
           Status: data.status || "active",
           IsBanned: data.status === "banned",
           Provider: accountProvider,
@@ -704,7 +704,7 @@ export const adminService = {
     if (updates.provider !== undefined) payload.Provider = updates.provider;
     if (updates.role !== undefined) {
       if (updates.role !== "Admin") {
-        payload.Role = updates.role;
+        payload.Role = updates.role.toLowerCase();
       }
     }
     if (updates.status !== undefined) {

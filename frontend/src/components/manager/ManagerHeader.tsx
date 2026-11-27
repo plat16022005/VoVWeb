@@ -15,7 +15,8 @@ export type ManagerSectionKey =
   | "gamedata:worlds"
   | "events:minigames"
   | "events:giftcodes"
-  | "support:mail";
+  | "support:mail"
+  | "support:players";
 
 interface ManagerHeaderProps {
   currentTab: ManagerTab;
@@ -93,6 +94,12 @@ const SECTION_META: Record<
     title: "Hòm Thư Hệ Thống (Mailbox)",
     subtitle:
       "Soạn và gửi thư toàn server, thư cá nhân đính kèm quà và đền bù xử lý báo lỗi theo từng cụm máy chủ.",
+  },
+  "support:players": {
+    group: "Hỗ Trợ Người Chơi",
+    title: "Dữ Liệu & Túi Đồ Người Chơi Theo Máy Chủ",
+    subtitle:
+      "Tra cứu hồ sơ nhân vật, cấp độ, lực chiến, số dư tiền tệ, kho tướng, trang bị, tiến trình vượt ải và kiểm tra / thu hồi vật phẩm trong túi đồ.",
   },
 };
 

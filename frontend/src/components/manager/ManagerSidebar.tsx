@@ -98,6 +98,11 @@ export default function ManagerSidebar({
     hasPermission(currentUser, "support.mail.send_global_reward") ||
     hasPermission(currentUser, "support.mail.delete");
 
+  const hasPlayerDataAccess =
+    currentUser?.role === "Admin" ||
+    hasPermission(currentUser, "support.player.view") ||
+    hasPermission(currentUser, "support.player.revoke_item");
+
   const contentChildren: SidebarChildItem[] = [
     ...(hasBlogAccess || hasFacebookAccess
       ? [{ id: "content-overview", title: "Tổng Quan Nội Dung", href: "/manager/contents" }]
@@ -140,6 +145,15 @@ export default function ManagerSidebar({
   const supportChildren: SidebarChildItem[] = [
     ...(hasMailAccess
       ? [{ id: "sp-mail", title: "Hòm Thư Hệ Thống", href: "/manager/support" }]
+      : []),
+    ...(hasPlayerDataAccess
+      ? [
+          {
+            id: "sp-players",
+            title: "Dữ Liệu & Túi Đồ Người Chơi",
+            href: "/manager/support/players",
+          },
+        ]
       : []),
   ];
 

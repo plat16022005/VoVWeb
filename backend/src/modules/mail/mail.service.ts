@@ -620,7 +620,17 @@ export class MailService {
           itemId;
         const type = clampInt(obj.Type ?? obj.ItemType, 0, 4, 1);
         const rarity = clampInt(obj.Rarity, 0, 4, 0);
-        return { ItemId: itemId, ItemName: itemName, Type: type, Rarity: rarity };
+        const iconUrl =
+          (typeof obj.IconUrl === 'string' && obj.IconUrl.trim()) ||
+          (typeof obj.ImageUrl === 'string' && obj.ImageUrl.trim()) ||
+          undefined;
+        return {
+          ItemId: itemId,
+          ItemName: itemName,
+          Type: type,
+          Rarity: rarity,
+          ...(iconUrl ? { IconUrl: iconUrl } : {}),
+        };
       })
       .sort((a, b) => {
         if (b.Rarity !== a.Rarity) return b.Rarity - a.Rarity;

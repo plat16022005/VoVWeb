@@ -15,6 +15,7 @@ import { EventsModule } from './modules/events/events.module.js';
 import { ItemsModule } from './modules/items/items.module.js';
 import { GiftcodesModule } from './modules/giftcodes/giftcodes.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
+import { PlayerDataModule } from './modules/player-data/player-data.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -28,6 +29,7 @@ AppModule = __decorate([
             ItemsModule,
             GiftcodesModule,
             MailModule,
+            PlayerDataModule,
         ],
         controllers: [AppController],
         providers: [AppService],

@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Headers, } from '@nestjs/common';
 import { ServersService } from './servers.service.js';
 import { CreateServerDto } from './dto/create-server.dto.js';
 let ServersController = class ServersController {
@@ -25,11 +25,11 @@ let ServersController = class ServersController {
     async getGlobalMaintenance() {
         return this.serversService.getGlobalMaintenance();
     }
-    async createServer(dto) {
-        return this.serversService.createServer(dto);
+    async createServer(dto, authHeader) {
+        return this.serversService.createServer(dto, authHeader);
     }
-    async applyRules(serverId) {
-        return this.serversService.applyRules(serverId);
+    async applyRules(serverId, authHeader) {
+        return this.serversService.applyRules(serverId, authHeader);
     }
 };
 __decorate([
@@ -48,15 +48,17 @@ __decorate([
 __decorate([
     Post('create'),
     __param(0, Body()),
+    __param(1, Headers('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [CreateServerDto]),
+    __metadata("design:paramtypes", [CreateServerDto, String]),
     __metadata("design:returntype", Promise)
 ], ServersController.prototype, "createServer", null);
 __decorate([
     Post(':id/rules'),
     __param(0, Param('id')),
+    __param(1, Headers('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ServersController.prototype, "applyRules", null);
 ServersController = __decorate([

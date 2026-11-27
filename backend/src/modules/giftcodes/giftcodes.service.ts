@@ -598,11 +598,16 @@ export class GiftcodesService {
           itemId;
         const type = clampInt(obj.Type ?? obj.ItemType, 0, 4, 1);
         const rarity = clampInt(obj.Rarity, 0, 4, 0);
+        const iconUrl =
+          (typeof obj.IconUrl === 'string' && obj.IconUrl.trim()) ||
+          (typeof obj.ImageUrl === 'string' && obj.ImageUrl.trim()) ||
+          undefined;
         return {
           ItemId: itemId,
           ItemName: itemName,
           Type: type,
           Rarity: rarity,
+          ...(iconUrl ? { IconUrl: iconUrl } : {}),
         };
       })
       .sort((a, b) => {

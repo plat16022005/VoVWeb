@@ -8,9 +8,11 @@ import { BadRequestException, Injectable, InternalServerErrorException, } from '
 import { createHash, createHmac } from 'node:crypto';
 import { VALID_ID_REGEX } from './gacha.validation.js';
 const MAX_BANNER_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_ITEM_ICON_BYTES = 5 * 1024 * 1024;
 const PRESIGN_EXPIRES_SECONDS = 300;
 const EMPTY_SHA256_HEX = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 const SAFE_KEY_REGEX = /^banners\/[a-z0-9_]+\/[a-zA-Z0-9_.-]+$/;
+const SAFE_ITEM_KEY_REGEX = /^items\/[a-zA-Z0-9_.-]+$/;
 function encodeRfc3986(value) {
     return encodeURIComponent(value).replace(/[!'()*]/g, (ch) => `%${ch.charCodeAt(0).toString(16).toUpperCase()}`);
 }
@@ -47,6 +49,12 @@ function isSafeBannerObjectKey(key) {
         return false;
     }
     return SAFE_KEY_REGEX.test(key);
+}
+function isSafeItemObjectKey(key) {
+    if (!key || key.includes('..') || key.startsWith('/')) {
+        return false;
+    }
+    return SAFE_ITEM_KEY_REGEX.test(key);
 }
 let GachaR2Service = class GachaR2Service {
     getConfig() {
@@ -177,6 +185,118 @@ let GachaR2Service = class GachaR2Service {
         const uniqueSafeKeys = Array.from(new Set(keys
             .map((k) => (typeof k === 'string' ? k.trim() : ''))
             .filter((k) => isSafeBannerObjectKey(k))));
+        if (uniqueSafeKeys.length === 0) {
+            return { deletedKeys: [], failedKeys: [] };
+        }
+        const config = this.getConfig();
+        const deletedKeys = [];
+        const failedKeys = [];
+        for (const key of uniqueSafeKeys) {
+            try {
+                await this.deleteSingleObject(config, key);
+                deletedKeys.push(key);
+            }
+            catch {
+                failedKeys.push(key);
+            }
+        }
+        return { deletedKeys, failedKeys };
+    }
+    validateItemIconUploadInput(input) {
+        const rawItemId = (input.itemId ?? '').trim().toLowerCase();
+        const itemIdSlug = rawItemId
+            .replace(/[^a-z0-9_]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .slice(0, 64) || 'item_icon';
+        const rawContentType = (input.contentType ?? '').trim().toLowerCase();
+        const lowerFileName = (input.fileName ?? '').trim().toLowerCase();
+        let contentType;
+        let extension;
+        if (rawContentType === 'image/png' || lowerFileName.endsWith('.png')) {
+            contentType = 'image/png';
+            extension = 'png';
+        }
+        else if (rawContentType === 'image/jpeg' ||
+            rawContentType === 'image/jpg' ||
+            lowerFileName.endsWith('.jpg') ||
+            lowerFileName.endsWith('.jpeg')) {
+            contentType = 'image/jpeg';
+            extension = 'jpg';
+        }
+        else if (rawContentType === 'image/webp' ||
+            lowerFileName.endsWith('.webp')) {
+            contentType = 'image/webp';
+            extension = 'webp';
+        }
+        else {
+            throw new BadRequestException('Định dạng ảnh vật phẩm không hợp lệ. Chỉ hỗ trợ ảnh PNG, JPG/JPEG hoặc WebP.');
+        }
+        if (input.fileSize !== undefined) {
+            if (typeof input.fileSize !== 'number' ||
+                !Number.isFinite(input.fileSize) ||
+                input.fileSize <= 0) {
+                throw new BadRequestException('Kích thước tệp ảnh không hợp lệ.');
+            }
+            if (input.fileSize > MAX_ITEM_ICON_BYTES) {
+                throw new BadRequestException('Dung lượng ảnh biểu tượng vật phẩm vượt quá giới hạn 5MB.');
+            }
+        }
+        return { itemIdSlug, contentType, extension };
+    }
+    createItemIconPresignUrl(input) {
+        const validated = this.validateItemIconUploadInput(input);
+        const config = this.getConfig();
+        const key = `items/${validated.itemIdSlug}_${Date.now()}.${validated.extension}`;
+        const host = `${config.accountId}.r2.cloudflarestorage.com`;
+        const canonicalUri = `/${encodeRfc3986(config.bucketName)}/${encodeObjectPath(key)}`;
+        const { amzDate, dateStamp } = formatAmzTimestamps(new Date());
+        const region = 'auto';
+        const service = 's3';
+        const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+        const queryEntries = [
+            ['X-Amz-Algorithm', 'AWS4-HMAC-SHA256'],
+            ['X-Amz-Credential', `${config.accessKeyId}/${credentialScope}`],
+            ['X-Amz-Date', amzDate],
+            ['X-Amz-Expires', String(PRESIGN_EXPIRES_SECONDS)],
+            ['X-Amz-SignedHeaders', 'content-type;host'],
+        ];
+        queryEntries.sort(([a], [b]) => a.localeCompare(b));
+        const canonicalQueryString = queryEntries
+            .map(([k, v]) => `${encodeRfc3986(k)}=${encodeRfc3986(v)}`)
+            .join('&');
+        const canonicalHeaders = `content-type:${validated.contentType}\n` + `host:${host}\n`;
+        const canonicalRequest = [
+            'PUT',
+            canonicalUri,
+            canonicalQueryString,
+            canonicalHeaders,
+            'content-type;host',
+            'UNSIGNED-PAYLOAD',
+        ].join('\n');
+        const stringToSign = [
+            'AWS4-HMAC-SHA256',
+            amzDate,
+            credentialScope,
+            sha256Hex(canonicalRequest),
+        ].join('\n');
+        const signingKey = deriveSigningKey(config.secretAccessKey, dateStamp, region, service);
+        const signature = createHmac('sha256', signingKey)
+            .update(stringToSign)
+            .digest('hex');
+        const uploadUrl = `https://${host}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+        const publicUrl = `${config.publicUrl}/${key}`;
+        return {
+            uploadUrl,
+            publicUrl,
+            key,
+            contentType: validated.contentType,
+            expiresInSeconds: PRESIGN_EXPIRES_SECONDS,
+        };
+    }
+    async deleteItemIconObjects(keys) {
+        const uniqueSafeKeys = Array.from(new Set(keys
+            .map((k) => (typeof k === 'string' ? k.trim() : ''))
+            .filter((k) => isSafeItemObjectKey(k))));
         if (uniqueSafeKeys.length === 0) {
             return { deletedKeys: [], failedKeys: [] };
         }

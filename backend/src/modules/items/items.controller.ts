@@ -59,6 +59,32 @@ export class ItemsController {
     return this.itemsService.seedUnitySampleItems(operator);
   }
 
+  @Post('media/presign')
+  async createMediaPresign(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    await this.firebase.authorizeOperator(authHeader, {
+      permissionGroupId: 'game_data',
+      permissionGroupLabel: 'Dữ Liệu Game & Nhân Vật',
+      requiredAnyPermissions: ['gamedata.item.edit'],
+    });
+    return this.itemsService.createMediaPresignUrl(body ?? {});
+  }
+
+  @Post('media/cleanup-temp')
+  async cleanupTempMedia(
+    @Headers('authorization') authHeader: string | undefined,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const operator = await this.firebase.authorizeOperator(authHeader, {
+      permissionGroupId: 'game_data',
+      permissionGroupLabel: 'Dữ Liệu Game & Nhân Vật',
+      requiredAnyPermissions: ['gamedata.item.edit'],
+    });
+    return this.itemsService.cleanupUnusedTempMedia(operator, body?.keys);
+  }
+
   @Get(':itemId')
   async getItemById(
     @Headers('authorization') authHeader: string | undefined,

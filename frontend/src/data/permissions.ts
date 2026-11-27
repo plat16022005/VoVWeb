@@ -11,6 +11,7 @@ export interface SubPermission {
     | "event"
     | "giftcode"
     | "mail"
+    | "player"
     | "general";
   categoryTitle: string;
 }
@@ -245,7 +246,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     id: "player_support",
     title: "Hỗ Trợ Người Chơi",
     code: "SUPPORT_OPS",
-    description: "Quản lý hòm thư hệ thống trong game: gửi thông báo toàn server, phát quà cá nhân, đền bù xử lý báo lỗi và hỗ trợ tài khoản người chơi.",
+    description: "Quản lý hòm thư hệ thống, đền bù báo lỗi và tra cứu dữ liệu nhân vật, kho tướng, trang bị, tiến trình vượt ải, kiểm tra túi đồ & thu hồi vật phẩm theo từng cụm máy chủ.",
     icon: "",
     subPermissions: [
       {
@@ -282,6 +283,21 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         description: "Thu hồi khẩn cấp thư đã phát hoặc xóa vĩnh viễn bản ghi thư khỏi trung tâm quản lý.",
         category: "mail",
         categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      // Nhánh 2: Dữ Liệu & Túi Đồ Người Chơi Theo Cụm Máy Chủ
+      {
+        id: "support.player.view",
+        title: "Tra Cứu Hồ Sơ, Kho Tướng, Trang Bị, Tiến Trình & Túi Đồ",
+        description: "Tra cứu dữ liệu người chơi theo từng cụm máy chủ: hồ sơ nhân vật, cấp độ, lực chiến, số dư tiền tệ, kho tướng, đội hình, trang bị, tiến trình vượt ải và túi đồ.",
+        category: "player",
+        categoryTitle: "Dữ Liệu & Túi Đồ Người Chơi (Theo Máy Chủ)",
+      },
+      {
+        id: "support.player.revoke_item",
+        title: "Xóa & Thu Hồi Vật Phẩm / Trang Bị Của Người Chơi",
+        description: "Quyền nhạy cảm cho phép trừ số lượng hoặc xóa vật phẩm trong túi đồ, thu hồi trang bị thực thể (tự động tháo khỏi tướng đang mặc) kèm lý do kiểm toán.",
+        category: "player",
+        categoryTitle: "Dữ Liệu & Túi Đồ Người Chơi (Theo Máy Chủ)",
       },
     ],
   },

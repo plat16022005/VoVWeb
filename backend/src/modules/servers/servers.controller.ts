@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  Headers,
+} from '@nestjs/common';
 import { ServersService } from './servers.service.js';
 import { CreateServerDto } from './dto/create-server.dto.js';
 
@@ -18,12 +26,18 @@ export class ServersController {
   }
 
   @Post('create')
-  async createServer(@Body() dto: CreateServerDto) {
-    return this.serversService.createServer(dto);
+  async createServer(
+    @Body() dto: CreateServerDto,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    return this.serversService.createServer(dto, authHeader);
   }
 
   @Post(':id/rules')
-  async applyRules(@Param('id') serverId: string) {
-    return this.serversService.applyRules(serverId);
+  async applyRules(
+    @Param('id') serverId: string,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    return this.serversService.applyRules(serverId, authHeader);
   }
 }

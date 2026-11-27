@@ -55,6 +55,9 @@ export default function ManagerPermissionsTable({
       if (filterGroup === "EVENT_OPS") {
         return m.permissionGroups && m.permissionGroups.includes("event_management");
       }
+      if (filterGroup === "SUPPORT_OPS") {
+        return m.permissionGroups && m.permissionGroups.includes("player_support");
+      }
       if (filterGroup === "BANNED") {
         return m.status === "banned";
       }
@@ -121,6 +124,11 @@ export default function ManagerPermissionsTable({
               id: "EVENT_OPS",
               label: "Quản Lý Sự Kiện",
               count: managers.filter((m) => m.permissionGroups && m.permissionGroups.includes("event_management")).length,
+            },
+            {
+              id: "SUPPORT_OPS",
+              label: "Hỗ Trợ Người Chơi",
+              count: managers.filter((m) => m.permissionGroups && m.permissionGroups.includes("player_support")).length,
             },
           ].map((f) => (
             <button

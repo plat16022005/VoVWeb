@@ -59,6 +59,10 @@ export interface ItemConfigDocument {
   TargetHeroId: string;
   RequiredShardsToSummon: number;
 
+  // Hình ảnh / Biểu tượng vật phẩm (IconUrl & IconKey lưu trên kho lưu trữ đám mây)
+  IconUrl?: string;
+  IconKey?: string;
+
   // Thông tin kiểm toán trên Web (Unity FirestoreData tự bỏ qua các trường phụ)
   LastUpdated?: string;
   UpdatedBy?: string;

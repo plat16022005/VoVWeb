@@ -63,8 +63,20 @@ export interface ItemConfigDocument {
   TargetHeroId: string;
   RequiredShardsToSummon: number;
 
+  // Biểu tượng / Hình ảnh vật phẩm
+  IconUrl?: string;
+  IconKey?: string;
+
   LastUpdated?: string;
   UpdatedBy?: string;
+}
+
+export interface ItemMediaPresignResponse {
+  uploadUrl: string;
+  publicUrl: string;
+  key: string;
+  contentType: string;
+  expiresInSeconds: number;
 }
 
 export type ItemLogAction =
@@ -158,7 +170,8 @@ export const ITEM_RARITY_OPTIONS: Array<{
     label: "Phổ Thông",
     hexColor: "#FFFFFF",
     badgeClass: "bg-slate-400/15 text-slate-200 border-slate-400/40",
-    borderClass: "border-slate-500/30",
+    borderClass:
+      "border-slate-400/60 bg-slate-400/10 shadow-[0_0_12px_rgba(148,163,184,0.18)]",
   },
   {
     value: GameItemRarity.Rare,
@@ -166,7 +179,8 @@ export const ITEM_RARITY_OPTIONS: Array<{
     label: "Hiếm",
     hexColor: "#4DA6FF",
     badgeClass: "bg-sky-500/15 text-sky-300 border-sky-400/45",
-    borderClass: "border-sky-500/35",
+    borderClass:
+      "border-sky-400/75 bg-sky-500/15 shadow-[0_0_14px_rgba(56,189,248,0.25)]",
   },
   {
     value: GameItemRarity.Epic,
@@ -174,7 +188,8 @@ export const ITEM_RARITY_OPTIONS: Array<{
     label: "Sử Thi",
     hexColor: "#B366FF",
     badgeClass: "bg-purple-500/15 text-purple-300 border-purple-400/45",
-    borderClass: "border-purple-500/35",
+    borderClass:
+      "border-purple-400/75 bg-purple-500/15 shadow-[0_0_14px_rgba(192,132,252,0.28)]",
   },
   {
     value: GameItemRarity.Legendary,
@@ -182,7 +197,8 @@ export const ITEM_RARITY_OPTIONS: Array<{
     label: "Huyền Thoại",
     hexColor: "#FFB733",
     badgeClass: "bg-[#f5c767]/15 text-[#f5c767] border-[#f5c767]/50",
-    borderClass: "border-[#f5c767]/40",
+    borderClass:
+      "border-[#f5c767]/85 bg-[#f5c767]/15 shadow-[0_0_16px_rgba(245,199,103,0.32)]",
   },
   {
     value: GameItemRarity.Mythic,
@@ -190,7 +206,8 @@ export const ITEM_RARITY_OPTIONS: Array<{
     label: "Thần Thoại",
     hexColor: "#FF3B30",
     badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/50",
-    borderClass: "border-rose-500/40",
+    borderClass:
+      "border-rose-500/85 bg-rose-500/15 shadow-[0_0_16px_rgba(244,63,94,0.35)]",
   },
 ];
 
@@ -389,6 +406,30 @@ class ItemConfigService {
   async getItemLogs(limitCount = 100): Promise<ItemActivityLog[]> {
     return this.request<ItemActivityLog[]>(
       `/logs/activities?limit=${encodeURIComponent(String(limitCount))}`
+    );
+  }
+
+  async createMediaPresign(params: {
+    itemId?: string;
+    fileName: string;
+    contentType: string;
+    fileSize?: number;
+  }): Promise<ItemMediaPresignResponse> {
+    return this.request<ItemMediaPresignResponse>("/media/presign", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async cleanupTempMedia(
+    keys: string[]
+  ): Promise<{ deletedKeys: string[]; skippedLiveKeys: string[] }> {
+    return this.request<{ deletedKeys: string[]; skippedLiveKeys: string[] }>(
+      "/media/cleanup-temp",
+      {
+        method: "POST",
+        body: JSON.stringify({ keys }),
+      }
     );
   }
 }

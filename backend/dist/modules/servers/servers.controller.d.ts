@@ -10,6 +10,6 @@ export declare class ServersController {
         version: string;
         minSupportedVersion: string;
     }>;
-    createServer(dto: CreateServerDto): Promise<any>;
-    applyRules(serverId: string): Promise<any>;
+    createServer(dto: CreateServerDto, authHeader?: string): Promise<any>;
+    applyRules(serverId: string, authHeader?: string): Promise<any>;
 }

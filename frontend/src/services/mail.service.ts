@@ -62,6 +62,7 @@ export interface MailReferenceItem {
   ItemName: string;
   Type: number;
   Rarity: number;
+  IconUrl?: string;
 }
 
 export interface MailReferenceServer {

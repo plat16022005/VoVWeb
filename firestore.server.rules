@@ -39,18 +39,26 @@ service cloud.firestore {
       allow write: if false; // Toàn bộ thay đổi qua Cloud Function
     }
 
+    // 1.0. Collection Group Read trên UserData (CHỈ dành cho Admin/Manager):
+    // Phục vụ truy vấn tổng hợp danh sách hồ sơ nhân vật (UserData/Profile) trên cụm máy chủ.
+    match /{path=**}/UserData/{docId} {
+      allow read: if isAdminOrManager();
+    }
+
     // 1.1. Hồ sơ hiển thị (Profile):
     // Cho phép mọi người chơi đã đăng nhập xem để phục vụ Bảng Xếp Hạng, PvP, Tìm kiếm bạn bè
     match /Users/{userId}/UserData/Profile {
       allow read: if isAuthenticated();
-      allow write: if false; // Chống hack: Cập nhật Level, Exp, Tên qua Cloud Function
+      allow update: if isAdminOrManager(); // Chỉ Admin/Manager cập nhật (ví dụ tính lại TotalCombatPower khi thu hồi trang bị)
+      allow create, delete: if false; // Chống hack: Người chơi không được tự ghi trực tiếp
     }
 
-    // 1.2. Các tài sản & dữ liệu nhạy cảm cá nhân (Wallet, Heroes, Formation, Inventory, Progress):
+    // 1.2. Các tài sản & dữ liệu nhạy cảm cá nhân (Wallet, Heroes, Formation, Inventory, Equipments, Progress, MailState):
     // Chỉ duy nhất CHÍNH CHỦ hoặc Admin/Manager mới có quyền đọc
     match /Users/{userId}/UserData/{docId} {
       allow read: if isOwner(userId) || isAdminOrManager();
-      allow write: if false; // Chống hack tài sản: Toàn bộ ghi qua Cloud Function
+      allow update: if isAdminOrManager() && docId in ['Inventory', 'Equipments', 'Heroes', 'Profile']; // Chỉ Admin/Manager được phép thu hồi vật phẩm/trang bị từ NestJS Backend
+      allow create, delete: if false; // Chống hack tài sản: Người chơi tuyệt đối không có quyền ghi trực tiếp
     }
 
     // 1.3. Lịch sử quay Gacha (GachaHistory):

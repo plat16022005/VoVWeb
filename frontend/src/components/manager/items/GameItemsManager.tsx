@@ -448,29 +448,52 @@ export default function GameItemsManager({
                       className="hover:bg-white/[0.025] transition-colors"
                     >
                       <td className="py-3.5 px-4 max-w-xs">
-                        <div className="font-bold text-white text-sm">
-                          {item.ItemName}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(item.ItemId);
-                              setCopiedId(item.ItemId);
-                              setTimeout(() => setCopiedId(null), 2000);
-                            }}
-                            className="text-[11px] font-mono text-[#3fe9d6] hover:underline cursor-pointer"
-                            title="Sao chép mã ItemId"
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center transition-colors ${rarityMeta.borderClass}`}
                           >
-                            {item.ItemId}
-                            {copiedId === item.ItemId ? " (Đã chép)" : ""}
-                          </button>
+                            {item.IconUrl ? (
+                              <img
+                                src={item.IconUrl}
+                                alt={item.ItemName}
+                                className="w-full h-full object-contain p-1"
+                              />
+                            ) : (
+                              <span
+                                className="text-[10px] font-mono font-bold text-center leading-tight px-1"
+                                style={{ color: rarityMeta.hexColor }}
+                              >
+                                {typeMeta.shortLabel}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-white text-sm truncate">
+                              {item.ItemName}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(item.ItemId);
+                                  setCopiedId(item.ItemId);
+                                  setTimeout(() => setCopiedId(null), 2000);
+                                }}
+                                className="text-[11px] font-mono text-[#3fe9d6] hover:underline cursor-pointer truncate"
+                                title="Sao chép mã ItemId"
+                              >
+                                {item.ItemId}
+                                {copiedId === item.ItemId ? " (Đã chép)" : ""}
+                              </button>
+                            </div>
+                            {item.Description && (
+                              <p className="text-[11px] text-slate-400 line-clamp-2 mt-1">
+                                {item.Description}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {item.Description && (
-                          <p className="text-[11px] text-slate-400 line-clamp-2 mt-1">
-                            {item.Description}
-                          </p>
-                        )}
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap">
