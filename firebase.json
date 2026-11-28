@@ -16,6 +16,14 @@
     {
       "database": "server-3",
       "rules": "firestore.server.rules"
+    },
+    {
+      "database": "server-4",
+      "rules": "firestore.server.rules"
+    },
+    {
+      "database": "server-sea",
+      "rules": "firestore.server.rules"
     }
   ],
   "functions": [

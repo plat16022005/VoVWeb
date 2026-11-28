@@ -12,6 +12,8 @@ import {
 } from '../gacha/gacha-firebase.service.js';
 import { AuthenticatedOperator } from '../gacha/gacha.types.js';
 import {
+  CustomEquipmentStatRoll,
+  CustomForgedEquipmentSpec,
   MailActivityLog,
   MailLogAction,
   MailPlayerSearchItem,
@@ -25,6 +27,98 @@ import {
   SystemMailStatus,
   SystemMailType,
 } from './mail.types.js';
+import {
+  EQUIP_RARITY_TIERS,
+  EQUIP_STAT_META,
+  validateAndNormalizeCustomEquipment,
+} from './equipment-forger.util.js';
+
+const BUILTIN_EQUIPMENT_TEMPLATES: MailReferenceItem[] = [
+  {
+    ItemId: 'equip_weapon_01',
+    ItemName: 'Trường Kiếm Rực Lửa',
+    Type: 2,
+    Rarity: 0,
+    Slot: 1,
+  },
+  {
+    ItemId: 'equip_weapon_02',
+    ItemName: 'Lưỡi Kiếm Ám Ảnh',
+    Type: 2,
+    Rarity: 0,
+    Slot: 1,
+  },
+  {
+    ItemId: 'equip_helmet_01',
+    ItemName: 'Chiến Khôi Lửa',
+    Type: 2,
+    Rarity: 0,
+    Slot: 2,
+  },
+  {
+    ItemId: 'equip_helmet_02',
+    ItemName: 'Mũ Trùm Bóng Đêm',
+    Type: 2,
+    Rarity: 0,
+    Slot: 2,
+  },
+  {
+    ItemId: 'equip_armor_01',
+    ItemName: 'Chiến Giáp Hoàng Kim',
+    Type: 2,
+    Rarity: 0,
+    Slot: 3,
+  },
+  {
+    ItemId: 'equip_armor_02',
+    ItemName: 'Áo Choàng Tinh Linh',
+    Type: 2,
+    Rarity: 0,
+    Slot: 3,
+  },
+  {
+    ItemId: 'equip_boots_01',
+    ItemName: 'Chiến Hài Bạc',
+    Type: 2,
+    Rarity: 0,
+    Slot: 4,
+  },
+  {
+    ItemId: 'equip_boots_02',
+    ItemName: 'Ủng Bóng Tối',
+    Type: 2,
+    Rarity: 0,
+    Slot: 4,
+  },
+  {
+    ItemId: 'equip_accessory_01',
+    ItemName: 'Huy Hiệu Sư Tử',
+    Type: 2,
+    Rarity: 0,
+    Slot: 5,
+  },
+  {
+    ItemId: 'equip_accessory_02',
+    ItemName: 'Dây Chuyền Tinh Tú',
+    Type: 2,
+    Rarity: 0,
+    Slot: 5,
+  },
+  {
+    ItemId: 'equip_gloves_01',
+    ItemName: 'Thủ Giáp Thép',
+    Type: 2,
+    Rarity: 0,
+    Slot: 6,
+  },
+  {
+    ItemId: 'equip_gloves_02',
+    ItemName: 'Nhẫn Ma Tinh',
+    Type: 2,
+    Rarity: 0,
+    Slot: 6,
+  },
+];
 
 const MAILBOX_COLLECTION = 'Mailbox';
 const USERS_COLLECTION = 'Users';
@@ -113,9 +207,20 @@ function summarizeRewards(rewards: SystemMailRewards): string {
   }
   if (rewards.Items.length > 0) {
     parts.push(
-      rewards.Items.map(
-        (it) => `${it.ItemName || it.ItemId} x${it.Quantity}`,
-      ).join(', '),
+      rewards.Items.map((it) => {
+        if (it.CustomEquipment) {
+          const ce = it.CustomEquipment;
+          const tierName =
+            EQUIP_RARITY_TIERS[ce.Rarity]?.name || `Bậc ${ce.Rarity}`;
+          const mainMeta = EQUIP_STAT_META[ce.MainStat.StatType];
+          const mainUnit = mainMeta?.isPct ? '%' : '';
+          const mainText = mainMeta
+            ? `${mainMeta.label} +${ce.MainStat.Value}${mainUnit}`
+            : '';
+          return `${it.ItemName || it.ItemId} [${tierName} +${ce.EnhanceLevel}${mainText ? `, ${mainText}` : ''}] x${it.Quantity}`;
+        }
+        return `${it.ItemName || it.ItemId} x${it.Quantity}`;
+      }).join(', '),
     );
   }
   return parts.length > 0 ? parts.join(' · ') : 'Không đính kèm quà';
@@ -257,11 +362,53 @@ export class MailService {
           : itemId;
       const quantity = clampInt(rec.Quantity, 1, 999999, 1);
       const rarity = clampInt(rec.Rarity, 0, 4, 0);
+      let customEquipment: CustomForgedEquipmentSpec | undefined;
+      if (rec.CustomEquipment && typeof rec.CustomEquipment === 'object') {
+        const ceRaw = rec.CustomEquipment as Record<string, unknown>;
+        const mainRaw =
+          ceRaw.MainStat && typeof ceRaw.MainStat === 'object'
+            ? (ceRaw.MainStat as Record<string, unknown>)
+            : null;
+        if (mainRaw) {
+          const rawSubs = Array.isArray(ceRaw.SubStats) ? ceRaw.SubStats : [];
+          const subStats: CustomEquipmentStatRoll[] = [];
+          for (const s of rawSubs) {
+            if (!s || typeof s !== 'object') continue;
+            const sRec = s as Record<string, unknown>;
+            subStats.push({
+              StatType: clampInt(sRec.StatType, 1, 11, 1),
+              BaseValue: Number(sRec.BaseValue) || 0,
+              Value: Number(sRec.Value) || 0,
+              UpgradeCount: clampInt(sRec.UpgradeCount, 0, 100, 0),
+            });
+          }
+          customEquipment = {
+            TemplateId:
+              typeof ceRaw.TemplateId === 'string' && ceRaw.TemplateId.trim()
+                ? ceRaw.TemplateId.trim()
+                : itemId,
+            Slot: clampInt(ceRaw.Slot, 1, 6, 1),
+            Rarity: clampInt(ceRaw.Rarity, 0, 4, rarity),
+            EnhanceLevel: clampInt(ceRaw.EnhanceLevel, 0, 100, 0),
+            IsLocked: ceRaw.IsLocked === true,
+            SetId:
+              typeof ceRaw.SetId === 'string' ? ceRaw.SetId.trim() : '',
+            MainStat: {
+              StatType: clampInt(mainRaw.StatType, 1, 11, 1),
+              BaseValue: Number(mainRaw.BaseValue) || 0,
+              Value: Number(mainRaw.Value) || 0,
+              UpgradeCount: clampInt(mainRaw.UpgradeCount, 0, 100, 0),
+            },
+            SubStats: subStats,
+          };
+        }
+      }
       items.push({
         ItemId: itemId,
         ItemName: itemName,
         Quantity: quantity,
         Rarity: rarity,
+        ...(customEquipment ? { CustomEquipment: customEquipment } : {}),
       });
     }
 
@@ -410,6 +557,8 @@ export class MailService {
     }
 
     const itemMap = new Map<string, SystemMailRewardItem>();
+    const customEquipItems: SystemMailRewardItem[] = [];
+
     for (const entry of rawItems) {
       if (!entry || typeof entry !== 'object') continue;
       const rec = entry as Record<string, unknown>;
@@ -432,6 +581,25 @@ export class MailService {
           : itemId;
       const rarity = clampInt(rec.Rarity, 0, 4, 0);
 
+      if (rec.CustomEquipment !== undefined && rec.CustomEquipment !== null) {
+        const builtinSlot = BUILTIN_EQUIPMENT_TEMPLATES.find(
+          (t) => t.ItemId === itemId,
+        )?.Slot;
+        const normalizedCustom = validateAndNormalizeCustomEquipment(
+          rec.CustomEquipment,
+          itemId,
+          builtinSlot,
+        );
+        customEquipItems.push({
+          ItemId: itemId,
+          ItemName: itemName,
+          Quantity: Math.min(20, quantity),
+          Rarity: normalizedCustom.Rarity,
+          CustomEquipment: normalizedCustom,
+        });
+        continue;
+      }
+
       const prev = itemMap.get(itemId);
       if (prev) {
         prev.Quantity = Math.min(999999, prev.Quantity + quantity);
@@ -445,7 +613,10 @@ export class MailService {
       }
     }
 
-    const items = Array.from(itemMap.values());
+    const items = [...Array.from(itemMap.values()), ...customEquipItems].slice(
+      0,
+      30,
+    );
     const hasRewards = gold > 0 || gems > 0 || energy > 0 || items.length > 0;
     return {
       rewards: { Gold: gold, Gems: gems, Energy: energy, Items: items },
@@ -608,35 +779,46 @@ export class MailService {
       this.getRegisteredServers(operator.authTokenForFirestore),
     ]);
 
-    const items: MailReferenceItem[] = itemDocs
-      .map((doc) => {
-        const id = this.firebase.extractDocId(doc.name);
-        const obj = this.firebase.docToObject(doc);
-        const itemId =
-          (typeof obj.ItemId === 'string' && obj.ItemId.trim()) || id;
-        const itemName =
-          (typeof obj.ItemName === 'string' && obj.ItemName.trim()) ||
-          (typeof obj.Name === 'string' && obj.Name.trim()) ||
-          itemId;
-        const type = clampInt(obj.Type ?? obj.ItemType, 0, 4, 1);
-        const rarity = clampInt(obj.Rarity, 0, 4, 0);
-        const iconUrl =
-          (typeof obj.IconUrl === 'string' && obj.IconUrl.trim()) ||
-          (typeof obj.ImageUrl === 'string' && obj.ImageUrl.trim()) ||
-          undefined;
-        return {
-          ItemId: itemId,
-          ItemName: itemName,
-          Type: type,
-          Rarity: rarity,
-          ...(iconUrl ? { IconUrl: iconUrl } : {}),
-        };
-      })
-      .sort((a, b) => {
+    const byId = new Map<string, MailReferenceItem>();
+    for (const tpl of BUILTIN_EQUIPMENT_TEMPLATES) {
+      byId.set(tpl.ItemId, { ...tpl });
+    }
+
+    for (const doc of itemDocs) {
+      const id = this.firebase.extractDocId(doc.name);
+      const obj = this.firebase.docToObject(doc);
+      const itemId =
+        (typeof obj.ItemId === 'string' && obj.ItemId.trim()) || id;
+      const itemName =
+        (typeof obj.ItemName === 'string' && obj.ItemName.trim()) ||
+        (typeof obj.Name === 'string' && obj.Name.trim()) ||
+        itemId;
+      const type = clampInt(obj.Type ?? obj.ItemType, 0, 4, 1);
+      const rarity = clampInt(obj.Rarity, 0, 4, 0);
+      const slotRaw = clampInt(obj.Slot, 0, 6, 0);
+      const fallbackSlot = byId.get(itemId)?.Slot;
+      const slot = slotRaw >= 1 && slotRaw <= 6 ? slotRaw : fallbackSlot;
+      const iconUrl =
+        (typeof obj.IconUrl === 'string' && obj.IconUrl.trim()) ||
+        (typeof obj.ImageUrl === 'string' && obj.ImageUrl.trim()) ||
+        undefined;
+      byId.set(itemId, {
+        ItemId: itemId,
+        ItemName: itemName,
+        Type: type,
+        Rarity: rarity,
+        ...(slot ? { Slot: slot } : {}),
+        ...(iconUrl ? { IconUrl: iconUrl } : {}),
+      });
+    }
+
+    const items: MailReferenceItem[] = Array.from(byId.values()).sort(
+      (a, b) => {
         if (b.Rarity !== a.Rarity) return b.Rarity - a.Rarity;
         if (a.Type !== b.Type) return a.Type - b.Type;
         return a.ItemName.localeCompare(b.ItemName, 'vi');
-      });
+      },
+    );
 
     return { items, servers };
   }
@@ -845,6 +1027,20 @@ export class MailService {
 
     const expiresAt = parseIsoOrDefaultExpiry(rawBody.ExpiresAt);
     const { rewards, hasRewards } = this.validateRewardsPayload(rawBody.Rewards);
+    const hasCustomEquipment = rewards.Items.some((it) =>
+      Boolean(it.CustomEquipment),
+    );
+
+    if (
+      hasCustomEquipment &&
+      !this.hasSubPermission(operator, 'support.mail.forge_equipment') &&
+      !this.hasSubPermission(operator, 'support.mail.send_personal') &&
+      !this.hasSubPermission(operator, 'support.mail.send_global_reward')
+    ) {
+      throw new ForbiddenException(
+        'Tài khoản của bạn không có quyền "Tạo & Chỉnh Chỉ Số Trang Bị Đền Bù Qua Thư".',
+      );
+    }
 
     // Kiểm soát phân quyền chi tiết ở tầng Backend (Rule 8 & Rule 10)
     if (type === 'global' && hasRewards) {
@@ -854,7 +1050,13 @@ export class MailService {
         );
       }
     } else if (type === 'personal' && hasRewards) {
-      if (!this.hasSubPermission(operator, 'support.mail.send_personal')) {
+      if (
+        !this.hasSubPermission(operator, 'support.mail.send_personal') &&
+        !(
+          hasCustomEquipment &&
+          this.hasSubPermission(operator, 'support.mail.forge_equipment')
+        )
+      ) {
         throw new ForbiddenException(
           'Tài khoản của bạn không có quyền "Gửi Thư Cá Nhân Kèm Quà / Đền Bù Lỗi".',
         );

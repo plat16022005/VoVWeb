@@ -135,7 +135,8 @@ service cloud.firestore {
     //      - ReceiverPlayerCode: string (required, 0..32 chars)
     //      - HasRewards: bool (required, must equal whether Rewards contains any currency or item)
     //      - Rewards: map (required, exact keys: Gold int 0..1000000000, Gems int 0..10000000,
-    //                      Energy int 0..100000, Items list size 0..30)
+    //                      Energy int 0..100000, Items list size 0..30; each entry in Items may
+    //                      optionally include CustomEquipment map for custom forged compensation equipment)
     //      - ReferenceTicketId: string (required, 0..64 chars)
     //      - Status: string (required, enum ['SENT', 'REVOKED']; must be 'SENT' on create)
     //      - ExpiresAt: string (required, 0..64 chars)
@@ -164,11 +165,12 @@ service cloud.firestore {
     function isValidSystemMailRewardItem(item) {
       return item is map
         && item.keys().hasAll(['ItemId', 'Quantity'])
-        && item.keys().hasOnly(['ItemId', 'ItemName', 'Quantity', 'Rarity'])
+        && item.keys().hasOnly(['ItemId', 'ItemName', 'Quantity', 'Rarity', 'CustomEquipment'])
         && item.ItemId is string && item.ItemId.size() >= 1 && item.ItemId.size() <= 80
         && item.Quantity is int && item.Quantity >= 1 && item.Quantity <= 999999
         && (!('ItemName' in item) || (item.ItemName is string && item.ItemName.size() <= 120))
-        && (!('Rarity' in item) || (item.Rarity is int && item.Rarity >= 0 && item.Rarity <= 4));
+        && (!('Rarity' in item) || (item.Rarity is int && item.Rarity >= 0 && item.Rarity <= 4))
+        && (!('CustomEquipment' in item) || item.CustomEquipment is map);
     }
 
     // Kiểm tra cấu trúc bản đồ phần thưởng (Rewards) của thư hệ thống

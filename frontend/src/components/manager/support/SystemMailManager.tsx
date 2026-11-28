@@ -13,12 +13,14 @@ import {
   mailService,
 } from "@/services/mail.service";
 import { soundEngine } from "@/services/audio.service";
+import { formatEquipStatText } from "@/utils/equipmentForger";
 import ComposeMailModal from "./ComposeMailModal";
 
 interface SystemMailManagerProps {
   canSendNotice: boolean;
   canSendPersonalReward: boolean;
   canSendGlobalReward: boolean;
+  canForgeEquipment?: boolean;
   canDelete: boolean;
   onNotify: (message: string) => void;
 }
@@ -40,6 +42,7 @@ export default function SystemMailManager({
   canSendNotice,
   canSendPersonalReward,
   canSendGlobalReward,
+  canForgeEquipment = true,
   canDelete,
   onNotify,
 }: SystemMailManagerProps) {
@@ -62,6 +65,7 @@ export default function SystemMailManager({
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [openComposeWithForge, setOpenComposeWithForge] = useState(false);
   const [previewMail, setPreviewMail] = useState<SystemMailDocument | null>(
     null
   );
@@ -71,7 +75,10 @@ export default function SystemMailManager({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const canComposeAny =
-    canSendNotice || canSendPersonalReward || canSendGlobalReward;
+    canSendNotice ||
+    canSendPersonalReward ||
+    canSendGlobalReward ||
+    canForgeEquipment;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -304,11 +311,26 @@ export default function SystemMailManager({
             {loading ? "Đang tải..." : "Làm Mới"}
           </button>
 
+          {(canForgeEquipment || canSendPersonalReward) && (
+            <button
+              type="button"
+              onClick={() => {
+                soundEngine.playClick();
+                setOpenComposeWithForge(true);
+                setIsComposeOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f5c767] to-amber-500 text-[#050814] font-bold text-xs font-mono hover:brightness-110 transition-all cursor-pointer shadow-[0_0_20px_rgba(245,199,103,0.25)]"
+            >
+              ⚒️ Tạo Trang Bị Đền Bù (Gửi Thư)
+            </button>
+          )}
+
           {canComposeAny && (
             <button
               type="button"
               onClick={() => {
                 soundEngine.playClick();
+                setOpenComposeWithForge(false);
                 setIsComposeOpen(true);
               }}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-[#3fe9d6] text-[#050814] font-bold text-xs font-mono hover:brightness-110 transition-all cursor-pointer"
@@ -600,11 +622,16 @@ export default function SystemMailManager({
                                 Thể Lực
                               </span>
                             )}
-                            {mail.Rewards.Items.map((it) => (
+                            {mail.Rewards.Items.map((it, idx) => (
                               <span
-                                key={it.ItemId}
-                                className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-200 border border-purple-500/30"
+                                key={`${it.ItemId}_${idx}`}
+                                className={`px-2 py-0.5 rounded border ${
+                                  it.CustomEquipment
+                                    ? "bg-[#f5c767]/15 text-[#f5c767] border-[#f5c767]/40 font-semibold"
+                                    : "bg-purple-500/15 text-purple-200 border border-purple-500/30"
+                                }`}
                               >
+                                {it.CustomEquipment ? "⚒️ " : ""}
                                 {it.ItemName} ×{it.Quantity}
                               </span>
                             ))}
@@ -718,12 +745,17 @@ export default function SystemMailManager({
       <ComposeMailModal
         isOpen={isComposeOpen}
         initialServerId={filterServer !== "ALL" ? filterServer : undefined}
+        initialOpenForge={openComposeWithForge}
         canSendNotice={canSendNotice}
         canSendPersonalReward={canSendPersonalReward}
         canSendGlobalReward={canSendGlobalReward}
+        canForgeEquipment={canForgeEquipment}
         referenceItems={referenceItems}
         referenceServers={referenceServers}
-        onClose={() => setIsComposeOpen(false)}
+        onClose={() => {
+          setIsComposeOpen(false);
+          setOpenComposeWithForge(false);
+        }}
         onSent={(sentMails, message) => {
           setMails((prev) => [...sentMails, ...prev]);
           onNotify(message);
@@ -809,13 +841,43 @@ export default function SystemMailManager({
                         Lực
                       </span>
                     )}
-                    {previewMail.Rewards.Items.map((it) => (
-                      <span
-                        key={it.ItemId}
-                        className="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-200 border border-purple-500/30"
+                    {previewMail.Rewards.Items.map((it, idx) => (
+                      <div
+                        key={`${it.ItemId}_${idx}`}
+                        className={`px-2.5 py-1.5 rounded-lg border ${
+                          it.CustomEquipment
+                            ? "bg-[#0c122e] text-[#f5c767] border-[#f5c767]/45 w-full space-y-1"
+                            : "bg-purple-500/15 text-purple-200 border border-purple-500/30"
+                        }`}
                       >
-                        {it.ItemName} ×{it.Quantity}
-                      </span>
+                        <div className="font-bold">
+                          {it.CustomEquipment ? "⚒️ " : ""}
+                          {it.ItemName} ×{it.Quantity}
+                        </div>
+                        {it.CustomEquipment && (
+                          <div className="flex flex-wrap gap-1.5 text-[11px]">
+                            <span className="px-2 py-0.5 rounded bg-[#f5c767]/15 border border-[#f5c767]/35 text-[#f5c767]">
+                              Chính:{" "}
+                              {formatEquipStatText(
+                                it.CustomEquipment.MainStat.StatType,
+                                it.CustomEquipment.MainStat.Value
+                              )}
+                            </span>
+                            {it.CustomEquipment.SubStats.map((sub, sIdx) => (
+                              <span
+                                key={sIdx}
+                                className="px-2 py-0.5 rounded bg-emerald-500/12 border border-emerald-500/30 text-emerald-300"
+                              >
+                                Phụ #{sIdx + 1}:{" "}
+                                {formatEquipStatText(sub.StatType, sub.Value)}
+                                {sub.UpgradeCount > 0
+                                  ? ` (+${sub.UpgradeCount})`
+                                  : ""}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>

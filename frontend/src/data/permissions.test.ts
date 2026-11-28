@@ -22,6 +22,7 @@ describe("Hệ thống phân quyền RBAC (permissions.ts)", () => {
     expect(contentPerms).toContain("content.blog.view");
     expect(contentPerms).toContain("content.facebook.bot");
     const supportPerms = getAllSubPermissionIds("player_support");
+    expect(supportPerms).toContain("support.mail.forge_equipment");
     expect(supportPerms).toContain("support.player.view");
     expect(supportPerms).toContain("support.player.activity_logs");
     expect(supportPerms).toContain("support.player.revoke_item");

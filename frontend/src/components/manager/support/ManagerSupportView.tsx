@@ -20,6 +20,9 @@ export default function ManagerSupportView({
     currentUser,
     "support.mail.send_personal"
   );
+  const canForgeEquipment =
+    hasPermission(currentUser, "support.mail.forge_equipment") ||
+    canSendPersonalReward;
   const canSendGlobalReward = hasPermission(
     currentUser,
     "support.mail.send_global_reward"
@@ -29,6 +32,7 @@ export default function ManagerSupportView({
     hasPermission(currentUser, "support.mail.view") ||
     canSendNotice ||
     canSendPersonalReward ||
+    canForgeEquipment ||
     canSendGlobalReward ||
     canDelete;
 
@@ -81,6 +85,7 @@ export default function ManagerSupportView({
           canSendNotice={canSendNotice}
           canSendPersonalReward={canSendPersonalReward}
           canSendGlobalReward={canSendGlobalReward}
+          canForgeEquipment={canForgeEquipment}
           canDelete={canDelete}
           onNotify={showToast}
         />

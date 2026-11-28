@@ -95,6 +95,7 @@ export default function ManagerSidebar({
     hasPermission(currentUser, "support.mail.view") ||
     hasPermission(currentUser, "support.mail.send_notice") ||
     hasPermission(currentUser, "support.mail.send_personal") ||
+    hasPermission(currentUser, "support.mail.forge_equipment") ||
     hasPermission(currentUser, "support.mail.send_global_reward") ||
     hasPermission(currentUser, "support.mail.delete");
 

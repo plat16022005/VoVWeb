@@ -271,6 +271,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
       },
       {
+        id: "support.mail.forge_equipment",
+        title: "Tạo & Chỉnh Chỉ Số Trang Bị Đền Bù Qua Thư",
+        description: "Khởi tạo trang bị động theo mẫu, tùy chỉnh phẩm chất, cấp cường hóa, chỉ số chính và các dòng chỉ số phụ trong ngưỡng cân bằng của game để gửi đền bù qua thư hệ thống.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      {
         id: "support.mail.send_global_reward",
         title: "Gửi Thư Toàn Server Kèm Quà Tặng",
         description: "Quyền đặc biệt cho phép phát thư kèm Vàng, Ngọc, Thể Lực hoặc vật phẩm tới toàn bộ người chơi trên một hoặc nhiều cụm máy chủ.",

@@ -17,6 +17,7 @@ const MAIL_READ_PERMISSIONS = [
   'support.mail.view',
   'support.mail.send_notice',
   'support.mail.send_personal',
+  'support.mail.forge_equipment',
   'support.mail.send_global_reward',
   'support.mail.delete',
 ];
@@ -24,6 +25,7 @@ const MAIL_READ_PERMISSIONS = [
 const MAIL_SEND_ANY_PERMISSIONS = [
   'support.mail.send_notice',
   'support.mail.send_personal',
+  'support.mail.forge_equipment',
   'support.mail.send_global_reward',
 ];
 

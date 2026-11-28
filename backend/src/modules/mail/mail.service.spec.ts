@@ -4,6 +4,12 @@ import {
 } from '@nestjs/common';
 import { GachaFirebaseService } from '../gacha/gacha-firebase.service.js';
 import { AuthenticatedOperator } from '../gacha/gacha.types.js';
+import {
+  computeMainStatValueAtLevel,
+  getMainStatBaseRange,
+  getSubStatBaseRange,
+  validateAndNormalizeCustomEquipment,
+} from './equipment-forger.util.js';
 import { MailService } from './mail.service.js';
 
 describe('MailService', () => {
@@ -136,5 +142,189 @@ describe('MailService', () => {
     });
     expect(sentNotice.sentCount).toBe(1);
     expect(sentNotice.mails[0].HasRewards).toBe(false);
+  });
+
+  describe('Chế tác & Kiểm tra chỉ số Trang bị đền bù (validateAndNormalizeCustomEquipment)', () => {
+    it('chấp nhận và tính đúng chỉ số chính + dòng phụ hợp lệ theo công thức Unity', () => {
+      // Vũ khí (Slot 1), Huyền Thoại (Rarity 3 -> maxEnhance 80, 4 dòng phụ)
+      const atkMainRange = getMainStatBaseRange(2, 3); // ATK ở Rarity 3
+      const s1 = getSubStatBaseRange(5, 3); // Crit Rate
+      const s2 = getSubStatBaseRange(6, 3); // Crit Damage
+      const s3 = getSubStatBaseRange(4, 3); // Speed
+      const s4 = getSubStatBaseRange(10, 3); // ATK%
+
+      const spec = validateAndNormalizeCustomEquipment(
+        {
+          Slot: 1,
+          Rarity: 3,
+          EnhanceLevel: 20,
+          IsLocked: true,
+          MainStat: {
+            StatType: 2,
+            BaseValue: atkMainRange.mid,
+          },
+          SubStats: [
+            { StatType: 5, BaseValue: s1.max, UpgradeCount: 1 },
+            { StatType: 6, BaseValue: s2.mid, UpgradeCount: 1 },
+            { StatType: 4, BaseValue: s3.mid, UpgradeCount: 0 },
+            { StatType: 10, BaseValue: s4.mid, UpgradeCount: 0 },
+          ],
+        },
+        'equip_weapon_01',
+        1,
+      );
+
+      expect(spec.Slot).toBe(1);
+      expect(spec.Rarity).toBe(3);
+      expect(spec.EnhanceLevel).toBe(20);
+      expect(spec.MainStat.Value).toBe(
+        computeMainStatValueAtLevel(2, atkMainRange.mid, 3, 20),
+      );
+      expect(spec.SubStats).toHaveLength(4);
+      expect(spec.SubStats[0].UpgradeCount).toBe(1);
+    });
+
+    it('chặn khi chỉ số chính không thuộc Pool của ô trang bị hoặc vượt ngưỡng cân bằng', () => {
+      // Vũ khí (Slot 1) chỉ cho phép ATK (2), ATK% (10), Crit Rate (5); không cho phép Speed (4) làm dòng chính
+      expect(() =>
+        validateAndNormalizeCustomEquipment(
+          {
+            Slot: 1,
+            Rarity: 0,
+            EnhanceLevel: 0,
+            MainStat: { StatType: 4, BaseValue: 3.0 },
+            SubStats: [{ StatType: 1, BaseValue: 100 }],
+          },
+          'equip_weapon_01',
+          1,
+        ),
+      ).toThrow(BadRequestException);
+
+      // Chỉ số chính ATK ở Rarity 0 có BaseValue hợp lệ 55..65; nhập 9999 sẽ bị chặn
+      expect(() =>
+        validateAndNormalizeCustomEquipment(
+          {
+            Slot: 1,
+            Rarity: 0,
+            EnhanceLevel: 0,
+            MainStat: { StatType: 2, BaseValue: 9999 },
+            SubStats: [{ StatType: 1, BaseValue: 100 }],
+          },
+          'equip_weapon_01',
+          1,
+        ),
+      ).toThrow(BadRequestException);
+    });
+
+    it('chặn khi dòng phụ trùng với dòng chính, trùng nhau, sai số lượng dòng hoặc vượt cấp cường hóa', () => {
+      const atkRange = getMainStatBaseRange(2, 1); // Rarity 1 (Hiếm) cần đúng 2 dòng phụ, maxEnhance = 40
+
+      // Vượt cấp cường hóa (Rarity 1 tối đa +40 nhưng truyền +60)
+      expect(() =>
+        validateAndNormalizeCustomEquipment(
+          {
+            Slot: 1,
+            Rarity: 1,
+            EnhanceLevel: 60,
+            MainStat: { StatType: 2, BaseValue: atkRange.mid },
+            SubStats: [
+              { StatType: 1, BaseValue: 160 },
+              { StatType: 3, BaseValue: 12 },
+            ],
+          },
+          'equip_weapon_01',
+          1,
+        ),
+      ).toThrow(BadRequestException);
+
+      // Dòng phụ trùng với dòng chính (ATK = 2)
+      expect(() =>
+        validateAndNormalizeCustomEquipment(
+          {
+            Slot: 1,
+            Rarity: 1,
+            EnhanceLevel: 10,
+            MainStat: { StatType: 2, BaseValue: atkRange.mid },
+            SubStats: [
+              { StatType: 2, BaseValue: 18 },
+              { StatType: 3, BaseValue: 12 },
+            ],
+          },
+          'equip_weapon_01',
+          1,
+        ),
+      ).toThrow(BadRequestException);
+    });
+
+    it('sendMail gửi thư cá nhân đính kèm trang bị chế tác thành công cho Manager có quyền support.mail.forge_equipment', async () => {
+      const forgeManager: AuthenticatedOperator = {
+        uid: 'mgr_forge',
+        email: 'forge@veyra.game',
+        username: 'MgrForge',
+        role: 'Manager',
+        permissionGroups: ['player_support'],
+        permissions: ['support.mail.forge_equipment'],
+        authTokenForFirestore: 'token_forge',
+      };
+
+      firebaseMock.getDocument.mockImplementation(async (path: string) => {
+        if (path === 'GameConfig/ServerList') {
+          return {
+            name: 'GameConfig/ServerList',
+            data: { 'server-1': { Name: 'Thánh Địa 01', Status: 'Normal' } },
+          };
+        }
+        if (path === 'Users/uid_player_1') {
+          return {
+            name: path,
+            data: { Username: 'HitomiPlayer', PlayerCode: '123456' },
+          };
+        }
+        return null;
+      });
+
+      const atkRange = getMainStatBaseRange(2, 0);
+      const hpSubRange = getSubStatBaseRange(1, 0);
+
+      const res = await service.sendMail(forgeManager, {
+        Type: 'personal',
+        Category: 'COMPENSATION',
+        Title: 'Đền Bù Trang Bị Vũ Khí',
+        Content: 'Gửi trang bị đền bù theo phiếu hỗ trợ.',
+        ServerId: 'server-1',
+        TargetServers: ['server-1'],
+        Recipients: [
+          { uid: 'uid_player_1', username: 'HitomiPlayer', playerCode: '123456' },
+        ],
+        Rewards: {
+          Gold: 0,
+          Gems: 0,
+          Energy: 0,
+          Items: [
+            {
+              ItemId: 'equip_weapon_01',
+              ItemName: 'Trường Kiếm Rực Lửa [Phổ Thông +10]',
+              Quantity: 1,
+              Rarity: 0,
+              CustomEquipment: {
+                Slot: 1,
+                Rarity: 0,
+                EnhanceLevel: 10,
+                MainStat: { StatType: 2, BaseValue: atkRange.mid },
+                SubStats: [{ StatType: 1, BaseValue: hpSubRange.mid, UpgradeCount: 1 }],
+              },
+            },
+          ],
+        },
+      });
+
+      expect(res.sentCount).toBe(1);
+      const sentItem = res.mails[0].Rewards.Items[0];
+      expect(sentItem.CustomEquipment).toBeDefined();
+      expect(sentItem.CustomEquipment?.EnhanceLevel).toBe(10);
+      expect(sentItem.CustomEquipment?.MainStat.Value).toBe(
+        computeMainStatValueAtLevel(2, atkRange.mid, 0, 10),
+      );
+    });
   });
 });
