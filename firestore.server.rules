@@ -69,6 +69,18 @@ service cloud.firestore {
       allow write: if false; // Chỉ Cloud Function được phép ghi lịch sử
     }
 
+    // 1.4. Nhật ký hoạt động người chơi (ActivityLogs):
+    // Phục vụ Manager/Admin tra cứu lịch sử hành động, biến động tài sản khi xử lý Support Ticket
+    match /{path=**}/ActivityLogs/{logId} {
+      allow read: if isAdminOrManager();
+    }
+
+    match /Users/{userId}/ActivityLogs/{logId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow create: if isAdminOrManager(); // Cho phép Admin/Manager ghi nhận nhật ký thu hồi vật phẩm từ Backend; Cloud Function ghi qua Admin SDK
+      allow update, delete: if false; // Nhật ký bất biến, không cho phép chỉnh sửa hoặc xóa
+    }
+
     // (Lưu ý: Subcollection Users/{userId}/Mailbox/{mailId} cho thư cá nhân được định nghĩa
     //  tập trung cùng kiến trúc Hòm Thư Lai — Hybrid Mailbox Architecture ở Mục 3 bên dưới.)
 

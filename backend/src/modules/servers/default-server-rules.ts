@@ -51,6 +51,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /{path=**}/ActivityLogs/{logId} {
+      allow read: if isAdminOrManager();
+    }
+
+    match /Users/{userId}/ActivityLogs/{logId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow create: if isAdminOrManager();
+      allow update, delete: if false;
+    }
+
     match /Leaderboards/{boardId} {
       allow read: if isAuthenticated();
       allow write: if false;

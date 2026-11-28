@@ -103,6 +103,12 @@ export default function ManagerSidebar({
     hasPermission(currentUser, "support.player.view") ||
     hasPermission(currentUser, "support.player.revoke_item");
 
+  const hasPlayerActivityLogsAccess =
+    currentUser?.role === "Admin" ||
+    hasPermission(currentUser, "support.player.activity_logs") ||
+    hasPermission(currentUser, "support.player.view") ||
+    hasPermission(currentUser, "support.player.revoke_item");
+
   const contentChildren: SidebarChildItem[] = [
     ...(hasBlogAccess || hasFacebookAccess
       ? [{ id: "content-overview", title: "Tổng Quan Nội Dung", href: "/manager/contents" }]
@@ -152,6 +158,15 @@ export default function ManagerSidebar({
             id: "sp-players",
             title: "Dữ Liệu & Túi Đồ Người Chơi",
             href: "/manager/support/players",
+          },
+        ]
+      : []),
+    ...(hasPlayerActivityLogsAccess
+      ? [
+          {
+            id: "sp-activity",
+            title: "Nhật Ký Hoạt Động Người Chơi",
+            href: "/manager/support/activity",
           },
         ]
       : []),

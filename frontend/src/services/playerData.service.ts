@@ -217,6 +217,171 @@ export interface PlayerDataActivityLog {
   createdAt: string;
 }
 
+export type PlayerActivityLogCategory =
+  | "AUTH"
+  | "BATTLE"
+  | "GACHA"
+  | "HERO"
+  | "EQUIPMENT"
+  | "ITEM"
+  | "MAIL"
+  | "GIFTCODE"
+  | "ADMIN"
+  | "SYSTEM";
+
+export interface PlayerActivityWalletDelta {
+  GoldBefore: number;
+  GoldAfter: number;
+  GoldChange: number;
+  GemsBefore: number;
+  GemsAfter: number;
+  GemsChange: number;
+  EnergyBefore: number;
+  EnergyAfter: number;
+  EnergyChange: number;
+}
+
+export interface PlayerActivityItemEntry {
+  ItemId: string;
+  ItemName: string;
+  Quantity: number;
+}
+
+export interface PlayerActivityItemsDelta {
+  Consumed: PlayerActivityItemEntry[];
+  Rewarded: PlayerActivityItemEntry[];
+}
+
+export interface PlayerGameplayActivityLog {
+  LogId: string;
+  UserId: string;
+  InGameName: string;
+  Username: string;
+  PlayerCode: string;
+  ServerId: string;
+  Category: PlayerActivityLogCategory;
+  Action: string;
+  Status: string;
+  Summary: string;
+  WalletDelta: PlayerActivityWalletDelta | null;
+  ItemsDelta: PlayerActivityItemsDelta;
+  Metadata: Record<string, unknown>;
+  TimestampMs: number;
+  CreatedAt: string;
+}
+
+export interface PlayerGameplayActivityLogsResponse {
+  serverId: string;
+  targetUid: string;
+  count: number;
+  nextCursor: string;
+  categoryCounts: Record<string, number>;
+  logs: PlayerGameplayActivityLog[];
+}
+
+export const PLAYER_ACTIVITY_CATEGORY_META: Record<
+  PlayerActivityLogCategory,
+  { label: string; shortLabel: string; badgeClass: string }
+> = {
+  GACHA: {
+    label: "Triệu Hồi Gacha",
+    shortLabel: "Gacha",
+    badgeClass: "bg-[#f5c767]/15 text-[#f5c767] border-[#f5c767]/45",
+  },
+  BATTLE: {
+    label: "Chiến Dịch PVE",
+    shortLabel: "Chiến Dịch",
+    badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/40",
+  },
+  HERO: {
+    label: "Chiến Binh Valkyria",
+    shortLabel: "Tướng",
+    badgeClass: "bg-[#3fe9d6]/15 text-[#3fe9d6] border-[#3fe9d6]/40",
+  },
+  EQUIPMENT: {
+    label: "Trang Bị Động",
+    shortLabel: "Trang Bị",
+    badgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/40",
+  },
+  ITEM: {
+    label: "Vật Phẩm Tiêu Hao",
+    shortLabel: "Vật Phẩm",
+    badgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
+  },
+  MAIL: {
+    label: "Hòm Thư & Nhận Quà",
+    shortLabel: "Hòm Thư",
+    badgeClass: "bg-sky-500/15 text-sky-300 border-sky-500/40",
+  },
+  GIFTCODE: {
+    label: "Mã Quà Tặng (Giftcode)",
+    shortLabel: "Giftcode",
+    badgeClass: "bg-purple-500/15 text-purple-300 border-purple-500/40",
+  },
+  AUTH: {
+    label: "Khởi Tạo & Tân Thủ",
+    shortLabel: "Tân Thủ",
+    badgeClass: "bg-teal-500/15 text-teal-300 border-teal-500/40",
+  },
+  ADMIN: {
+    label: "Tác Vụ Quản Trị",
+    shortLabel: "Quản Trị",
+    badgeClass: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40",
+  },
+  SYSTEM: {
+    label: "Hệ Thống",
+    shortLabel: "Hệ Thống",
+    badgeClass: "bg-slate-500/15 text-slate-300 border-slate-500/40",
+  },
+};
+
+export const PLAYER_ACTIVITY_ACTION_LABELS: Record<string, string> = {
+  INIT_NEWBIE_DATA: "Khởi tạo nhân vật tân thủ",
+  START_STAGE: "Bắt đầu ải Chiến dịch",
+  CLAIM_STAGE_REWARD: "Hoàn thành & nhận thưởng ải",
+  CLAIM_CHAPTER_CHEST: "Mở rương mốc sao chương",
+  ROLL_HERO_GACHA: "Triệu hồi Banner Gacha",
+  LEVEL_UP_HERO_BATCH: "Nâng cấp độ Valkyria",
+  PROMOTE_HERO_QUALITY: "Đột phá phẩm chất Valkyria",
+  PROMOTE_HERO_STAR: "Nâng bậc sao Valkyria",
+  SAVE_FORMATION: "Lưu đội hình xuất chiến 3×3",
+  EQUIP_HERO_EQUIPMENT: "Mặc trang bị cho Valkyria",
+  UNEQUIP_HERO_EQUIPMENT: "Tháo trang bị khỏi Valkyria",
+  UNEQUIP_ALL_HERO_EQUIPMENTS: "Tháo toàn bộ trang bị",
+  AUTO_EQUIP_BEST_HERO: "Tự động mặc trang bị tối ưu",
+  ENHANCE_EQUIPMENT: "Cường hóa cấp độ trang bị",
+  TOGGLE_EQUIPMENT_LOCK: "Khóa / Mở khóa trang bị",
+  SALVAGE_EQUIPMENTS: "Phân giải trang bị nhận nguyên liệu",
+  USE_CONSUMABLE_ITEM: "Sử dụng vật phẩm tiêu hao",
+  CLAIM_MAIL_REWARD: "Nhận vật phẩm từ thư",
+  CLAIM_ALL_MAIL_REWARDS: "Nhận nhanh toàn bộ quà thư",
+  REDEEM_GIFTCODE: "Nhập mã quà tặng Giftcode",
+  ADMIN_GRANT_EQUIPMENTS: "Cấp trang bị từ quản trị",
+  ADMIN_GRANT_ITEMS: "Cấp vật phẩm từ quản trị",
+  REVOKE_INVENTORY_ITEM: "Thu hồi vật phẩm túi đồ",
+  CLEAR_INVENTORY_ITEM: "Xóa toàn bộ vật phẩm túi đồ",
+  REVOKE_EQUIPMENT: "Thu hồi trang bị thực thể",
+};
+
+export function getPlayerActivityCategoryMeta(category: string) {
+  const key = (category || "SYSTEM").trim().toUpperCase() as PlayerActivityLogCategory;
+  return (
+    PLAYER_ACTIVITY_CATEGORY_META[key] || PLAYER_ACTIVITY_CATEGORY_META.SYSTEM
+  );
+}
+
+export function getPlayerActivityActionLabel(action: string): string {
+  const key = (action || "").trim().toUpperCase();
+  return PLAYER_ACTIVITY_ACTION_LABELS[key] || key || "Hoạt động trong game";
+}
+
+export function formatSignedDelta(delta: number): string {
+  const num = Math.trunc(Number(delta) || 0);
+  if (num > 0) return `+${num.toLocaleString("vi-VN")}`;
+  if (num < 0) return num.toLocaleString("vi-VN");
+  return "0";
+}
+
 export const HERO_QUALITY_META: Record<
   number,
   { label: string; badgeClass: string; maxLevel: number }
@@ -393,6 +558,63 @@ class PlayerDataService {
   async getPlayerDataLogs(limitCount = 150): Promise<PlayerDataActivityLog[]> {
     return this.request<PlayerDataActivityLog[]>(
       `/logs/activities?limit=${encodeURIComponent(String(limitCount))}`
+    );
+  }
+
+  async getPlayerGameplayActivityLogs(
+    serverId: string,
+    uid: string,
+    options: {
+      category?: string;
+      action?: string;
+      search?: string;
+      limit?: number;
+      startAfterCreatedAt?: string;
+    } = {}
+  ): Promise<PlayerGameplayActivityLogsResponse> {
+    const params = new URLSearchParams();
+    if (options.category && options.category !== "ALL") {
+      params.set("category", options.category);
+    }
+    if (options.action) params.set("action", options.action);
+    if (options.search?.trim()) params.set("search", options.search.trim());
+    if (options.limit) params.set("limit", String(options.limit));
+    if (options.startAfterCreatedAt) {
+      params.set("startAfterCreatedAt", options.startAfterCreatedAt);
+    }
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request<PlayerGameplayActivityLogsResponse>(
+      `/players/${encodeURIComponent(serverId)}/${encodeURIComponent(uid)}/activity-logs${qs}`
+    );
+  }
+
+  async getServerGameplayActivityLogs(
+    serverId: string,
+    options: {
+      targetUid?: string;
+      category?: string;
+      action?: string;
+      search?: string;
+      limit?: number;
+      startAfterCreatedAt?: string;
+    } = {}
+  ): Promise<PlayerGameplayActivityLogsResponse> {
+    const params = new URLSearchParams();
+    if (options.targetUid && options.targetUid !== "all") {
+      params.set("targetUid", options.targetUid);
+    }
+    if (options.category && options.category !== "ALL") {
+      params.set("category", options.category);
+    }
+    if (options.action) params.set("action", options.action);
+    if (options.search?.trim()) params.set("search", options.search.trim());
+    if (options.limit) params.set("limit", String(options.limit));
+    if (options.startAfterCreatedAt) {
+      params.set("startAfterCreatedAt", options.startAfterCreatedAt);
+    }
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request<PlayerGameplayActivityLogsResponse>(
+      `/activity-logs/${encodeURIComponent(serverId)}${qs}`
     );
   }
 }

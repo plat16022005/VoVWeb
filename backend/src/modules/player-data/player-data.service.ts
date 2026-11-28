@@ -7,10 +7,15 @@ import {
 } from '@nestjs/common';
 import {
   FirestoreBatchWrite,
+  FirestoreRestDocument,
   GachaFirebaseService,
 } from '../gacha/gacha-firebase.service.js';
 import { AuthenticatedOperator } from '../gacha/gacha.types.js';
 import {
+  PlayerActivityItemEntry,
+  PlayerActivityItemsDelta,
+  PlayerActivityLogCategory,
+  PlayerActivityWalletDelta,
   PlayerDataActivityLog,
   PlayerDataLogAction,
   PlayerEquipmentDetailItem,
@@ -19,6 +24,8 @@ import {
   PlayerFormationData,
   PlayerFormationSlotItem,
   PlayerFullServerDetailResponse,
+  PlayerGameplayActivityLog,
+  PlayerGameplayActivityLogsResponse,
   PlayerHeroDetailItem,
   PlayerInventoryItemDetail,
   PlayerProfileData,
@@ -28,6 +35,19 @@ import {
   PlayerStageStarItem,
   PlayerWalletData,
 } from './player-data.types.js';
+
+const VALID_GAMEPLAY_LOG_CATEGORIES: PlayerActivityLogCategory[] = [
+  'AUTH',
+  'BATTLE',
+  'GACHA',
+  'HERO',
+  'EQUIPMENT',
+  'ITEM',
+  'MAIL',
+  'GIFTCODE',
+  'ADMIN',
+  'SYSTEM',
+];
 
 const USERS_COLLECTION = 'Users';
 const ITEM_CONFIGS_COLLECTION = 'ItemConfigs';
@@ -2322,6 +2342,487 @@ export class PlayerDataService {
         `Không thể ghi nhật ký Dữ liệu người chơi (${payload.action}): ${err instanceof Error ? err.message : 'unknown'}`,
       );
     }
+
+    // Đồng bộ ghi vào Users/{uid}/ActivityLogs/{logId} trên cụm máy chủ để đối soát trực tiếp trên dòng thời gian của người chơi
+    if (payload.serverId && payload.targetUid) {
+      const shardLogId = `LOG_${now}_web_${Math.random().toString(16).slice(2, 8)}`;
+      const shardLogDoc: Record<string, unknown> = {
+        LogId: shardLogId,
+        UserId: payload.targetUid,
+        ServerId: payload.serverId,
+        Category: 'ADMIN',
+        Action: payload.action,
+        Status: 'SUCCESS',
+        Summary: payload.details,
+        WalletDelta: null,
+        ItemsDelta: {
+          Consumed: [
+            {
+              ItemId: payload.itemId,
+              ItemName: payload.itemName,
+              Quantity: payload.revokedQuantity,
+            },
+          ],
+          Rewarded: [],
+        },
+        Metadata: {
+          reason: payload.reason,
+          performedBy: formatOperatorLabel(operator),
+          performedByRole: operator.role,
+          previousQuantity: payload.previousQuantity,
+          revokedQuantity: payload.revokedQuantity,
+          remainingQuantity: payload.remainingQuantity,
+        },
+        TimestampMs: now,
+        CreatedAt: new Date(now).toISOString(),
+      };
+      await this.firebase
+        .createDocument(
+          `${USERS_COLLECTION}/${payload.targetUid}/ActivityLogs`,
+          shardLogId,
+          shardLogDoc,
+          operator.authTokenForFirestore,
+          payload.serverId,
+        )
+        .catch(() => undefined);
+    }
+  }
+
+  // ==================== 6. TRA CỨU NHẬT KÝ HOẠT ĐỘNG NGƯỜI CHƠI TRONG GAME (ACTIVITY LOGS THEO SHARD) ====================
+
+  private parseWalletDelta(raw: unknown): PlayerActivityWalletDelta | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const rec = raw as Record<string, unknown>;
+    const goldBefore = clampInt(rec.GoldBefore, 0, 2_000_000_000, 0);
+    const goldAfter = clampInt(rec.GoldAfter, 0, 2_000_000_000, goldBefore);
+    const gemsBefore = clampInt(rec.GemsBefore, 0, 2_000_000_000, 0);
+    const gemsAfter = clampInt(rec.GemsAfter, 0, 2_000_000_000, gemsBefore);
+    const energyBefore = clampInt(rec.EnergyBefore, 0, 1_000_000, 0);
+    const energyAfter = clampInt(
+      rec.EnergyAfter,
+      0,
+      1_000_000,
+      energyBefore,
+    );
+    return {
+      GoldBefore: goldBefore,
+      GoldAfter: goldAfter,
+      GoldChange:
+        typeof rec.GoldChange === 'number' && Number.isFinite(rec.GoldChange)
+          ? Math.trunc(rec.GoldChange)
+          : goldAfter - goldBefore,
+      GemsBefore: gemsBefore,
+      GemsAfter: gemsAfter,
+      GemsChange:
+        typeof rec.GemsChange === 'number' && Number.isFinite(rec.GemsChange)
+          ? Math.trunc(rec.GemsChange)
+          : gemsAfter - gemsBefore,
+      EnergyBefore: energyBefore,
+      EnergyAfter: energyAfter,
+      EnergyChange:
+        typeof rec.EnergyChange === 'number' &&
+        Number.isFinite(rec.EnergyChange)
+          ? Math.trunc(rec.EnergyChange)
+          : energyAfter - energyBefore,
+    };
+  }
+
+  private parseItemsDelta(
+    raw: unknown,
+    itemCatalogMap: Map<string, { itemName: string }>,
+  ): PlayerActivityItemsDelta {
+    const parseEntries = (listRaw: unknown): PlayerActivityItemEntry[] => {
+      if (!listRaw) return [];
+      const result: PlayerActivityItemEntry[] = [];
+      if (Array.isArray(listRaw)) {
+        for (const entry of listRaw) {
+          if (!entry || typeof entry !== 'object') continue;
+          const rec = entry as Record<string, unknown>;
+          const itemId = String(rec.ItemId ?? rec.itemId ?? '').trim();
+          const qty = clampInt(rec.Quantity ?? rec.quantity, 0, 999_999_999, 0);
+          if (!itemId || qty <= 0) continue;
+          const rawName = String(rec.ItemName ?? rec.itemName ?? '').trim();
+          const catalogName = itemCatalogMap.get(itemId)?.itemName || '';
+          const itemName =
+            !rawName || rawName === itemId
+              ? catalogName || rawName || itemId
+              : rawName;
+          result.push({ ItemId: itemId, ItemName: itemName, Quantity: qty });
+        }
+        return result;
+      }
+      if (typeof listRaw === 'object') {
+        for (const [k, v] of Object.entries(
+          listRaw as Record<string, unknown>,
+        )) {
+          const itemId = k.trim();
+          const qty = clampInt(v, 0, 999_999_999, 0);
+          if (!itemId || qty <= 0) continue;
+          const catalogName = itemCatalogMap.get(itemId)?.itemName || itemId;
+          result.push({
+            ItemId: itemId,
+            ItemName: catalogName,
+            Quantity: qty,
+          });
+        }
+      }
+      return result;
+    };
+
+    if (!raw || typeof raw !== 'object') {
+      return { Consumed: [], Rewarded: [] };
+    }
+    const obj = raw as Record<string, unknown>;
+    return {
+      Consumed: parseEntries(obj.Consumed ?? obj.consumed),
+      Rewarded: parseEntries(obj.Rewarded ?? obj.rewarded),
+    };
+  }
+
+  private parseGameplayActivityDoc(
+    doc: FirestoreRestDocument,
+    fallbackServerId: string,
+    fallbackUid: string,
+    playerIdentity: {
+      inGameName: string;
+      username: string;
+      playerCode: string;
+    },
+    itemCatalogMap: Map<string, { itemName: string }>,
+  ): PlayerGameplayActivityLog {
+    const docId = this.firebase.extractDocId(doc.name);
+    const data = this.firebase.docToObject(doc);
+
+    // Nếu là truy vấn tổng hợp (collection-group), tách UID từ đường dẫn Users/{uid}/ActivityLogs/{logId}
+    let resolvedUid =
+      typeof data.UserId === 'string' && data.UserId.trim()
+        ? data.UserId.trim()
+        : fallbackUid;
+    if (!resolvedUid || resolvedUid === 'all') {
+      const match = doc.name.match(/\/Users\/([^/]+)\/ActivityLogs\//);
+      if (match?.[1]) {
+        resolvedUid = match[1];
+      }
+    }
+
+    const rawCat = String(data.Category || 'SYSTEM')
+      .trim()
+      .toUpperCase();
+    const category: PlayerActivityLogCategory =
+      VALID_GAMEPLAY_LOG_CATEGORIES.includes(
+        rawCat as PlayerActivityLogCategory,
+      )
+        ? (rawCat as PlayerActivityLogCategory)
+        : 'SYSTEM';
+
+    const createdAt =
+      typeof data.CreatedAt === 'string' && data.CreatedAt.trim()
+        ? data.CreatedAt.trim()
+        : doc.createTime || '';
+    const parsedTs = Number(data.TimestampMs) || Date.parse(createdAt) || 0;
+
+    return {
+      LogId:
+        typeof data.LogId === 'string' && data.LogId.trim()
+          ? data.LogId.trim()
+          : docId,
+      UserId: resolvedUid,
+      InGameName: playerIdentity.inGameName || resolvedUid.slice(0, 12),
+      Username: playerIdentity.username || resolvedUid.slice(0, 12),
+      PlayerCode: playerIdentity.playerCode || '',
+      ServerId:
+        typeof data.ServerId === 'string' && data.ServerId.trim()
+          ? data.ServerId.trim()
+          : fallbackServerId,
+      Category: category,
+      Action:
+        typeof data.Action === 'string' && data.Action.trim()
+          ? data.Action.trim().toUpperCase()
+          : 'UNKNOWN_ACTION',
+      Status:
+        typeof data.Status === 'string' && data.Status.trim()
+          ? data.Status.trim().toUpperCase()
+          : 'SUCCESS',
+      Summary:
+        typeof data.Summary === 'string' ? data.Summary.trim() : '',
+      WalletDelta: this.parseWalletDelta(data.WalletDelta),
+      ItemsDelta: this.parseItemsDelta(data.ItemsDelta, itemCatalogMap),
+      Metadata:
+        data.Metadata && typeof data.Metadata === 'object'
+          ? (data.Metadata as Record<string, unknown>)
+          : {},
+      TimestampMs: parsedTs,
+      CreatedAt: createdAt,
+    };
+  }
+
+  private async fetchRawActivityDocsForUid(
+    serverId: string,
+    uid: string,
+    scanLimit: number,
+    cursorIso: string,
+    token: string,
+  ): Promise<FirestoreRestDocument[]> {
+    try {
+      const structuredQuery: Record<string, unknown> = {
+        from: [{ collectionId: 'ActivityLogs' }],
+        orderBy: [
+          { field: { fieldPath: 'CreatedAt' }, direction: 'DESCENDING' },
+        ],
+        limit: scanLimit,
+      };
+      if (cursorIso) {
+        structuredQuery.startAt = {
+          values: [{ stringValue: cursorIso }],
+          before: false,
+        };
+      }
+      return await this.firebase.runQuery(
+        `${USERS_COLLECTION}/${uid}`,
+        structuredQuery,
+        token,
+        serverId,
+      );
+    } catch {
+      const list = await this.firebase
+        .listDocuments(
+          `${USERS_COLLECTION}/${uid}/ActivityLogs`,
+          token,
+          scanLimit,
+          serverId,
+        )
+        .catch(() => []);
+      return list;
+    }
+  }
+
+  async getPlayerGameplayActivityLogs(
+    operator: AuthenticatedOperator,
+    rawServerId: string,
+    rawTargetUid = '',
+    options: {
+      category?: string;
+      action?: string;
+      search?: string;
+      limit?: number;
+      startAfterCreatedAt?: string;
+    } = {},
+  ): Promise<PlayerGameplayActivityLogsResponse> {
+    if (
+      !this.hasSubPermission(operator, 'support.player.activity_logs') &&
+      !this.hasSubPermission(operator, 'support.player.view') &&
+      !this.hasSubPermission(operator, 'support.player.revoke_item')
+    ) {
+      throw new ForbiddenException(
+        'Tài khoản của bạn chưa được cấp quyền "Tra Cứu Nhật Ký Hoạt Động & Biến Động Tài Sản Người Chơi".',
+      );
+    }
+
+    const srv = await this.assertRegisteredServer(
+      rawServerId,
+      operator.authTokenForFirestore,
+    );
+    const serverId = srv.ServerId;
+    const token = operator.authTokenForFirestore;
+
+    const cleanUid = (rawTargetUid || '').trim();
+    const isAllPlayers = !cleanUid || cleanUid.toLowerCase() === 'all';
+    if (!isAllPlayers) {
+      this.assertValidUid(cleanUid);
+    }
+
+    const rawCat = (options.category || '').trim().toUpperCase();
+    const categoryFilter =
+      rawCat &&
+      rawCat !== 'ALL' &&
+      VALID_GAMEPLAY_LOG_CATEGORIES.includes(
+        rawCat as PlayerActivityLogCategory,
+      )
+        ? rawCat
+        : '';
+    const actionFilter = (options.action || '').trim().toUpperCase();
+    const searchKeyword = (options.search || '').trim().toLowerCase();
+    const cursorIso = (options.startAfterCreatedAt || '').trim();
+    const limitCount = clampInt(options.limit, 1, 200, 50);
+
+    const hasInMemoryFilter = Boolean(
+      categoryFilter || actionFilter || searchKeyword,
+    );
+    const scanLimit = hasInMemoryFilter
+      ? Math.min(500, limitCount * 5)
+      : limitCount;
+
+    const catalogs = await this.loadCatalogMaps(token);
+    const parsedEntries: PlayerGameplayActivityLog[] = [];
+
+    if (!isAllPlayers) {
+      let rawDocs: FirestoreRestDocument[] = [];
+      let userDoc: FirestoreRestDocument | null = null;
+      let profileDoc: FirestoreRestDocument | null = null;
+
+      try {
+        [rawDocs, userDoc, profileDoc] = await Promise.all([
+          this.fetchRawActivityDocsForUid(
+            serverId,
+            cleanUid,
+            scanLimit,
+            cursorIso,
+            token,
+          ),
+          this.firebase
+            .getDocument(`${USERS_COLLECTION}/${cleanUid}`, token)
+            .catch(() => null),
+          this.firebase
+            .getDocument(
+              `${USERS_COLLECTION}/${cleanUid}/UserData/Profile`,
+              token,
+              serverId,
+            )
+            .catch(() => null),
+        ]);
+      } catch (err) {
+        this.wrapShardError(serverId, err);
+      }
+
+      const userObj = userDoc ? this.firebase.docToObject(userDoc) : {};
+      const profileObj = profileDoc
+        ? this.firebase.docToObject(profileDoc)
+        : {};
+      const username =
+        (typeof userObj.Username === 'string' && userObj.Username.trim()) ||
+        (typeof userObj.username === 'string' && userObj.username.trim()) ||
+        cleanUid.slice(0, 12);
+      const inGameName =
+        (typeof profileObj.InGameName === 'string' &&
+          profileObj.InGameName.trim()) ||
+        username;
+      const playerCode =
+        typeof userObj.PlayerCode === 'string' ||
+        typeof userObj.PlayerCode === 'number'
+          ? String(userObj.PlayerCode).trim()
+          : '';
+
+      for (const doc of rawDocs) {
+        parsedEntries.push(
+          this.parseGameplayActivityDoc(
+            doc,
+            serverId,
+            cleanUid,
+            { inGameName, username, playerCode },
+            catalogs.itemMap,
+          ),
+        );
+      }
+    } else {
+      // Tra cứu toàn cụm máy chủ: Lấy danh sách người chơi trên máy chủ và gom song song lịch sử hoạt động mới nhất (không đòi hỏi tạo Composite/CollectionGroup Index trên từng Shard)
+      const playersOnServer = await this.listPlayersByServer(
+        operator,
+        serverId,
+        '',
+        false,
+      );
+      const activePlayers = playersOnServer.slice(0, 25);
+      const perPlayerLimit = Math.max(15, Math.min(60, Math.ceil(scanLimit / 2)));
+
+      const BATCH_SIZE = 8;
+      for (let i = 0; i < activePlayers.length; i += BATCH_SIZE) {
+        const slice = activePlayers.slice(i, i + BATCH_SIZE);
+        const batchLogs = await Promise.all(
+          slice.map(async (p) => {
+            const docs = await this.fetchRawActivityDocsForUid(
+              serverId,
+              p.uid,
+              perPlayerLimit,
+              cursorIso,
+              token,
+            ).catch(() => []);
+            return docs.map((doc) =>
+              this.parseGameplayActivityDoc(
+                doc,
+                serverId,
+                p.uid,
+                {
+                  inGameName: p.inGameName,
+                  username: p.username,
+                  playerCode: p.playerCode,
+                },
+                catalogs.itemMap,
+              ),
+            );
+          }),
+        );
+        for (const group of batchLogs) {
+          parsedEntries.push(...group);
+        }
+      }
+    }
+
+    // Sắp xếp mới nhất lên đầu
+    parsedEntries.sort((a, b) => {
+      if (b.TimestampMs !== a.TimestampMs) {
+        return b.TimestampMs - a.TimestampMs;
+      }
+      return b.CreatedAt.localeCompare(a.CreatedAt);
+    });
+
+    const categoryCounts: Record<string, number> = {};
+    const filteredLogs: PlayerGameplayActivityLog[] = [];
+
+    for (const entry of parsedEntries) {
+      if (cursorIso && entry.CreatedAt && entry.CreatedAt >= cursorIso) {
+        continue;
+      }
+
+      categoryCounts[entry.Category] =
+        (categoryCounts[entry.Category] || 0) + 1;
+
+      if (categoryFilter && entry.Category !== categoryFilter) continue;
+      if (actionFilter && entry.Action !== actionFilter) continue;
+
+      if (searchKeyword) {
+        const itemNames = [
+          ...entry.ItemsDelta.Consumed.map(
+            (i) => `${i.ItemId} ${i.ItemName}`,
+          ),
+          ...entry.ItemsDelta.Rewarded.map(
+            (i) => `${i.ItemId} ${i.ItemName}`,
+          ),
+        ].join(' ');
+        const haystack = [
+          entry.LogId,
+          entry.UserId,
+          entry.InGameName,
+          entry.Username,
+          entry.PlayerCode,
+          entry.Summary,
+          entry.Action,
+          entry.Category,
+          itemNames,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(searchKeyword)) continue;
+      }
+
+      if (filteredLogs.length < limitCount) {
+        filteredLogs.push(entry);
+      }
+    }
+
+    const nextCursor =
+      filteredLogs.length > 0
+        ? filteredLogs[filteredLogs.length - 1].CreatedAt
+        : '';
+
+    return {
+      serverId,
+      targetUid: isAllPlayers ? 'all' : cleanUid,
+      count: filteredLogs.length,
+      nextCursor,
+      categoryCounts,
+      logs: filteredLogs,
+    };
   }
 
   async getPlayerDataLogs(
