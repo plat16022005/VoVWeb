@@ -209,3 +209,65 @@ export interface PlayerDataActivityLog {
   timestamp: number;
   createdAt: string;
 }
+
+export type PlayerActivityLogCategory =
+  | 'AUTH'
+  | 'BATTLE'
+  | 'GACHA'
+  | 'HERO'
+  | 'EQUIPMENT'
+  | 'ITEM'
+  | 'MAIL'
+  | 'GIFTCODE'
+  | 'ADMIN'
+  | 'SYSTEM';
+
+export interface PlayerActivityWalletDelta {
+  GoldBefore: number;
+  GoldAfter: number;
+  GoldChange: number;
+  GemsBefore: number;
+  GemsAfter: number;
+  GemsChange: number;
+  EnergyBefore: number;
+  EnergyAfter: number;
+  EnergyChange: number;
+}
+
+export interface PlayerActivityItemEntry {
+  ItemId: string;
+  ItemName: string;
+  Quantity: number;
+}
+
+export interface PlayerActivityItemsDelta {
+  Consumed: PlayerActivityItemEntry[];
+  Rewarded: PlayerActivityItemEntry[];
+}
+
+export interface PlayerGameplayActivityLog {
+  LogId: string;
+  UserId: string;
+  InGameName: string;
+  Username: string;
+  PlayerCode: string;
+  ServerId: string;
+  Category: PlayerActivityLogCategory;
+  Action: string;
+  Status: string;
+  Summary: string;
+  WalletDelta: PlayerActivityWalletDelta | null;
+  ItemsDelta: PlayerActivityItemsDelta;
+  Metadata: Record<string, unknown>;
+  TimestampMs: number;
+  CreatedAt: string;
+}
+
+export interface PlayerGameplayActivityLogsResponse {
+  serverId: string;
+  targetUid: string;
+  count: number;
+  nextCursor: string;
+  categoryCounts: Record<string, number>;
+  logs: PlayerGameplayActivityLog[];
+}

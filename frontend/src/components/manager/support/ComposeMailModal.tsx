@@ -14,14 +14,23 @@ import {
   mailService,
 } from "@/services/mail.service";
 import { getItemRarityMeta, getItemTypeMeta } from "@/services/itemConfig.service";
+import {
+  EQUIP_RARITY_TIERS,
+  EQUIP_SLOT_LABELS,
+  computeForgedEquipmentCombatScore,
+  formatEquipStatText,
+} from "@/utils/equipmentForger";
 import { soundEngine } from "@/services/audio.service";
+import ForgeEquipmentModal from "./ForgeEquipmentModal";
 
 interface ComposeMailModalProps {
   isOpen: boolean;
   initialServerId?: string;
+  initialOpenForge?: boolean;
   canSendNotice: boolean;
   canSendPersonalReward: boolean;
   canSendGlobalReward: boolean;
+  canForgeEquipment?: boolean;
   referenceItems: MailReferenceItem[];
   referenceServers: MailReferenceServer[];
   onClose: () => void;
@@ -40,11 +49,13 @@ export default function ComposeMailModal(props: ComposeMailModalProps) {
   if (!props.isOpen) return null;
   return (
     <ComposeMailModalContent
-      key={props.initialServerId || "default"}
+      key={`${props.initialServerId || "default"}_${props.initialOpenForge ? "forge" : "std"}`}
       initialServerId={props.initialServerId}
+      initialOpenForge={props.initialOpenForge}
       canSendNotice={props.canSendNotice}
       canSendPersonalReward={props.canSendPersonalReward}
       canSendGlobalReward={props.canSendGlobalReward}
+      canForgeEquipment={props.canForgeEquipment}
       referenceItems={props.referenceItems}
       referenceServers={props.referenceServers}
       onClose={props.onClose}
@@ -55,9 +66,11 @@ export default function ComposeMailModal(props: ComposeMailModalProps) {
 
 function ComposeMailModalContent({
   initialServerId,
+  initialOpenForge = false,
   canSendNotice,
   canSendPersonalReward,
   canSendGlobalReward,
+  canForgeEquipment = true,
   referenceItems,
   referenceServers,
   onClose,
@@ -68,11 +81,25 @@ function ComposeMailModalContent({
     referenceServers[0]?.ServerId ||
     "";
 
-  const [mailType, setMailType] = useState<SystemMailType>("global");
-  const [category, setCategory] = useState<SystemMailCategory>("NOTICE");
-  const [senderName, setSenderName] = useState("Hội Đồng Veyra");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [mailType, setMailType] = useState<SystemMailType>(() =>
+    initialOpenForge ? "personal" : "global"
+  );
+  const [category, setCategory] = useState<SystemMailCategory>(() =>
+    initialOpenForge ? "COMPENSATION" : "NOTICE"
+  );
+  const [senderName, setSenderName] = useState(() =>
+    initialOpenForge ? "Đội Hỗ Trợ Kỹ Thuật" : "Hội Đồng Veyra"
+  );
+  const [title, setTitle] = useState(() =>
+    initialOpenForge ? "Quà Đền Bù Trang Bị & Hỗ Trợ Kỹ Thuật" : ""
+  );
+  const [content, setContent] = useState(() =>
+    initialOpenForge
+      ? "Thưa Chỉ Huy,\n\nĐội ngũ Hỗ Trợ Người Chơi đã kiểm tra và khôi phục trang bị đền bù theo đúng chỉ số phù hợp cho Chỉ Huy. Vui lòng nhấn Nhận Quà bên dưới để trang bị được chuyển trực tiếp vào Kho Trang Bị trong game."
+      : ""
+  );
+  const [isForgeModalOpen, setIsForgeModalOpen] =
+    useState<boolean>(initialOpenForge);
   const [referenceTicketId, setReferenceTicketId] = useState("");
   const [expiresAt, setExpiresAt] = useState(() => getDefaultExpiryLocal(30));
 
@@ -112,10 +139,15 @@ function ComposeMailModalContent({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const canAttachRewardsForCurrentScope =
-    mailType === "global" ? canSendGlobalReward : canSendPersonalReward;
+    mailType === "global"
+      ? canSendGlobalReward
+      : canSendPersonalReward || canForgeEquipment;
 
   const canSendCurrentNotice =
-    canSendNotice || canSendPersonalReward || canSendGlobalReward;
+    canSendNotice ||
+    canSendPersonalReward ||
+    canSendGlobalReward ||
+    canForgeEquipment;
 
   const filteredRefItems = useMemo(() => {
     const q = itemSearch.trim().toLowerCase();
@@ -239,7 +271,9 @@ function ComposeMailModalContent({
     if (!target) return;
     const qty = Math.max(1, Math.trunc(Number(selectedItemQty) || 1));
     setRewardItems((prev) => {
-      const idx = prev.findIndex((r) => r.ItemId === target.ItemId);
+      const idx = prev.findIndex(
+        (r) => r.ItemId === target.ItemId && !r.CustomEquipment
+      );
       if (idx >= 0) {
         return prev.map((r, i) =>
           i === idx ? { ...r, Quantity: r.Quantity + qty } : r
@@ -258,16 +292,31 @@ function ComposeMailModalContent({
     setSelectedItemQty(1);
   };
 
-  const handleUpdateRewardQty = (itemId: string, nextQty: number) => {
+  const handleAddForgedEquipment = (forgedItem: SystemMailRewardItem) => {
+    setRewardItems((prev) => [...prev, forgedItem]);
+    if (!title.trim()) {
+      setTitle("Quà Đền Bù Trang Bị & Hỗ Trợ Kỹ Thuật");
+    }
+    if (!content.trim()) {
+      setContent(
+        "Thưa Chỉ Huy,\n\nĐội ngũ Hỗ Trợ Người Chơi đã kiểm tra và khôi phục trang bị đền bù theo đúng chỉ số phù hợp cho Chỉ Huy. Vui lòng nhấn Nhận Quà bên dưới để trang bị được chuyển trực tiếp vào Kho Trang Bị trong game."
+      );
+    }
+    if (category === "NOTICE") {
+      setCategory("COMPENSATION");
+    }
+  };
+
+  const handleUpdateRewardQtyByIndex = (rowIndex: number, nextQty: number) => {
     const qty = Math.max(1, Math.trunc(nextQty) || 1);
     setRewardItems((prev) =>
-      prev.map((r) => (r.ItemId === itemId ? { ...r, Quantity: qty } : r))
+      prev.map((r, idx) => (idx === rowIndex ? { ...r, Quantity: qty } : r))
     );
   };
 
-  const handleRemoveRewardItem = (itemId: string) => {
+  const handleRemoveRewardItemByIndex = (rowIndex: number) => {
     soundEngine.playClick();
-    setRewardItems((prev) => prev.filter((r) => r.ItemId !== itemId));
+    setRewardItems((prev) => prev.filter((_, idx) => idx !== rowIndex));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -853,9 +902,25 @@ function ComposeMailModalContent({
 
                 {referenceItems.length > 0 && (
                   <div className="pt-3 border-t border-white/10 space-y-3">
-                    <div className="text-[11px] font-mono uppercase text-slate-300 font-semibold">
-                      Vật Phẩm Đính Kèm (Đồng Bộ Kho Vật Phẩm Game)
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-[11px] font-mono uppercase text-slate-300 font-semibold">
+                        Vật Phẩm &amp; Trang Bị Đính Kèm (Đồng Bộ Kho Vật Phẩm Game)
+                      </div>
+
+                      {canForgeEquipment && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            soundEngine.playClick();
+                            setIsForgeModalOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#f5c767]/25 to-amber-500/20 hover:from-[#f5c767]/35 hover:to-amber-500/30 border border-[#f5c767]/50 text-[#f5c767] text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,199,103,0.18)]"
+                        >
+                          <span>⚒️ Tạo Trang Bị Đền Bù (Chỉnh Chỉ Số Chính &amp; Phụ)</span>
+                        </button>
+                      )}
                     </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
                       <div className="sm:col-span-4">
                         <input
@@ -916,53 +981,105 @@ function ComposeMailModalContent({
 
                     {rewardItems.length > 0 && (
                       <div className="space-y-2">
-                        {rewardItems.map((it) => {
+                        {rewardItems.map((it, rowIdx) => {
                           const r = getItemRarityMeta(it.Rarity);
+                          const customEq = it.CustomEquipment;
+                          const eqTier = customEq
+                            ? EQUIP_RARITY_TIERS[customEq.Rarity]
+                            : null;
+                          const cpScore = customEq
+                            ? computeForgedEquipmentCombatScore(customEq)
+                            : 0;
+
                           return (
                             <div
-                              key={it.ItemId}
-                              className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-[#090d24] border border-white/10 text-xs"
+                              key={`${it.ItemId}_${rowIdx}`}
+                              className={`p-3 rounded-xl border text-xs space-y-2 ${
+                                customEq
+                                  ? "bg-[#0c122e] border-[#f5c767]/45"
+                                  : "bg-[#090d24] border-white/10"
+                              }`}
                             >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span
-                                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${r.badgeClass}`}
-                                >
-                                  {r.tier}
-                                </span>
-                                <span className="font-semibold text-white truncate">
-                                  {it.ItemName}
-                                </span>
-                                <span className="text-[11px] font-mono text-slate-400">
-                                  ({it.ItemId})
-                                </span>
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                                      eqTier ? eqTier.badgeClass : r.badgeClass
+                                    }`}
+                                  >
+                                    {eqTier
+                                      ? `[${eqTier.tierCode}] ${eqTier.name}`
+                                      : r.tier}
+                                  </span>
+                                  <span className="font-semibold text-white truncate">
+                                    {it.ItemName}
+                                  </span>
+                                  {customEq && (
+                                    <span className="px-2 py-0.5 rounded bg-[#f5c767]/15 border border-[#f5c767]/40 text-[10px] font-mono font-bold text-[#f5c767]">
+                                      ⚒️ Trang Bị Chế Tác · Ô{" "}
+                                      {EQUIP_SLOT_LABELS[customEq.Slot]} · +
+                                      {cpScore.toLocaleString("vi-VN")} CP
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] font-mono text-slate-400">
+                                    ({it.ItemId})
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-mono text-slate-400">
+                                    SL:
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={customEq ? 20 : 999999}
+                                    value={it.Quantity}
+                                    onChange={(e) =>
+                                      handleUpdateRewardQtyByIndex(
+                                        rowIdx,
+                                        Number(e.target.value)
+                                      )
+                                    }
+                                    className="w-20 px-2 py-1 rounded-lg bg-[#060919] border border-white/15 text-xs font-mono text-[#f5c767] text-center"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveRewardItemByIndex(rowIdx)
+                                    }
+                                    className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 text-[11px] font-mono cursor-pointer"
+                                  >
+                                    Gỡ
+                                  </button>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-mono text-slate-400">
-                                  SL:
-                                </span>
-                                <input
-                                  type="number"
-                                  min={1}
-                                  max={999999}
-                                  value={it.Quantity}
-                                  onChange={(e) =>
-                                    handleUpdateRewardQty(
-                                      it.ItemId,
-                                      Number(e.target.value)
-                                    )
-                                  }
-                                  className="w-20 px-2 py-1 rounded-lg bg-[#060919] border border-white/15 text-xs font-mono text-[#f5c767] text-center"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRemoveRewardItem(it.ItemId)
-                                  }
-                                  className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 text-[11px] font-mono cursor-pointer"
-                                >
-                                  Gỡ
-                                </button>
-                              </div>
+
+                              {customEq && (
+                                <div className="pt-1.5 border-t border-white/10 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+                                  <span className="px-2 py-0.5 rounded bg-[#f5c767]/15 border border-[#f5c767]/35 text-[#f5c767] font-bold">
+                                    Chính:{" "}
+                                    {formatEquipStatText(
+                                      customEq.MainStat.StatType,
+                                      customEq.MainStat.Value
+                                    )}
+                                  </span>
+                                  {customEq.SubStats.map((sub, sIdx) => (
+                                    <span
+                                      key={sIdx}
+                                      className="px-2 py-0.5 rounded bg-emerald-500/12 border border-emerald-500/30 text-emerald-300"
+                                    >
+                                      Phụ #{sIdx + 1}:{" "}
+                                      {formatEquipStatText(
+                                        sub.StatType,
+                                        sub.Value
+                                      )}
+                                      {sub.UpgradeCount > 0
+                                        ? ` (+${sub.UpgradeCount})`
+                                        : ""}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -997,6 +1114,14 @@ function ComposeMailModalContent({
             </button>
           </div>
         </form>
+
+        {/* Modal Chế Tác Trang Bị Đền Bù */}
+        <ForgeEquipmentModal
+          isOpen={isForgeModalOpen}
+          referenceItems={referenceItems}
+          onClose={() => setIsForgeModalOpen(false)}
+          onConfirmForge={handleAddForgedEquipment}
+        />
       </div>
     </div>
   );

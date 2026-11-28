@@ -16,7 +16,8 @@ export type ManagerSectionKey =
   | "events:minigames"
   | "events:giftcodes"
   | "support:mail"
-  | "support:players";
+  | "support:players"
+  | "support:activity";
 
 interface ManagerHeaderProps {
   currentTab: ManagerTab;
@@ -100,6 +101,12 @@ const SECTION_META: Record<
     title: "Dữ Liệu & Túi Đồ Người Chơi Theo Máy Chủ",
     subtitle:
       "Tra cứu hồ sơ nhân vật, cấp độ, lực chiến, số dư tiền tệ, kho tướng, trang bị, tiến trình vượt ải và kiểm tra / thu hồi vật phẩm trong túi đồ.",
+  },
+  "support:activity": {
+    group: "Hỗ Trợ Người Chơi",
+    title: "Nhật Ký Hoạt Động & Biến Động Tài Sản Người Chơi",
+    subtitle:
+      "Tra cứu lịch sử hành động trong game của người chơi theo cụm máy chủ: triệu hồi Gacha, vượt ải, nâng cấp tướng, cường hóa trang bị, nhận thư, nhập Giftcode và đối soát biến động Vàng/Ngọc/Vật phẩm.",
   },
 };
 

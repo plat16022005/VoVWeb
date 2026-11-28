@@ -95,11 +95,18 @@ export default function ManagerSidebar({
     hasPermission(currentUser, "support.mail.view") ||
     hasPermission(currentUser, "support.mail.send_notice") ||
     hasPermission(currentUser, "support.mail.send_personal") ||
+    hasPermission(currentUser, "support.mail.forge_equipment") ||
     hasPermission(currentUser, "support.mail.send_global_reward") ||
     hasPermission(currentUser, "support.mail.delete");
 
   const hasPlayerDataAccess =
     currentUser?.role === "Admin" ||
+    hasPermission(currentUser, "support.player.view") ||
+    hasPermission(currentUser, "support.player.revoke_item");
+
+  const hasPlayerActivityLogsAccess =
+    currentUser?.role === "Admin" ||
+    hasPermission(currentUser, "support.player.activity_logs") ||
     hasPermission(currentUser, "support.player.view") ||
     hasPermission(currentUser, "support.player.revoke_item");
 
@@ -152,6 +159,15 @@ export default function ManagerSidebar({
             id: "sp-players",
             title: "Dữ Liệu & Túi Đồ Người Chơi",
             href: "/manager/support/players",
+          },
+        ]
+      : []),
+    ...(hasPlayerActivityLogsAccess
+      ? [
+          {
+            id: "sp-activity",
+            title: "Nhật Ký Hoạt Động Người Chơi",
+            href: "/manager/support/activity",
           },
         ]
       : []),

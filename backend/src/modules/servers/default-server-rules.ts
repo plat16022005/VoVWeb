@@ -51,6 +51,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /{path=**}/ActivityLogs/{logId} {
+      allow read: if isAdminOrManager();
+    }
+
+    match /Users/{userId}/ActivityLogs/{logId} {
+      allow read: if isOwner(userId) || isAdminOrManager();
+      allow create: if isAdminOrManager();
+      allow update, delete: if false;
+    }
+
     match /Leaderboards/{boardId} {
       allow read: if isAuthenticated();
       allow write: if false;
@@ -74,11 +84,12 @@ service cloud.firestore {
     function isValidSystemMailRewardItem(item) {
       return item is map
         && item.keys().hasAll(['ItemId', 'Quantity'])
-        && item.keys().hasOnly(['ItemId', 'ItemName', 'Quantity', 'Rarity'])
+        && item.keys().hasOnly(['ItemId', 'ItemName', 'Quantity', 'Rarity', 'CustomEquipment'])
         && item.ItemId is string && item.ItemId.size() >= 1 && item.ItemId.size() <= 80
         && item.Quantity is int && item.Quantity >= 1 && item.Quantity <= 999999
         && (!('ItemName' in item) || (item.ItemName is string && item.ItemName.size() <= 120))
-        && (!('Rarity' in item) || (item.Rarity is int && item.Rarity >= 0 && item.Rarity <= 4));
+        && (!('Rarity' in item) || (item.Rarity is int && item.Rarity >= 0 && item.Rarity <= 4))
+        && (!('CustomEquipment' in item) || item.CustomEquipment is map);
     }
 
     function isValidSystemMailRewards(rewards) {

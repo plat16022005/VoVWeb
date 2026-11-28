@@ -246,7 +246,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     id: "player_support",
     title: "Hỗ Trợ Người Chơi",
     code: "SUPPORT_OPS",
-    description: "Quản lý hòm thư hệ thống, đền bù báo lỗi và tra cứu dữ liệu nhân vật, kho tướng, trang bị, tiến trình vượt ải, kiểm tra túi đồ & thu hồi vật phẩm theo từng cụm máy chủ.",
+    description: "Quản lý hòm thư hệ thống, đền bù báo lỗi, tra cứu dữ liệu nhân vật, kho tướng, trang bị, tiến trình vượt ải, kiểm tra túi đồ, thu hồi vật phẩm và tra cứu nhật ký hoạt động người chơi theo từng cụm máy chủ.",
     icon: "",
     subPermissions: [
       {
@@ -271,6 +271,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
       },
       {
+        id: "support.mail.forge_equipment",
+        title: "Tạo & Chỉnh Chỉ Số Trang Bị Đền Bù Qua Thư",
+        description: "Khởi tạo trang bị động theo mẫu, tùy chỉnh phẩm chất, cấp cường hóa, chỉ số chính và các dòng chỉ số phụ trong ngưỡng cân bằng của game để gửi đền bù qua thư hệ thống.",
+        category: "mail",
+        categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
+      },
+      {
         id: "support.mail.send_global_reward",
         title: "Gửi Thư Toàn Server Kèm Quà Tặng",
         description: "Quyền đặc biệt cho phép phát thư kèm Vàng, Ngọc, Thể Lực hoặc vật phẩm tới toàn bộ người chơi trên một hoặc nhiều cụm máy chủ.",
@@ -284,11 +291,18 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         category: "mail",
         categoryTitle: "Hòm Thư Hệ Thống & Đền Bù (Mailbox)",
       },
-      // Nhánh 2: Dữ Liệu & Túi Đồ Người Chơi Theo Cụm Máy Chủ
+      // Nhánh 2: Dữ Liệu, Túi Đồ & Nhật Ký Hoạt Động Người Chơi Theo Cụm Máy Chủ
       {
         id: "support.player.view",
         title: "Tra Cứu Hồ Sơ, Kho Tướng, Trang Bị, Tiến Trình & Túi Đồ",
         description: "Tra cứu dữ liệu người chơi theo từng cụm máy chủ: hồ sơ nhân vật, cấp độ, lực chiến, số dư tiền tệ, kho tướng, đội hình, trang bị, tiến trình vượt ải và túi đồ.",
+        category: "player",
+        categoryTitle: "Dữ Liệu & Túi Đồ Người Chơi (Theo Máy Chủ)",
+      },
+      {
+        id: "support.player.activity_logs",
+        title: "Tra Cứu Nhật Ký Hoạt Động & Biến Động Tài Sản Người Chơi",
+        description: "Tra cứu lịch sử hành động trong game của người chơi theo từng cụm máy chủ: triệu hồi Gacha, vượt ải chiến dịch, nâng cấp tướng, cường hóa/phân giải trang bị, dùng vật phẩm, nhận thư, nhập Giftcode và đối chiếu biến động Vàng/Ngọc/Thể lực/Vật phẩm.",
         category: "player",
         categoryTitle: "Dữ Liệu & Túi Đồ Người Chơi (Theo Máy Chủ)",
       },

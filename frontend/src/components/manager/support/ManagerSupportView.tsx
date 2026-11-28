@@ -5,8 +5,9 @@ import { useAuth } from "@/services/auth.service";
 import { hasPermission } from "@/data/permissions";
 import SystemMailManager from "./SystemMailManager";
 import PlayerDataManager from "./PlayerDataManager";
+import PlayerActivityLogsManager from "./PlayerActivityLogsManager";
 
-export type SupportSubTab = "mail" | "players";
+export type SupportSubTab = "mail" | "players" | "activity";
 
 export default function ManagerSupportView({
   initialSubTab = "mail",
@@ -19,6 +20,9 @@ export default function ManagerSupportView({
     currentUser,
     "support.mail.send_personal"
   );
+  const canForgeEquipment =
+    hasPermission(currentUser, "support.mail.forge_equipment") ||
+    canSendPersonalReward;
   const canSendGlobalReward = hasPermission(
     currentUser,
     "support.mail.send_global_reward"
@@ -28,6 +32,7 @@ export default function ManagerSupportView({
     hasPermission(currentUser, "support.mail.view") ||
     canSendNotice ||
     canSendPersonalReward ||
+    canForgeEquipment ||
     canSendGlobalReward ||
     canDelete;
 
@@ -38,6 +43,10 @@ export default function ManagerSupportView({
   const hasPlayerDataAccess =
     hasPermission(currentUser, "support.player.view") || canRevokePlayerItem;
 
+  const hasPlayerActivityLogsAccess =
+    hasPermission(currentUser, "support.player.activity_logs") ||
+    hasPlayerDataAccess;
+
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
@@ -45,7 +54,8 @@ export default function ManagerSupportView({
 
   if (
     (initialSubTab === "mail" && !hasMailAccess) ||
-    (initialSubTab === "players" && !hasPlayerDataAccess)
+    (initialSubTab === "players" && !hasPlayerDataAccess) ||
+    (initialSubTab === "activity" && !hasPlayerActivityLogsAccess)
   ) {
     return (
       <div className="py-20 p-8 rounded-3xl bg-[#090d24]/90 border border-amber-500/30 text-center space-y-3">
@@ -75,6 +85,7 @@ export default function ManagerSupportView({
           canSendNotice={canSendNotice}
           canSendPersonalReward={canSendPersonalReward}
           canSendGlobalReward={canSendGlobalReward}
+          canForgeEquipment={canForgeEquipment}
           canDelete={canDelete}
           onNotify={showToast}
         />
@@ -82,6 +93,14 @@ export default function ManagerSupportView({
 
       {initialSubTab === "players" && (
         <PlayerDataManager
+          canRevoke={canRevokePlayerItem}
+          onNotify={showToast}
+        />
+      )}
+
+      {initialSubTab === "activity" && (
+        <PlayerActivityLogsManager
+          canViewPlayerDetail={hasPlayerDataAccess}
           canRevoke={canRevokePlayerItem}
           onNotify={showToast}
         />

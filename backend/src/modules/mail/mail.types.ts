@@ -9,11 +9,30 @@ export type SystemMailCategory =
 
 export type SystemMailStatus = 'SENT' | 'REVOKED';
 
+export interface CustomEquipmentStatRoll {
+  StatType: number;
+  BaseValue: number;
+  Value: number;
+  UpgradeCount: number;
+}
+
+export interface CustomForgedEquipmentSpec {
+  TemplateId: string;
+  Slot: number;
+  Rarity: number;
+  EnhanceLevel: number;
+  IsLocked: boolean;
+  SetId: string;
+  MainStat: CustomEquipmentStatRoll;
+  SubStats: CustomEquipmentStatRoll[];
+}
+
 export interface SystemMailRewardItem {
   ItemId: string;
   ItemName: string;
   Quantity: number;
   Rarity: number;
+  CustomEquipment?: CustomForgedEquipmentSpec;
 }
 
 export interface SystemMailRewards {
@@ -55,6 +74,7 @@ export interface MailReferenceItem {
   ItemName: string;
   Type: number;
   Rarity: number;
+  Slot?: number;
   IconUrl?: string;
 }
 

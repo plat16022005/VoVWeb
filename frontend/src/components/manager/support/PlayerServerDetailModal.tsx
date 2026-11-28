@@ -16,6 +16,7 @@ import {
   getItemTypeMeta,
 } from "@/services/itemConfig.service";
 import { soundEngine } from "@/services/audio.service";
+import PlayerActivityLogsPanel from "./PlayerActivityLogsPanel";
 
 interface PlayerServerDetailModalProps {
   detail: PlayerFullServerDetailResponse;
@@ -27,7 +28,12 @@ interface PlayerServerDetailModalProps {
   ) => void;
 }
 
-type DetailTab = "overview" | "inventory" | "equipments" | "heroes";
+type DetailTab =
+  | "overview"
+  | "inventory"
+  | "equipments"
+  | "heroes"
+  | "activity";
 
 export default function PlayerServerDetailModal({
   detail,
@@ -271,6 +277,11 @@ export default function PlayerServerDetailModal({
               id: "heroes" as const,
               label: "4. Kho Tướng & Đội Hình 3×3",
               badge: `${detail.heroes.length} Valkyria`,
+            },
+            {
+              id: "activity" as const,
+              label: "5. Nhật Ký Hoạt Động",
+              badge: "Đối Soát",
             },
           ].map((tab) => {
             const active = activeTab === tab.id;
@@ -1013,6 +1024,16 @@ export default function PlayerServerDetailModal({
                 )}
               </div>
             </div>
+          )}
+
+          {/* ==================== TAB 5: NHẬT KÝ HOẠT ĐỘNG & BIẾN ĐỘNG TÀI SẢN (ACTIVITY LOGS) ==================== */}
+          {activeTab === "activity" && (
+            <PlayerActivityLogsPanel
+              serverId={detail.serverId}
+              targetUid={detail.uid}
+              targetInGameName={detail.profile.InGameName}
+              showPlayerColumn={false}
+            />
           )}
         </div>
       </div>

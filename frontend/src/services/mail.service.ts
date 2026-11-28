@@ -1,6 +1,7 @@
 "use client";
 
 import { auth } from "@/lib/firebase";
+import { CustomForgedEquipmentSpec } from "@/utils/equipmentForger";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
@@ -21,6 +22,7 @@ export interface SystemMailRewardItem {
   ItemName: string;
   Quantity: number;
   Rarity: number;
+  CustomEquipment?: CustomForgedEquipmentSpec;
 }
 
 export interface SystemMailRewards {
@@ -62,6 +64,7 @@ export interface MailReferenceItem {
   ItemName: string;
   Type: number;
   Rarity: number;
+  Slot?: number;
   IconUrl?: string;
 }
 
